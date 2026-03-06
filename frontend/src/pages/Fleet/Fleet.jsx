@@ -98,10 +98,6 @@ export default function Fleet() {
   const [selectedFleet,  setSelectedFleet]  = useState(null);
   const [movementLogs,   setMovementLogs]   = useState([]);
   const [logsLoading,    setLogsLoading]    = useState(false);
-  const [showLogForm,    setShowLogForm]    = useState(false);
-  const [logForm,        setLogForm]        = useState({ status_code: '', lat: '', lng: '' });
-  const [loggingMove,    setLoggingMove]    = useState(false);
-
   const { role }  = useAuth();
   // Fleet: superadmin = full access, admin = view only, user = hidden (nav)
   const isAdmin   = role === 'superadmin';
@@ -121,19 +117,23 @@ export default function Fleet() {
 
   useEffect(() => { load(); }, []);
 
-  // Status codes that mean the unit is back in service
-  const RETURN_TO_SERVICE_CODES = [
-    '10-24 (Operation finished/Clear)',
-    '10-25 (Return to base)',
-    'Serviceable (Available)',
-  ];
-
-  // Status codes that mean the unit is out for maintenance
-  const MAINTENANCE_CODES = ['Maintenance (Out of Service)'];
-
+  // Admin override — returns a unit to service outside of the dispatch flow.
+  // Also writes a movement log entry so the change is visible in the log panel.
   const handleMarkServiceable = async (fleet) => {
-    await fleetApi.update(fleet.id, { status: 'Serviceable' });
-    load();
+    await Promise.all([
+      fleetApi.update(fleet.id, { status: 'Serviceable' }),
+      fleetApi.logMovement(fleet.id, { status_code: 'Return to Service' }),
+    ]);
+    const data = await fleetApi.list();
+    setFleets(data ?? []);
+    // Keep the log panel in sync if this fleet is currently selected
+    if (selectedFleet?.id === fleet.id) {
+      const refreshed = (data ?? []).find(f => f.id === fleet.id);
+      if (refreshed) {
+        setSelectedFleet(refreshed);
+        loadLogs(fleet.id);
+      }
+    }
   };
 
   const handleCreate = async () => {
@@ -156,26 +156,7 @@ export default function Fleet() {
     loadLogs(fleet.id);
   };
 
-  const handleLogMovement = async () => {
-    if (!selectedFleet) return;
-    setLoggingMove(true);
-    await fleetApi.logMovement(selectedFleet.id, {
-      status_code: logForm.status_code,
-      lat: logForm.lat ? parseFloat(logForm.lat) : undefined,
-      lng: logForm.lng ? parseFloat(logForm.lng) : undefined,
-    });
-    // Sync the fleet's top-level status badge to match the logged movement code
-    if (RETURN_TO_SERVICE_CODES.includes(logForm.status_code)) {
-      await fleetApi.update(selectedFleet.id, { status: 'Serviceable' });
-    } else if (MAINTENANCE_CODES.includes(logForm.status_code)) {
-      await fleetApi.update(selectedFleet.id, { status: 'Maintenance' });
-    }
-    setLoggingMove(false);
-    setShowLogForm(false);
-    setLogForm({ status_code: '', lat: '', lng: '' });
-    loadLogs(selectedFleet.id);
-    load();
-  };
+
 
   return (
     <div className={styles.pageContainer}>
@@ -244,18 +225,20 @@ export default function Fleet() {
 
         {/* Movement Log Panel */}
         <div className={styles.logPanel.wrapper}>
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
             <h3 className="text-white font-medium text-sm">
               {selectedFleet ? `${selectedFleet.engine_code} — Movement Log` : 'Select a vehicle to view log'}
             </h3>
-            {selectedFleet && (
-              <button 
-                onClick={() => setShowLogForm(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
-              >
-                <Plus className="w-3 h-3" /> Log Status
-              </button>
-            )}
+            {selectedFleet && (() => {
+              const live = fleets.find(f => f.id === selectedFleet.id) ?? selectedFleet;
+              return (
+                <span className={`mt-1.5 inline-block text-xs px-2 py-0.5 rounded border ${
+                  FLEET_STATUS_COLORS[live.status] ?? FLEET_STATUS_COLORS.Inactive
+                }`}>
+                  {live.status}
+                </span>
+              );
+            })()}
           </div>
           {logsLoading ? (
             <div className={styles.logPanel.loading}>Loading...</div>
@@ -333,59 +316,7 @@ export default function Fleet() {
         </div>
       )}
 
-      {/* Log Movement Modal */}
-      {showLogForm && (
-        <div className={styles.modal.overlay}>
-          <div className={styles.modal.container}>
-            <div className={styles.modal.header}>
-              <h2 className={styles.modal.title}>
-                <RefreshCw className={styles.modal.titleIcon} /> Log Movement Status
-              </h2>
-              <button onClick={() => setShowLogForm(false)} className={styles.modal.closeBtn}>
-                <X className={styles.modal.closeIcon} />
-              </button>
-            </div>
-            <div className={styles.modal.body}>
-              <div>
-                <label className={styles.modal.label}>Status Code / Action *</label>
-                <select value={logForm.status_code}
-                  onChange={e => setLogForm(f => ({ ...f, status_code: e.target.value }))}
-                  className={styles.modal.input}>
-                  <option value="" disabled>Select Status Code</option>
-                  <option value="10-14 (En route)">10-14 (En route)</option>
-                  <option value="10-23 (Arrived at scene)">10-23 (Arrived at scene)</option>
-                  <option value="10-24 (Operation finished/Clear)">10-24 (Operation finished/Clear)</option>
-                  <option value="10-25 (Return to base)">10-25 (Return to base)</option>
-                  <option value="Maintenance (Out of Service)">Maintenance (Out of Service)</option>
-                  <option value="Serviceable (Available)">Serviceable (Available)</option>
-                </select>
-              </div>
-              <div>
-                <label className={styles.modal.label}>Latitude (Optional)</label>
-                <input type="number" step="any" value={logForm.lat}
-                  onChange={e => setLogForm(f => ({ ...f, lat: e.target.value }))}
-                  placeholder="e.g. 14.5995"
-                  className={styles.modal.input} />
-              </div>
-              <div>
-                <label className={styles.modal.label}>Longitude (Optional)</label>
-                <input type="number" step="any" value={logForm.lng}
-                  onChange={e => setLogForm(f => ({ ...f, lng: e.target.value }))}
-                  placeholder="e.g. 120.9842"
-                  className={styles.modal.input} />
-              </div>
-            </div>
-            <div className={styles.modal.footer}>
-              <button onClick={() => setShowLogForm(false)}
-                className={styles.modal.cancelBtn}>Cancel</button>
-              <button onClick={handleLogMovement} disabled={loggingMove || !logForm.status_code}
-                className={styles.modal.submitBtn}>
-                {loggingMove ? 'Logging...' : 'Save Log'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

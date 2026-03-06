@@ -162,10 +162,17 @@ export function useDispatchManager() {
       incident_id: selectedInc,
       fleet_id:    selectedFleet,
     });
+
+    // Mark the fleet as Dispatched and write the first movement log entry
+    // so the change is immediately visible in the Fleet page log panel.
+    await Promise.all([
+      fleetApi.update(selectedFleet, { status: 'Dispatched' }),
+      fleetApi.logMovement(selectedFleet, { status_code: RADIO_CODES.EN_ROUTE }),
+    ]);
+
     setDispatching(false);
     setSelectedFleet('');
 
-    // Seed the initial history entry for this new dispatch
     appendHistory(
       created?.id ?? 'new',
       getFleetLabel(selectedFleet),
@@ -179,6 +186,10 @@ export function useDispatchManager() {
 
   const handleStatusUpdate = async (dispatch, newStatus) => {
     await dispatchesApi.updateStatus(dispatch.id, { dispatch_status: newStatus });
+
+    // Write a movement log entry so every status change appears in the Fleet page log panel.
+    await fleetApi.logMovement(dispatch.fleet_id, { status_code: newStatus });
+
     appendHistory(
       dispatch.id,
       getFleetLabel(dispatch.fleet_id),
