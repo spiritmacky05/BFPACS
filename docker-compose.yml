@@ -40,7 +40,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        - VITE_API_URL=${PUBLIC_API_URL:-http://187.77.136.225:8081}/api/v1
+        - VITE_API_URL=/api/v1
     container_name: bfpacs_frontend
     ports:
       - "5173:80"
