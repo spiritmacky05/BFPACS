@@ -1,43 +1,59 @@
 package database
 
 import (
-	"context"
 	"log"
 	"os"
-	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sassinzz13/bfp-backend/internal/models"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-// NewConnectionPool creates a production-ready pgxpool with tuned settings
-func NewConnectionPool() *pgxpool.Pool {
+// NewConnectionPool creates a new GORM DB connection and automigrates schemas
+func NewConnectionPool() *gorm.DB {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		log.Fatal("DATABASE_URL environment variable not set")
 	}
 
-	config, err := pgxpool.ParseConfig(connStr)
+	config := &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	}
+
+	db, err := gorm.Open(postgres.Open(connStr), config)
 	if err != nil {
-		log.Fatalf("Unable to parse DATABASE_URL: %v", err)
+		log.Fatalf("Unable to connect to database using GORM: %v", err)
 	}
 
-	// Production pool tuning
-	config.MaxConns = 20
-	config.MinConns = 2
-	config.MaxConnLifetime = 30 * time.Minute
-	config.MaxConnIdleTime = 5 * time.Minute
-	config.HealthCheckPeriod = 1 * time.Minute
-
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	// AutoMigrate all models
+	err = db.AutoMigrate(
+		&models.User{},
+		&models.Station{},
+		&models.LogisticalEquipment{},
+		&models.Fleet{},
+		&models.FleetMovementLog{},
+		&models.DutyPersonnel{},
+		&models.FireIncident{},
+		&models.IncidentDispatch{},
+		&models.Deployment{},
+		&models.DeploymentAssignment{},
+		&models.Hydrant{},
+		&models.SituationalReport{},
+		&models.Notification{},
+		&models.PersonnelIncidentLog{},
+	)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		log.Fatalf("Warning: Database AutoMigrate failed: %v", err)
 	}
 
-	// Validate connectivity at startup
-	if err := pool.Ping(context.Background()); err != nil {
-		log.Fatalf("Database ping failed: %v", err)
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get generic db object: %v", err)
 	}
+	sqlDB.SetMaxIdleConns(2)
+	sqlDB.SetMaxOpenConns(20)
 
-	log.Println("✅ Database connection pool established")
-	return pool
+	log.Println("✅ Database connection pool established (GORM)")
+	return db
 }

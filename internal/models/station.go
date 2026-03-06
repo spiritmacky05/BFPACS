@@ -8,7 +8,7 @@ import (
 
 // Station maps to public.stations
 type Station struct {
-	ID                uuid.UUID `json:"id"`
+	ID                uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	StationName       string    `json:"station_name"`
 	ContactNumber     *string   `json:"contact_number,omitempty"`
 	TeamLeaderContact *string   `json:"team_leader_contact,omitempty"`

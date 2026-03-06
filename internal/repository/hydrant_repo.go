@@ -5,94 +5,55 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sassinzz13/bfp-backend/internal/models"
+	"gorm.io/gorm"
 )
 
-// HydrantRepo handles all DB ops for hydrants
 type HydrantRepo struct {
-	Pool *pgxpool.Pool
+	db *gorm.DB
 }
 
-func NewHydrantRepo(pool *pgxpool.Pool) *HydrantRepo {
-	return &HydrantRepo{Pool: pool}
+func NewHydrantRepo(db *gorm.DB) *HydrantRepo {
+	return &HydrantRepo{db: db}
 }
 
-const hydrantSelectFields = `
-	id, station_id, hydrant_code, address_text, city, status,
-	ST_Y(location::geometry) AS lat,
-	ST_X(location::geometry) AS lng,
-	district, region, created_at, updated_at`
+func (r *HydrantRepo) GetAll(ctx context.Context) ([]models.Hydrant, error) {
+	var list []models.Hydrant
+	err := r.db.WithContext(ctx).Order("hydrant_code").Find(&list).Error
+	return list, err
+}
 
-func scanHydrant(row pgx.Row) (*models.Hydrant, error) {
+func (r *HydrantRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Hydrant, error) {
 	var h models.Hydrant
-	err := row.Scan(&h.ID, &h.StationID, &h.HydrantCode, &h.AddressText, &h.City, &h.Status,
-		&h.Lat, &h.Lng, &h.District, &h.Region, &h.CreatedAt, &h.UpdatedAt)
-	if err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&h).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &h, nil
 }
 
-func (r *HydrantRepo) GetAll(ctx context.Context) ([]models.Hydrant, error) {
-	rows, err := r.Pool.Query(ctx, `SELECT `+hydrantSelectFields+` FROM hydrants ORDER BY hydrant_code`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var list []models.Hydrant
-	for rows.Next() {
-		var h models.Hydrant
-		if err := rows.Scan(&h.ID, &h.StationID, &h.HydrantCode, &h.AddressText, &h.City, &h.Status,
-			&h.Lat, &h.Lng, &h.District, &h.Region, &h.CreatedAt, &h.UpdatedAt); err != nil {
-			return nil, err
-		}
-		list = append(list, h)
-	}
-	return list, nil
-}
-
-func (r *HydrantRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Hydrant, error) {
-	row := r.Pool.QueryRow(ctx, `SELECT `+hydrantSelectFields+` FROM hydrants WHERE id=$1`, id)
-	h, err := scanHydrant(row)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return h, nil
-}
-
-// GetNearby uses PostGIS ST_DWithin for efficient radial search against the GiST index
 func (r *HydrantRepo) GetNearby(ctx context.Context, lat, lng float64, radiusMeters float64) ([]models.NearbyHydrant, error) {
-	rows, err := r.Pool.Query(ctx, `
-		SELECT id, station_id, hydrant_code, address_text, city, status,
-		       ST_Y(location::geometry) AS lat,
-		       ST_X(location::geometry) AS lng,
-		       district, region, created_at, updated_at,
-		       ST_Distance(location, ST_MakePoint($1,$2)::geography) AS distance_meters
+	query := `
+		SELECT *, (
+			6371000 * acos(
+				cos(radians(?)) * cos(radians(lat)) * cos(radians(lng) - radians(?)) +
+				sin(radians(?)) * sin(radians(lat))
+			)
+		) AS distance_meters
 		FROM hydrants
-		WHERE ST_DWithin(location, ST_MakePoint($1,$2)::geography, $3)
-		ORDER BY distance_meters`, lng, lat, radiusMeters)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+		WHERE (
+			6371000 * acos(
+				cos(radians(?)) * cos(radians(lat)) * cos(radians(lng) - radians(?)) +
+				sin(radians(?)) * sin(radians(lat))
+			)
+		) <= ? AND lat IS NOT NULL AND lng IS NOT NULL
+		ORDER BY distance_meters
+	`
 	var list []models.NearbyHydrant
-	for rows.Next() {
-		var h models.NearbyHydrant
-		if err := rows.Scan(&h.ID, &h.StationID, &h.HydrantCode, &h.AddressText, &h.City, &h.Status,
-			&h.Lat, &h.Lng, &h.District, &h.Region, &h.CreatedAt, &h.UpdatedAt,
-			&h.DistanceMeters); err != nil {
-			return nil, err
-		}
-		list = append(list, h)
-	}
-	return list, nil
+	err := r.db.WithContext(ctx).Raw(query, lat, lng, lat, lat, lng, lat, radiusMeters).Scan(&list).Error
+	return list, err
 }
 
 func (r *HydrantRepo) Create(ctx context.Context, req models.CreateHydrantRequest) (*models.Hydrant, error) {
@@ -100,12 +61,21 @@ func (r *HydrantRepo) Create(ctx context.Context, req models.CreateHydrantReques
 	if status == "" {
 		status = "Serviceable"
 	}
-	row := r.Pool.QueryRow(ctx, `
-		INSERT INTO hydrants (station_id, hydrant_code, address_text, city, status,
-		                      location, district, region)
-		VALUES ($1,$2,$3,$4,$5, ST_MakePoint($7,$6)::geography, $8,$9)
-		RETURNING `+hydrantSelectFields,
-		req.StationID, req.HydrantCode, req.AddressText, req.City, status,
-		req.Lat, req.Lng, req.District, req.Region)
-	return scanHydrant(row)
+	lat := req.Lat
+	lng := req.Lng
+	h := models.Hydrant{
+		StationID:   req.StationID,
+		HydrantCode: req.HydrantCode,
+		AddressText: req.AddressText,
+		City:        req.City,
+		District:    req.District,
+		Region:      req.Region,
+		Status:      status,
+		Lat:         &lat,
+		Lng:         &lng,
+	}
+	if err := r.db.WithContext(ctx).Create(&h).Error; err != nil {
+		return nil, err
+	}
+	return &h, nil
 }

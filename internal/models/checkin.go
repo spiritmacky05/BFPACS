@@ -8,9 +8,9 @@ import (
 
 // PersonnelIncidentLog maps to public.personnel_incident_logs
 type PersonnelIncidentLog struct {
-	ID            uuid.UUID  `json:"id"`
-	IncidentID    *uuid.UUID `json:"incident_id,omitempty"`
-	PersonnelID   *uuid.UUID `json:"personnel_id,omitempty"`
+	ID            uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	IncidentID    *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid"`
+	PersonnelID   *uuid.UUID `json:"personnel_id,omitempty" gorm:"type:uuid"`
 	CheckInMethod string     `json:"check_in_method"` // NFC | PIN | Manual
 	CheckInTime   time.Time  `json:"check_in_time"`
 	CheckOutTime  *time.Time `json:"check_out_time,omitempty"`

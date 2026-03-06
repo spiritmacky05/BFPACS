@@ -1,4 +1,4 @@
-version: '4.8'
+version: "4.8"
 
 services:
   db:
@@ -8,8 +8,8 @@ services:
       POSTGRES_USER: bfp_admin
       POSTGRES_PASSWORD: ${DB_PASSWORD:-Ultraman13}
       POSTGRES_DB: bfpacs_db
-    expose:
-      - "5432"
+    ports:
+      - "5433:5432"
     volumes:
       - bfpacs_pgdata:/var/lib/postgresql/data
     restart: unless-stopped

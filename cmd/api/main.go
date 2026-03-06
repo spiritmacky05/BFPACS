@@ -20,23 +20,26 @@ func main() {
 	}
 
 	// Initialize DB connection pool
-	pool := database.NewConnectionPool()
-	defer pool.Close()
+	db := database.NewConnectionPool()
+	sqlDB, err := db.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
 
 	// ── Repositories ──────────────────────────────────────────────────────────
-	personnelRepo := repository.NewPersonnelRepo(pool)
-	fleetRepo := repository.NewFleetRepo(pool)
-	incidentRepo := repository.NewIncidentRepo(pool)
-	dispatchRepo := repository.NewDispatchRepo(pool)
-	deploymentRepo := repository.NewDeploymentRepo(pool)
-	hydrantRepo := repository.NewHydrantRepo(pool)
-	stationRepo := repository.NewStationRepo(pool)
-	reportRepo := repository.NewReportRepo(pool)
-	notifRepo := repository.NewNotificationRepo(pool)
-	equipmentRepo := repository.NewEquipmentRepo(pool)
-	checkinRepo := checkin.NewCheckInRepo(pool)
+	personnelRepo := repository.NewPersonnelRepo(db)
+	fleetRepo := repository.NewFleetRepo(db)
+	incidentRepo := repository.NewIncidentRepo(db)
+	dispatchRepo := repository.NewDispatchRepo(db)
+	deploymentRepo := repository.NewDeploymentRepo(db)
+	hydrantRepo := repository.NewHydrantRepo(db)
+	stationRepo := repository.NewStationRepo(db)
+	reportRepo := repository.NewReportRepo(db)
+	notifRepo := repository.NewNotificationRepo(db)
+	equipmentRepo := repository.NewEquipmentRepo(db)
+	checkinRepo := checkin.NewCheckInRepo(db)
 
-	authRepo := repository.NewUserRepo(pool)
+	authRepo := repository.NewUserRepo(db)
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
 	authH := handlers.NewAuthHandler(authRepo)

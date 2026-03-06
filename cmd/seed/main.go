@@ -13,7 +13,10 @@ import (
 func main() {
 	godotenv.Load("/home/khristo/programming/WORK/bfp/BFPACS/.env")
 	pool := database.NewConnectionPool()
-	defer pool.Close()
+	sqlDB, err := pool.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
 	repo := repository.NewUserRepo(pool)
 
 	users := []struct{ Email, Name, Role string }{

@@ -8,7 +8,7 @@ import (
 
 // Deployment maps to public.deployments
 type Deployment struct {
-	ID               uuid.UUID  `json:"id"`
+	ID               uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	NameOfDeployment string     `json:"name_of_deployment"`
 	LocationText     string     `json:"location_text"`
 	Lat              *float64   `json:"lat,omitempty"`
@@ -34,9 +34,9 @@ type CreateDeploymentRequest struct {
 
 // DeploymentAssignment maps to public.deployment_assignments
 type DeploymentAssignment struct {
-	ID              uuid.UUID  `json:"id"`
-	DeploymentID    *uuid.UUID `json:"deployment_id,omitempty"`
-	FleetID         *uuid.UUID `json:"fleet_id,omitempty"`
+	ID              uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	DeploymentID    *uuid.UUID `json:"deployment_id,omitempty" gorm:"type:uuid"`
+	FleetID         *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
 	CheckInTime     time.Time  `json:"check_in_time"`
 	CheckOutTime    *time.Time `json:"check_out_time,omitempty"`
 	SituationUpdate *string    `json:"situation_update,omitempty"`

@@ -8,9 +8,9 @@ import (
 
 // DutyPersonnel maps to public.duty_personnel
 type DutyPersonnel struct {
-	ID                 uuid.UUID  `json:"id"`
-	StationID          *uuid.UUID `json:"station_id,omitempty"`
-	FleetID            *uuid.UUID `json:"fleet_id,omitempty"`
+	ID                 uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	StationID          *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
+	FleetID            *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
 	FullName           string     `json:"full_name"`
 	Rank               string     `json:"rank"`
 	Designation        *string    `json:"designation,omitempty"`

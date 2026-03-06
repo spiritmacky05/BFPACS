@@ -8,10 +8,10 @@ import (
 
 // SituationalReport maps to public.situational_reports
 type SituationalReport struct {
-	ID                    uuid.UUID  `json:"id"`
-	IncidentID            *uuid.UUID `json:"incident_id,omitempty"`
-	DeploymentID          *uuid.UUID `json:"deployment_id,omitempty"`
-	ReporterID            *uuid.UUID `json:"reporter_id,omitempty"`
+	ID                    uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	IncidentID            *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid"`
+	DeploymentID          *uuid.UUID `json:"deployment_id,omitempty" gorm:"type:uuid"`
+	ReporterID            *uuid.UUID `json:"reporter_id,omitempty" gorm:"type:uuid"`
 	SituationText         string     `json:"situation_text"`
 	Remarks               *string    `json:"remarks,omitempty"`
 	PhotoURL              *string    `json:"photo_url,omitempty"`
@@ -20,7 +20,7 @@ type SituationalReport struct {
 	ReportType            string     `json:"report_type"` // Situational | Incident | Inspection
 	SubjectText           *string    `json:"subject_text,omitempty"`
 	InvolvedOccupancyType *string    `json:"involved_occupancy_type,omitempty"`
-	TeamLeaderID          *uuid.UUID `json:"team_leader_id,omitempty"`
+	TeamLeaderID          *uuid.UUID `json:"team_leader_id,omitempty" gorm:"type:uuid"`
 	AreaOfDeploymentText  *string    `json:"area_of_deployment_text,omitempty"`
 	CreatedAt             time.Time  `json:"created_at"`
 }

@@ -9,8 +9,8 @@ import (
 // FireIncident maps to public.fire_incidents
 // geo_location (PostGIS) decomposed to Lat/Lng
 type FireIncident struct {
-	ID                         uuid.UUID  `json:"id"`
-	ReportedBy                 *uuid.UUID `json:"reported_by,omitempty"`
+	ID                         uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	ReportedBy                 *uuid.UUID `json:"reported_by,omitempty" gorm:"type:uuid"`
 	LocationText               string     `json:"location_text"`
 	Lat                        *float64   `json:"lat,omitempty"`
 	Lng                        *float64   `json:"lng,omitempty"`
@@ -57,9 +57,9 @@ type UpdateIncidentStatusRequest struct {
 
 // IncidentDispatch maps to public.incident_dispatches
 type IncidentDispatch struct {
-	ID                uuid.UUID  `json:"id"`
-	IncidentID        *uuid.UUID `json:"incident_id,omitempty"`
-	FleetID           *uuid.UUID `json:"fleet_id,omitempty"`
+	ID                uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	IncidentID        *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid"`
+	FleetID           *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
 	DispatchStatus    *string    `json:"dispatch_status,omitempty"` // e.g. "En Route", "10-23 Arrived at Scene"
 	CheckInTime       time.Time  `json:"check_in_time"`
 	CheckOutTime      *time.Time `json:"check_out_time,omitempty"`

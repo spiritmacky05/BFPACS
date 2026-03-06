@@ -8,9 +8,9 @@ import (
 
 // LogisticalEquipment maps to public.logistical_equipment
 type LogisticalEquipment struct {
-	ID            uuid.UUID  `json:"id"`
-	StationID     *uuid.UUID `json:"station_id,omitempty"`
-	FleetID       *uuid.UUID `json:"fleet_id,omitempty"`
+	ID            uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	StationID     *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
+	FleetID       *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
 	EquipmentName string     `json:"equipment_name"`
 	Quantity      int        `json:"quantity"`
 	Status        string     `json:"status"`
