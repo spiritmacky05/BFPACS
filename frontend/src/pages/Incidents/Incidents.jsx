@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { incidentsApi }     from '@/api/incidents/incidents';
+import { dispatchesApi }    from '@/api/dispatches/dispatches';
+import { fleetApi }         from '@/api/fleet/fleet';
 import { useAuth }          from '@/context/AuthContext/AuthContext';
 import IncidentEditModal    from '../../components/incidents/IncidentEditModal/IncidentEditModal';
 import ConfirmationModal    from '../../components/common/ConfirmationModal/ConfirmationModal';
@@ -173,6 +175,21 @@ export default function Incidents() {
 
   const updateStatus = async (id, incidentStatus) => {
     await incidentsApi.updateStatus(id, { incident_status: incidentStatus });
+
+    // When fire is out, release every fleet unit dispatched to this incident
+    // back to Serviceable so they appear in the dispatch dropdown immediately.
+    if (incidentStatus === 'Fire Out') {
+      const dispatches = await dispatchesApi.getByIncident(id);
+      await Promise.all(
+        (dispatches ?? []).map(d =>
+          Promise.all([
+            fleetApi.update(d.fleet_id, { status: 'Serviceable' }),
+            fleetApi.logMovement(d.fleet_id, { status_code: 'Fire Out — Returned to Service' }),
+          ])
+        )
+      );
+    }
+
     load();
   };
 
