@@ -24,6 +24,11 @@ func main() {
 		log.Println("No .env file found, reading environment variables directly")
 	}
 
+	// Fail fast: validate JWT_SECRET before anything else in production
+	if os.Getenv("GIN_MODE") == "release" && os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("FATAL: JWT_SECRET environment variable must be set in production (GIN_MODE=release)")
+	}
+
 	// Initialize DB connection pool
 	db := database.NewConnectionPool()
 	sqlDB, err := db.DB()
