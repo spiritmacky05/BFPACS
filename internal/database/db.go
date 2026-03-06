@@ -55,5 +55,8 @@ func NewConnectionPool() *gorm.DB {
 	sqlDB.SetMaxOpenConns(20)
 
 	log.Println("✅ Database connection pool established (GORM)")
+
+	SeedInitialUsers(db)
+
 	return db
 }
