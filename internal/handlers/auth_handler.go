@@ -63,7 +63,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	// Create user in DB
-	user, err := h.userRepo.CreateUser(c.Request.Context(), req.Email, req.FullName, string(hashedPassword), "Personnel", stationIDPtr)
+	user, err := h.userRepo.CreateUser(c.Request.Context(), req.Email, req.FullName, string(hashedPassword), "user", stationIDPtr)
 	if err != nil {
 		log.Printf("Create user error: %v", err)
 		// Usually indicates a unique constraint violation on email
