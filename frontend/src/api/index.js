@@ -16,3 +16,4 @@ export { checkinApi }                    from './checkin';
 export { hydrantsApi }                   from './hydrants';
 export { equipmentApi }                  from './equipment';
 export { notificationsApi }              from './notifications';
+export { stationsApi }                   from './stations';

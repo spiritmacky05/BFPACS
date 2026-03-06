@@ -59,6 +59,41 @@ func (h *FleetHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, f)
 }
 
+func (h *FleetHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// Only allow certain fields to be updated
+	allowed := map[string]bool{"status": true, "current_assignment_status": true}
+	updates := make(map[string]interface{})
+	for k, v := range body {
+		if allowed[k] {
+			updates[k] = v
+		}
+	}
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no valid fields to update"})
+		return
+	}
+	f, err := h.Repo.Update(c.Request.Context(), id, updates)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if f == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "fleet not found"})
+		return
+	}
+	c.JSON(http.StatusOK, f)
+}
+
 func (h *FleetHandler) UpdateLocation(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

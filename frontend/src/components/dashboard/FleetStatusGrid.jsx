@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Truck, MapPin, X, AlertTriangle, Check } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { fleetApi } from "@/api/fleet";
 
 const statusColors = {
   Available: "text-green-400 bg-green-600/10 border-green-600/30",
@@ -26,9 +26,8 @@ export default function FleetStatusGrid({ trucks, incidents = [], isAdmin = fals
   const handleAssign = async () => {
     if (!assigning || !selectedIncident) return;
     setSaving(true);
-    await base44.entities.FireTruck.update(assigning.id, {
-      current_incident_id: selectedIncident,
-      status: "Deployed",
+    await fleetApi.update(assigning.id, {
+      status: "Dispatched",
     });
     setSaving(false);
     setAssigning(null);
@@ -37,9 +36,8 @@ export default function FleetStatusGrid({ trucks, incidents = [], isAdmin = fals
   };
 
   const handleUnassign = async (truck) => {
-    await base44.entities.FireTruck.update(truck.id, {
-      current_incident_id: "",
-      status: "Available",
+    await fleetApi.update(truck.id, {
+      status: "Serviceable",
     });
     if (onAssigned) onAssigned();
   };

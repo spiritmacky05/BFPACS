@@ -22,6 +22,13 @@ export const fleetApi = {
   create: (data) => api.post('/fleets', data),
 
   /**
+   * Update fleet fields (e.g. status, current_assignment_status).
+   * @param {string} id
+   * @param {Object} data
+   */
+  update: (id, data) => api.patch(`/fleets/${id}`, data),
+
+  /**
    * Update GPS position (called by mobile device or fleet tracker).
    * @param {string} id
    * @param {{ lat: number, lng: number }} data

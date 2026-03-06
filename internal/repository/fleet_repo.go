@@ -61,6 +61,21 @@ func (r *FleetRepo) Create(ctx context.Context, req models.CreateFleetRequest) (
 	return &f, nil
 }
 
+func (r *FleetRepo) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.Fleet, error) {
+	res := r.db.WithContext(ctx).Model(&models.Fleet{}).Where("id = ?", id).Updates(updates)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, nil
+	}
+	var f models.Fleet
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&f).Error; err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
 func (r *FleetRepo) UpdateLocation(ctx context.Context, id uuid.UUID, lat, lng float64) error {
 	return r.db.WithContext(ctx).Model(&models.Fleet{}).Where("id = ?", id).Updates(map[string]interface{}{"lat": lat, "lng": lng}).Error
 }

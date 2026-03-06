@@ -96,6 +96,7 @@ func main() {
 				f.GET("", fleetH.GetAll)
 				f.GET("/:id", fleetH.GetByID)
 				f.POST("", fleetH.Create)
+				f.PATCH("/:id", fleetH.Update)
 				f.PATCH("/:id/location", fleetH.UpdateLocation)
 				f.POST("/:id/log-movement", fleetH.LogMovement)
 				f.GET("/:id/movement-logs", fleetH.GetMovementLogs)

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { fleetApi } from "@/api/fleet";
+import { dispatchesApi } from "@/api/dispatches";
 import { Truck, AlertTriangle } from "lucide-react";
 
 const truckTypeColors = {
@@ -29,15 +30,12 @@ export default function FleetForIncidentDashboard({ incidentId }) {
 
     const fetchData = async () => {
       try {
-        // Fetch dispatches for this incident
-        const dispatches = await base44.entities.Dispatch.filter({
-          incident_id: incidentId,
-        });
+        const dispatches = await dispatchesApi.getByIncident(incidentId);
 
         // Fetch truck details for each dispatch
-        const truckIds = dispatches.map(d => d.truck_id);
+        const truckIds = dispatches.map(d => d.fleet_id);
         const truckPromises = truckIds.map(id =>
-          base44.entities.FireTruck.filter({ id }).then(data => data[0])
+          fleetApi.getById(id)
         );
 
         const truckData = await Promise.all(truckPromises);
