@@ -19,7 +19,7 @@ func NewHydrantRepo(db *gorm.DB) *HydrantRepo {
 
 func (r *HydrantRepo) GetAll(ctx context.Context) ([]models.Hydrant, error) {
 	var list []models.Hydrant
-	err := r.db.WithContext(ctx).Order("hydrant_code").Find(&list).Error
+	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&list).Error
 	return list, err
 }
 
@@ -65,7 +65,6 @@ func (r *HydrantRepo) Create(ctx context.Context, req models.CreateHydrantReques
 	lng := req.Lng
 	h := models.Hydrant{
 		StationID:   req.StationID,
-		HydrantCode: req.HydrantCode,
 		AddressText: req.AddressText,
 		City:        req.City,
 		District:    req.District,

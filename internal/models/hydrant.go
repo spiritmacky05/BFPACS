@@ -11,7 +11,6 @@ import (
 type Hydrant struct {
 	ID          uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	StationID   *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
-	HydrantCode string     `json:"hydrant_code"`
 	AddressText *string    `json:"address_text,omitempty"`
 	City        *string    `json:"city,omitempty"`
 	Status      string     `json:"status"`
@@ -26,7 +25,6 @@ type Hydrant struct {
 // CreateHydrantRequest is the request body for adding a hydrant
 type CreateHydrantRequest struct {
 	StationID   *uuid.UUID `json:"station_id"`
-	HydrantCode string     `json:"hydrant_code" binding:"required"`
 	AddressText *string    `json:"address_text"`
 	City        *string    `json:"city"`
 	Status      string     `json:"status"`
