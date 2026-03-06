@@ -44,15 +44,12 @@ export default function SuperAdmin() {
   const [health, setHealth] = useState(null);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
-    fetch(`${baseUrl}/health`)
-      .then(r => r.json())
+    api.get('/health')
       .then(setHealth)
       .catch(() => setHealth({ status: 'unreachable' }));
   }, []);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
   const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
 
   return (

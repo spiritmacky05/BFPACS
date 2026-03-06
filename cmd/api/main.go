@@ -63,13 +63,13 @@ func main() {
 	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.RateLimiter())
 
-	// Health check
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok", "service": "BFPACS API"})
-	})
-
 	v1 := r.Group("/api/v1")
 	{
+		// Health check (now under /api/v1/health)
+		v1.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "ok", "service": "BFPACS API"})
+		})
+
 		// ── Public Auth ────────────────────────────────────────────────────
 		auth := v1.Group("/auth")
 		{
