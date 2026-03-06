@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bfp-red: #dc2626;
+  --bfp-red-dark: #991b1b;
+  --bfp-red-glow: rgba(220, 38, 38, 0.3);
+  --bfp-dark: #0a0a0a;
+  --bfp-dark-card: #111111;
+  --bfp-dark-border: #1f1f1f;
+  --bfp-gray: #1a1a1a;
+}
+
+body {
+  background-color: var(--bfp-dark);
+  color: #e5e5e5;
+  font-family: 'Inter', sans-serif;
+}
+
+.glow-red {
+  box-shadow: 0 0 20px var(--bfp-red-glow), 0 0 40px rgba(220, 38, 38, 0.1);
+}
+
+.glow-text {
+  text-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+}
+
+.scanline {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+}
+
+.hex-border {
+  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px);
+}
+
+.status-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.card-dark {
+  background: #111111;
+  border: 1px solid #1f1f1f;
+}
+
+.card-dark:hover {
+  border-color: rgba(220, 38, 38, 0.4);
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.1);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #dc2626;
+  border-radius: 3px;
+}

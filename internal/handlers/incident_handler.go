@@ -1,0 +1,78 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/sassinzz13/bfp-backend/internal/models"
+	"github.com/sassinzz13/bfp-backend/internal/repository"
+)
+
+type IncidentHandler struct {
+	Repo *repository.IncidentRepo
+}
+
+func NewIncidentHandler(repo *repository.IncidentRepo) *IncidentHandler {
+	return &IncidentHandler{Repo: repo}
+}
+
+func (h *IncidentHandler) GetAll(c *gin.Context) {
+	data, err := h.Repo.GetAll(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, data)
+}
+
+func (h *IncidentHandler) GetByID(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	incident, err := h.Repo.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if incident == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "incident not found"})
+		return
+	}
+	c.JSON(http.StatusOK, incident)
+}
+
+// Create reports a new fire incident (10-70). The DB trigger auto-notifies commanders.
+func (h *IncidentHandler) Create(c *gin.Context) {
+	var req models.CreateIncidentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	incident, err := h.Repo.Create(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, incident)
+}
+
+func (h *IncidentHandler) UpdateStatus(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	var req models.UpdateIncidentStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.Repo.UpdateStatus(c.Request.Context(), id, req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "incident updated"})
+}

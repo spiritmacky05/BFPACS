@@ -1,0 +1,29 @@
+# Go binaries
+main
+*.exe
+*.out
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build logs
+*.log
+.build.log
+
+# Go module cache
+vendor/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db

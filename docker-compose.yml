@@ -1,0 +1,52 @@
+version: '4.8'
+
+services:
+  db:
+    image: postgis/postgis:15-master
+    container_name: bfpacs_db
+    environment:
+      POSTGRES_USER: bfp_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Ultraman13}
+      POSTGRES_DB: bfpacs_db
+    expose:
+      - "5432"
+    volumes:
+      - bfpacs_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bfp_admin -d bfpacs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: bfpacs_backend
+    environment:
+      - DATABASE_URL=postgres://bfp_admin:${DB_PASSWORD:-Ultraman13}@db:5432/bfpacs_db
+      - JWT_SECRET=${JWT_SECRET:-super_secret_production_key_12345}
+      - GIN_MODE=release
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_URL=${PUBLIC_API_URL:-http://187.77.136.225:8081}/api/v1
+    container_name: bfpacs_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  bfpacs_pgdata:
