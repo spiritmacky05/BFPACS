@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Package, Plus, X, ArrowLeft, ArrowRight, Edit2, Trash2 } from 'lucide-react';
 import { equipmentApi } from '@/api/equipment';
+import { personnelApi } from '@/api/personnel';
 import { useAuth }      from '@/context/AuthContext';
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
@@ -66,6 +67,7 @@ const EMPTY_FORM = { equipment_name: '', quantity: 1, condition: 'Good' };
 
 export default function Equipment() {
   const [items,    setItems]    = useState([]);
+  const [personnel, setPersonnel] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form,     setForm]     = useState(EMPTY_FORM);
@@ -80,9 +82,18 @@ export default function Equipment() {
   const isAdmin = role === 'superadmin' || role === 'admin' || role === 'user';
 
   const load = async () => {
-    const data = await equipmentApi.list();
-    setItems(data ?? []);
-    setLoading(false);
+    try {
+      const [equipData, personnelData] = await Promise.all([
+        equipmentApi.list(),
+        personnelApi.list()
+      ]);
+      setItems(equipData ?? []);
+      setPersonnel(personnelData ?? []);
+    } catch (err) {
+      console.error('Error loading equipment data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -112,7 +123,7 @@ export default function Equipment() {
   const handleUpdate = async () => {
     setSaving(true);
     const payload = { ...editItem };
-    if (!payload.borrower_name) delete payload.borrower_name;
+    if (!payload.borrower_name) payload.borrower_name = null;
     try {
       await equipmentApi.update(editItem.id, payload);
     } catch(err) {
@@ -218,9 +229,18 @@ export default function Equipment() {
             </div>
             <div className={styles.modal.body}>
               <label className={styles.modal.label}>Borrower Name *</label>
-              <input value={borrowerName} onChange={e => setBorrowerName(e.target.value)}
-                placeholder="Full name of borrower"
-                className={styles.modal.input} />
+              <select 
+                value={borrowerName} 
+                onChange={e => setBorrowerName(e.target.value)}
+                className={styles.modal.input}
+              >
+                <option value="">— Select Personnel —</option>
+                {personnel.map(p => (
+                  <option key={p.id} value={p.full_name}>
+                    {p.full_name} ({p.rank || p.personnel_type || 'BFP'})
+                  </option>
+                ))}
+              </select>
             </div>
             <div className={styles.modal.footer}>
               <button onClick={() => setBorrowItem(null)}
@@ -304,9 +324,18 @@ export default function Equipment() {
               </div>
               <div>
                 <label className={styles.modal.labelSpaced}>Borrower Name (Optional)</label>
-                <input value={editItem.borrower_name || ''} onChange={e => setEditItem(f => ({ ...f, borrower_name: e.target.value }))}
-                  placeholder="Leave empty if None"
-                  className={styles.modal.input} />
+                <select 
+                  value={editItem.borrower_name || ''} 
+                  onChange={e => setEditItem(f => ({ ...f, borrower_name: e.target.value }))}
+                  className={styles.modal.input}
+                >
+                  <option value="">— None —</option>
+                  {personnel.map(p => (
+                    <option key={p.id} value={p.full_name}>
+                      {p.full_name} ({p.rank || p.personnel_type || 'BFP'})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className={styles.modal.footer}>
