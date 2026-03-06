@@ -9,8 +9,8 @@ import (
 // SituationalReport maps to public.situational_reports
 type SituationalReport struct {
 	ID                    uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	IncidentID            *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid"`
-	DeploymentID          *uuid.UUID `json:"deployment_id,omitempty" gorm:"type:uuid"`
+	IncidentID            *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid;index"`
+	DeploymentID          *uuid.UUID `json:"deployment_id,omitempty" gorm:"type:uuid;index"`
 	ReporterID            *uuid.UUID `json:"reporter_id,omitempty" gorm:"type:uuid"`
 	SituationText         string     `json:"situation_text"`
 	Remarks               *string    `json:"remarks,omitempty"`

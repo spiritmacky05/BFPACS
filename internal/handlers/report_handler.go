@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,8 @@ func (h *ReportHandler) Create(c *gin.Context) {
 	}
 	r, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ReportHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create report"})
 		return
 	}
 	c.JSON(http.StatusCreated, r)
@@ -39,7 +41,8 @@ func (h *ReportHandler) GetByIncident(c *gin.Context) {
 	}
 	list, err := h.Repo.GetByIncident(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ReportHandler.GetByIncident] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve reports"})
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -53,7 +56,8 @@ func (h *ReportHandler) GetByDeployment(c *gin.Context) {
 	}
 	list, err := h.Repo.GetByDeployment(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ReportHandler.GetByDeployment] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve reports"})
 		return
 	}
 	c.JSON(http.StatusOK, list)

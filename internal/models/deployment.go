@@ -16,7 +16,7 @@ type Deployment struct {
 	Status           string     `json:"status"`
 	TeamLeader       *string    `json:"team_leader,omitempty"`
 	Remarks          *string    `json:"remarks,omitempty"`
-	StartTime        time.Time  `json:"start_time"`
+	StartTime        time.Time  `json:"start_time" gorm:"autoCreateTime"`
 	EndTime          *time.Time `json:"end_time,omitempty"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
@@ -35,8 +35,8 @@ type CreateDeploymentRequest struct {
 // DeploymentAssignment maps to public.deployment_assignments
 type DeploymentAssignment struct {
 	ID              uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	DeploymentID    *uuid.UUID `json:"deployment_id,omitempty" gorm:"type:uuid"`
-	FleetID         *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
+	DeploymentID    *uuid.UUID `json:"deployment_id,omitempty" gorm:"type:uuid;index"`
+	FleetID         *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid;index"`
 	CheckInTime     time.Time  `json:"check_in_time"`
 	CheckOutTime    *time.Time `json:"check_out_time,omitempty"`
 	SituationUpdate *string    `json:"situation_update,omitempty"`

@@ -9,10 +9,10 @@ import (
 // PersonnelIncidentLog maps to public.personnel_incident_logs
 type PersonnelIncidentLog struct {
 	ID            uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	IncidentID    *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid"`
-	PersonnelID   *uuid.UUID `json:"personnel_id,omitempty" gorm:"type:uuid"`
+	IncidentID    *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid;index:idx_checkin_incident_personnel"`
+	PersonnelID   *uuid.UUID `json:"personnel_id,omitempty" gorm:"type:uuid;index:idx_checkin_incident_personnel"`
 	CheckInMethod string     `json:"check_in_method"` // NFC | PIN | Manual
-	CheckInTime   time.Time  `json:"check_in_time"`
+	CheckInTime   time.Time  `json:"check_in_time" gorm:"autoCreateTime"`
 	CheckOutTime  *time.Time `json:"check_out_time,omitempty"`
 	EntryType     string     `json:"entry_type"`
 }

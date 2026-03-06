@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"strings"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,34 +11,26 @@ func SecurityHeaders() gin.HandlerFunc {
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		c.Header("Content-Security-Policy", "default-src 'self'")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'")
 		c.Next()
 	}
 }
 
 // CORSMiddleware handles Cross-Origin Resource Sharing
 func CORSMiddleware() gin.HandlerFunc {
+	// Build a set for O(1) lookups and exact matching
+	allowedOrigins := map[string]bool{
+		"http://localhost:5173":      true, // Local React Dev Server
+		"http://187.77.136.225:5173": true, // Hostinger VPS Frontend
+		"capacitor://localhost":      true, // Ionic/Capacitor iOS/Android
+		"http://localhost":           true,
+	}
+
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 
-		// List of permitted origins
-		allowedOrigins := []string{
-			"http://localhost:5173",        // Local React Dev Server
-			"http://187.77.136.225:5173",  // Hostinger VPS Frontend
-			"capacitor://localhost",       // Ionic/Capacitor iOS/Android
-			"http://localhost",
-		}
-
-		isAllowed := false
-		for _, o := range allowedOrigins {
-			if strings.HasPrefix(origin, o) {
-				isAllowed = true
-				break
-			}
-		}
-
-		// If the origin is allowed, set the specific headers for that origin
-		if isAllowed {
+		// Exact match prevents subdomain bypass (e.g. http://localhost:5173.evil.com)
+		if allowedOrigins[origin] {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
@@ -49,8 +39,6 @@ func CORSMiddleware() gin.HandlerFunc {
 
 		// Handle Browser Preflight (OPTIONS) requests
 		if c.Request.Method == "OPTIONS" {
-			// If it's an OPTIONS request, we abort here with 204 No Content
-			// but with the CORS headers already set above
 			c.AbortWithStatus(204)
 			return
 		}

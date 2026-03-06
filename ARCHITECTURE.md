@@ -1,7 +1,7 @@
 # BFPACS Backend — Architecture & Development Reference Guide
 
-> A comprehensive reference for building production-grade Go REST APIs backed by PostgreSQL with PostGIS.  
-> Written based on the actual construction of the BFPACS (Bureau of Fire Protection Automated Check-in System) backend.
+> A comprehensive reference for the BFPACS (Bureau of Fire Protection Alarm and Command System) Go REST API.
+> Built with Go + Gin + GORM + PostgreSQL/PostGIS.
 
 ---
 
@@ -9,18 +9,18 @@
 
 1. [Technology Stack](#1-technology-stack)
 2. [Project Structure](#2-project-structure)
-3. [Database Layer — PostgreSQL + PostGIS](#3-database-layer--postgresql--postgis)
-4. [Connection Pooling — pgxpool](#4-connection-pooling--pgxpool)
+3. [Database Layer — GORM + PostgreSQL](#3-database-layer--gorm--postgresql)
+4. [Connection Pooling](#4-connection-pooling)
 5. [Domain Models](#5-domain-models)
-6. [Repository Pattern — Raw SQL](#6-repository-pattern--raw-sql)
-7. [PostGIS Geo Handling Strategy](#7-postgis-geo-handling-strategy)
+6. [Repository Pattern — GORM](#6-repository-pattern--gorm)
+7. [Geo Handling Strategy](#7-geo-handling-strategy)
 8. [HTTP Handlers — Gin Framework](#8-http-handlers--gin-framework)
-9. [NFC Check-in System](#9-nfc-check-in-system)
+9. [NFC / PIN Check-in System](#9-nfc--pin-check-in-system)
 10. [Router & Middleware](#10-router--middleware)
-11. [Environment Configuration](#11-environment-configuration)
-12. [Entry Point — main.go Wiring](#12-entry-point--maingo-wiring)
-13. [Production Readiness Checklist](#13-production-readiness-checklist)
-14. [Deployment Guide](#14-deployment-guide)
+11. [Authentication & Authorization](#11-authentication--authorization)
+12. [Environment Configuration](#12-environment-configuration)
+13. [Entry Point — main.go Wiring](#13-entry-point--maingo-wiring)
+14. [Docker Deployment](#14-docker-deployment)
 15. [API Reference Summary](#15-api-reference-summary)
 16. [Common Patterns & Recipes](#16-common-patterns--recipes)
 
@@ -28,18 +28,17 @@
 
 ## 1. Technology Stack
 
-| Layer           | Technology                        | Reason                                                                            |
-| --------------- | --------------------------------- | --------------------------------------------------------------------------------- |
-| Language        | Go 1.25                           | Compiled, statically typed, excellent concurrency                                 |
-| HTTP Framework  | Gin v1.12                         | High-performance, minimal overhead, idiomatic routing                             |
-| Database Driver | pgx/v5                            | Native PostgreSQL driver, faster than `database/sql`, first-class PostGIS support |
-| Connection Pool | pgxpool                           | Built-in to pgx, production-grade with health checks                              |
-| Database        | PostgreSQL 17                     | ACID compliance, advanced types, trigger support                                  |
-| Geo Extension   | PostGIS                           | Spatial queries (`ST_DWithin`, `ST_MakePoint`, `ST_X`, `ST_Y`)                    |
-| UUID Generation | uuid-ossp (PG) + google/uuid (Go) | RFC-4122 UUIDs at both the DB and application layer                               |
-| Config          | godotenv                          | `.env` file loading for local development                                         |
-
-**Why no ORM?** PostgreSQL features like PostGIS spatial types, `RETURNING` clauses, database triggers, and custom ENUM types cannot be reliably expressed through most Go ORMs. Raw SQL gives you complete control, zero overhead, and predictable query behavior.
+| Layer            | Technology                          | Reason                                                           |
+| ---------------- | ----------------------------------- | ---------------------------------------------------------------- |
+| Language         | Go 1.25                             | Compiled, statically typed, excellent concurrency                |
+| HTTP Framework   | Gin v1.12                           | High-performance, minimal overhead, idiomatic routing            |
+| ORM              | GORM v1.31                          | Mature Go ORM with AutoMigrate, hooks, transactions              |
+| Database Driver  | gorm/driver/postgres (pgx under)    | GORM's PostgreSQL driver backed by pgx/v5                        |
+| Database         | PostgreSQL 15 + PostGIS             | ACID compliance, spatial queries, trigger support                |
+| Authentication   | golang-jwt/jwt/v5 + bcrypt          | JWT tokens for API auth, bcrypt password hashing                 |
+| Rate Limiting    | ulule/limiter/v3                    | Memory-based rate limiter for auth endpoint protection           |
+| UUID Generation  | gen_random_uuid() (PG) + google/uuid| RFC-4122 UUIDs at both database and application layer            |
+| Config           | godotenv                            | `.env` file loading for local development                        |
 
 ---
 
@@ -48,978 +47,689 @@
 ```
 BFPACS/
 ├── .env                        # Environment variables (never commit to git)
-├── go.mod                      # Go module definition
-├── go.sum                      # Dependency checksums
+├── .dockerignore               # Docker build exclusions
+├── go.mod / go.sum             # Go module definition
+├── docker-compose.yml          # Docker orchestration (db + backend + frontend)
+├── Dockerfile.backend          # Multi-stage Go build
+├── Dockerfile.frontend         # Multi-stage React + Nginx build
 ├── ARCHITECTURE.md             # This file
-├── setup_db.sh                 # One-time database setup script
+├── setup_db.sh                 # One-time local database setup script
 │
 ├── cmd/
-│   └── api/
-│       └── main.go             # Application entry point — wires everything together
+│   ├── api/
+│   │   └── main.go             # Application entry point — wires everything together
+│   └── seed/
+│       └── main.go             # Standalone seeder (alternative to auto-seed)
 │
 └── internal/
     ├── database/
-    │   └── db.go               # pgxpool initialization with production settings
+    │   ├── db.go               # GORM connection pool + AutoMigrate
+    │   └── seed.go             # Initial user seeding (superadmin, admin, user)
     │
-    ├── models/                 # Pure Go structs — no DB annotations
-    │   ├── personnel.go
-    │   ├── fleet.go
-    │   ├── incident.go
-    │   ├── deployment.go
-    │   ├── hydrant.go
-    │   ├── station.go
-    │   ├── user.go
-    │   ├── report.go
-    │   ├── notification.go
-    │   ├── equipment.go
-    │   └── checkin.go
+    ├── models/                 # Go structs with GORM + JSON tags
+    │   ├── auth.go             # RegisterRequest, LoginRequest, AuthResponse
+    │   ├── checkin.go          # PersonnelIncidentLog, NFC/PIN/Manual requests
+    │   ├── deployment.go       # Deployment, DeploymentAssignment
+    │   ├── equipment.go        # LogisticalEquipment, borrow/return requests
+    │   ├── fleet.go            # Fleet, FleetMovementLog
+    │   ├── hydrant.go          # Hydrant, NearbyHydrant
+    │   ├── incident.go         # FireIncident, IncidentDispatch
+    │   ├── notification.go     # Notification
+    │   ├── personnel.go        # DutyPersonnel
+    │   ├── report.go           # SituationalReport
+    │   ├── station.go          # Station
+    │   └── user.go             # User (with BeforeSave hook)
     │
-    ├── repository/             # All SQL lives here — one file per domain
-    │   ├── personnel_repo.go
-    │   ├── fleet_repo.go
-    │   ├── incident_repo.go
-    │   ├── dispatch_repo.go
+    ├── repository/             # Data access layer — one file per domain
     │   ├── deployment_repo.go
+    │   ├── dispatch_repo.go
+    │   ├── equipment_repo.go
+    │   ├── fleet_repo.go
     │   ├── hydrant_repo.go
-    │   ├── station_repo.go
-    │   ├── report_repo.go
+    │   ├── incident_repo.go
     │   ├── notification_repo.go
-    │   └── equipment_repo.go
+    │   ├── personnel_repo.go
+    │   ├── report_repo.go
+    │   ├── station_repo.go
+    │   └── user_repo.go
     │
     ├── handlers/               # HTTP layer — one file per domain
-    │   ├── personnel_handler.go
-    │   ├── fleet_handler.go
-    │   ├── incident_handler.go
-    │   ├── dispatch_handler.go
+    │   ├── auth_handler.go     # Register, Login + JWT generation
     │   ├── deployment_handler.go
+    │   ├── dispatch_handler.go
+    │   ├── equipment_handler.go
+    │   ├── fleet_handler.go
     │   ├── hydrant_handler.go
-    │   ├── station_handler.go
-    │   ├── report_handler.go
+    │   ├── incident_handler.go
     │   ├── notification_handler.go
-    │   └── equipment_handler.go
+    │   ├── personnel_handler.go
+    │   ├── report_handler.go
+    │   └── station_handler.go
     │
-    └── checkin/                # Self-contained NFC/PIN module
-        ├── checkin_repo.go
-        └── checkin_handler.go
+    ├── middleware/              # HTTP middleware
+    │   ├── auth_middleware.go   # JWT validation (RequireAuth)
+    │   ├── rate_limiter.go     # 5 req/sec on auth routes
+    │   └── security_middleware.go # CORS, CSP, HSTS, security headers
+    │
+    └── checkin/                # Self-contained NFC/PIN check-in module
+        ├── checkin_repo.go     # Atomic check-in with transaction
+        └── checkin_handler.go  # NFC, PIN, Manual check-in handlers
 ```
 
 ### Why `internal/`?
 
-The `internal/` directory in Go is a language-enforced access boundary. No code outside this module can import packages inside `internal/`. This keeps your domain logic private and prevents external packages from depending on implementation details.
+The `internal/` directory in Go is a language-enforced access boundary. No code outside this module can import packages inside `internal/`. This keeps domain logic private.
 
 ### The Three-Layer Architecture
 
 ```
 Request → Handler → Repository → PostgreSQL
-         (HTTP)    (SQL)        (Data)
+         (HTTP)    (GORM)       (Data)
 ```
 
-Each layer has a single responsibility:
-
-- **Handler**: Parse/validate input, call the repo, return HTTP responses
-- **Repository**: Execute SQL, scan results into structs, return domain types
+- **Handler**: Parse/validate HTTP input, call the repo, return responses
+- **Repository**: Execute GORM queries, return domain types
 - **PostgreSQL**: Store data, enforce constraints, run triggers
 
 ---
 
-## 3. Database Layer — PostgreSQL + PostGIS
+## 3. Database Layer — GORM + PostgreSQL
 
-### Schema Design Principles
+### GORM AutoMigrate
 
-The BFPACS schema follows these conventions:
+On startup, GORM's `AutoMigrate` creates or updates tables to match the Go struct definitions:
 
-**1. UUID Primary Keys (not auto-increment integers)**
-
-```sql
-id uuid DEFAULT public.uuid_generate_v4() NOT NULL
-```
-
-UUIDs are globally unique — safe to generate at the application layer, safe to merge across environments, and don't expose row counts to clients.
-
-**2. Timestamps with Time Zone**
-
-```sql
-created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
-```
-
-Always store in UTC. The `+08:00` offset you see in responses is the PostgreSQL session timezone applied at read time, not stored in the field.
-
-**3. Soft ENUMs via CHECK constraints**
-
-```sql
-CONSTRAINT check_bfp_rank CHECK (
-  rank::text = ANY (ARRAY['FO1','FO2','FO3','SFO1',...])
+```go
+db.AutoMigrate(
+    &models.User{},
+    &models.Station{},
+    &models.Fleet{},
+    // ... all 14 models
 )
 ```
 
-More portable than PostgreSQL ENUM types — easier to add new values without a schema migration.
+AutoMigrate will:
+- Create tables that don't exist
+- Add columns that are missing
+- Create indexes defined in GORM tags
+- **Never** drop columns or data (safe for production)
 
-**4. PostGIS Geography Columns**
+### Schema Design Principles
 
-```sql
-current_location public.geography(Point,4326)
+**1. UUID Primary Keys**
+
+```go
+ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 ```
 
-`geography(Point,4326)` stores WGS84 coordinates (the same coordinate system as GPS). The `4326` is the SRID (Spatial Reference ID for standard GPS lat/lng).
+Uses PostgreSQL's native `gen_random_uuid()` function. UUIDs are globally unique, safe to merge across environments, and don't expose row counts.
 
-**5. GiST Indexes on Geography Columns**
+**2. Timestamps**
 
-```sql
-CREATE INDEX idx_fleets_current_location ON fleets USING gist (current_location);
+Models use `CreatedAt` and `UpdatedAt` fields which GORM auto-populates. Domain-specific timestamps (like `CheckInTime`) use the `autoCreateTime` tag:
+
+```go
+CreatedAt   time.Time  `json:"created_at"`
+UpdatedAt   time.Time  `json:"updated_at"`
+CheckInTime time.Time  `json:"check_in_time" gorm:"autoCreateTime"`
 ```
 
-GiST (Generalized Search Tree) is required for spatial queries. Without this index, `ST_DWithin` would do a full table scan.
+**3. Indexes via GORM Tags**
 
-**6. Database Triggers for Automated Notifications**
-
-```sql
-CREATE TRIGGER trg_new_incident_alert
-  AFTER INSERT ON fire_incidents
-  FOR EACH ROW EXECUTE FUNCTION notify_new_incident();
+```go
+StationID *uuid.UUID `gorm:"type:uuid;index"`         // B-tree index
+Email     string     `gorm:"uniqueIndex;not null"`     // unique B-tree index
 ```
 
-The trigger automatically inserts notification records for all Station Commanders whenever a new incident is reported. This logic lives in the database — not in the application — ensuring notifications fire regardless of which service inserts the data.
+Composite indexes for multi-column queries:
+
+```go
+IncidentID  *uuid.UUID `gorm:"type:uuid;index:idx_checkin_incident_personnel"`
+PersonnelID *uuid.UUID `gorm:"type:uuid;index:idx_checkin_incident_personnel"`
+```
+
+**4. Nullable Fields = Pointer Types**
+
+Any column that can be `NULL` must be a pointer in Go:
+
+```go
+Lat *float64 `json:"lat,omitempty"` // nil = no GPS fix
+```
+
+The `json:"omitempty"` tag omits nil fields from JSON output.
 
 ---
 
-## 4. Connection Pooling — pgxpool
+## 4. Connection Pooling
 
-### The Pool Configuration (`internal/database/db.go`)
+GORM uses Go's `database/sql` pool under the hood:
 
 ```go
-func NewConnectionPool() *pgxpool.Pool {
-    connStr := os.Getenv("DATABASE_URL")
-    config, err := pgxpool.ParseConfig(connStr)
-
-    // --- Production tuning ---
-    config.MaxConns = 20              // Max simultaneous DB connections
-    config.MinConns = 2               // Keep 2 connections warm at all times
-    config.MaxConnLifetime = 30 * time.Minute  // Recycle connections (avoids stale TCP)
-    config.MaxConnIdleTime = 5 * time.Minute   // Release idle connections after 5 min
-    config.HealthCheckPeriod = 1 * time.Minute // Ping idle connections to keep them alive
-
-    pool, _ := pgxpool.NewWithConfig(context.Background(), config)
-    pool.Ping(context.Background()) // Fail fast at startup if DB is unreachable
-    return pool
-}
+sqlDB, _ := db.DB()
+sqlDB.SetMaxIdleConns(5)           // Keep 5 warm connections
+sqlDB.SetMaxOpenConns(25)          // Max 25 simultaneous connections
+sqlDB.SetConnMaxLifetime(5 * time.Minute)  // Recycle after 5 min
+sqlDB.SetConnMaxIdleTime(3 * time.Minute)  // Release idle after 3 min
 ```
-
-### Why a Pool Matters
-
-Without a pool, every HTTP request would open a new TCP connection to PostgreSQL (expensive: ~5ms–50ms per connection). With a pool, connections are reused — a request gets a connection from the warm pool in microseconds.
 
 ### Connection Pool Math
 
 ```
-MaxConns = 20
-Concurrent requests that need DB = 20 max (beyond that, they queue)
-
-For a typical API:
-  - Each request holds a connection for ~1ms–10ms
-  - At 20 connections, you can serve ~2,000–20,000 req/sec
+MaxOpenConns = 25
+Each request holds a connection for ~1ms–10ms
+At 25 connections: ~2,500–25,000 req/sec throughput
+Beyond 25 concurrent DB requests → they queue (backpressure)
 ```
 
-### The DATABASE_URL Format
+### GORM Log Level
 
-```
-postgres://[user]:[password]@[host]:[port]/[database]
-postgres://bfp_admin:@Ultraman13@localhost:5432/bfpacs_db
-```
-
-Note: The `@` symbol in the password is URL-encoded in some clients but pgx handles it correctly as-is.
+In development: `logger.Info` (logs all SQL queries).
+In production (`GIN_MODE=release`): `logger.Warn` (only slow queries and errors).
 
 ---
 
 ## 5. Domain Models
 
-Models are **plain Go structs with JSON tags**. They have zero coupling to the database driver.
+Models are Go structs with both GORM and JSON tags:
 
 ```go
-// internal/models/fleet.go
 type Fleet struct {
-    ID          uuid.UUID  `json:"id"`
+    ID          uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+    StationID   *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid;index"`
     EngineCode  string     `json:"engine_code"`
     Status      string     `json:"status"`
-    Lat         *float64   `json:"lat,omitempty"`   // nil if no GPS fix
+    Lat         *float64   `json:"lat,omitempty"`
     Lng         *float64   `json:"lng,omitempty"`
     CreatedAt   time.Time  `json:"created_at"`
+    UpdatedAt   time.Time  `json:"updated_at"`
 }
 ```
 
 ### Key Design Decisions
 
-**Pointer types for nullable fields (`*string`, `*float64`, `*uuid.UUID`)**
-
-PostgreSQL `NULL` maps to Go `nil`. Any column that can be NULL in the schema must be a pointer in Go, otherwise scanning will fail with a nil dereference.
-
-```go
-// BAD: will panic if DB value is NULL
-var name string
-rows.Scan(&name)
-
-// GOOD: safely handles NULL
-var name *string
-rows.Scan(&name)  // name is nil if DB returns NULL
-```
-
-**`omitempty` on nullable fields**
-
-The `json:"field,omitempty"` tag skips the field entirely in JSON output if it's nil. This keeps responses clean — a fleet with no GPS fix won't have `"lat": null` in the JSON.
-
-**Separate Request structs**
-
-Never use the same struct for both database output and HTTP input. Always define separate `CreateXRequest` and `UpdateXRequest` structs:
+**Separate Request Structs**: Never use the same struct for DB output and HTTP input:
 
 ```go
 type CreateFleetRequest struct {
-    EngineCode  string  `json:"engine_code" binding:"required"`
-    PlateNumber string  `json:"plate_number" binding:"required"`
-    // ...only fields the client is allowed to set
-}
-
-type Fleet struct {
-    // ...all fields including server-set ones like id, created_at
+    EngineCode  string `json:"engine_code" binding:"required"`
+    PlateNumber string `json:"plate_number" binding:"required"`
 }
 ```
 
-This prevents clients from setting fields like `id` or `created_at` that should only be set by the server.
+This prevents clients from setting server-only fields like `id` or `created_at`.
+
+**GORM Hooks**: The `User` model uses a `BeforeSave` hook to lowercase emails:
+
+```go
+func (u *User) BeforeSave(tx *gorm.DB) error {
+    u.Email = strings.ToLower(u.Email)
+    return nil
+}
+```
 
 ---
 
-## 6. Repository Pattern — Raw SQL
+## 6. Repository Pattern — GORM
 
-Each repository struct holds a reference to the shared `*pgxpool.Pool`. Methods execute SQL directly.
-
-### Anatomy of a Repository
+Each repository holds a `*gorm.DB` reference injected via constructor:
 
 ```go
 type PersonnelRepo struct {
-    Pool *pgxpool.Pool           // shared pool — injected via constructor
+    db *gorm.DB
 }
 
-func NewPersonnelRepo(pool *pgxpool.Pool) *PersonnelRepo {
-    return &PersonnelRepo{Pool: pool}
+func NewPersonnelRepo(db *gorm.DB) *PersonnelRepo {
+    return &PersonnelRepo{db: db}
 }
 ```
 
 ### The Three Query Patterns
 
-**Pattern 1: `QueryRow` — single row result**
+**Pattern 1: Single record lookup**
 
 ```go
 func (r *PersonnelRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.DutyPersonnel, error) {
     var p models.DutyPersonnel
-    err := r.Pool.QueryRow(ctx,
-        `SELECT id, full_name, rank, duty_status FROM duty_personnel WHERE id=$1`,
-        id,
-    ).Scan(&p.ID, &p.FullName, &p.Rank, &p.DutyStatus)
-
-    if errors.Is(err, pgx.ErrNoRows) {
-        return nil, nil  // not found, not an error
-    }
-    if err != nil {
-        return nil, err  // real error
+    if err := r.db.WithContext(ctx).Where("id = ?", id).First(&p).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, nil  // not found — not an error
+        }
+        return nil, err      // real DB error
     }
     return &p, nil
 }
 ```
 
-**Pattern 2: `Query` — multiple row results**
+**Pattern 2: List query**
 
 ```go
 func (r *PersonnelRepo) GetAll(ctx context.Context) ([]models.DutyPersonnel, error) {
-    rows, err := r.Pool.Query(ctx,
-        `SELECT id, full_name, rank, duty_status FROM duty_personnel ORDER BY full_name`)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()  // ALWAYS defer close to release the connection back to pool
-
     var list []models.DutyPersonnel
-    for rows.Next() {
-        var p models.DutyPersonnel
-        if err := rows.Scan(&p.ID, &p.FullName, &p.Rank, &p.DutyStatus); err != nil {
-            return nil, err
-        }
-        list = append(list, p)
+    err := r.db.WithContext(ctx).Order("full_name").Find(&list).Error
+    return list, err
+}
+```
+
+**Pattern 3: Partial update (PATCH semantics)**
+
+```go
+func (r *IncidentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, req models.UpdateIncidentStatusRequest) error {
+    updates := make(map[string]interface{})
+    if req.IncidentStatus != nil {
+        updates["incident_status"] = *req.IncidentStatus
     }
-    return list, nil
+    // ... only set non-nil fields
+    return r.db.WithContext(ctx).Model(&models.FireIncident{}).Where("id = ?", id).Updates(updates).Error
 }
 ```
 
-**Pattern 3: `Exec` — no result needed (UPDATE, DELETE)**
+### Transactions for Race-Safe Operations
 
 ```go
-func (r *PersonnelRepo) UpdateDutyStatus(ctx context.Context, id uuid.UUID, status string) error {
-    _, err := r.Pool.Exec(ctx,
-        `UPDATE duty_personnel SET duty_status=$1, updated_at=NOW() WHERE id=$2`,
-        status, id)
-    return err
+func (r *EquipmentRepo) BorrowItem(ctx context.Context, id uuid.UUID, req models.BorrowEquipmentRequest) error {
+    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        var equip models.LogisticalEquipment
+        if err := tx.Where("id = ?", id).First(&equip).Error; err != nil {
+            return err
+        }
+        if equip.Status == "Borrowed" {
+            return ErrAlreadyBorrowed
+        }
+        return tx.Model(&equip).Updates(map[string]interface{}{
+            "borrower_name": req.BorrowerName,
+            "status":        "Borrowed",
+        }).Error
+    })
 }
-```
-
-### RETURNING Clause — Insert and Get in One Round-Trip
-
-Instead of doing INSERT then SELECT, use PostgreSQL's `RETURNING`:
-
-```go
-// BAD: two round-trips to the database
-r.Pool.Exec(ctx, `INSERT INTO fleets (...) VALUES (...)`)
-r.Pool.QueryRow(ctx, `SELECT * FROM fleets WHERE id=$1`, id)
-
-// GOOD: one round-trip
-err := r.Pool.QueryRow(ctx, `
-    INSERT INTO fleets (engine_code, plate_number, vehicle_type)
-    VALUES ($1,$2,$3)
-    RETURNING id, engine_code, plate_number, created_at`,  // get back the created row
-    req.EngineCode, req.PlateNumber, req.VehicleType,
-).Scan(&f.ID, &f.EngineCode, &f.PlateNumber, &f.CreatedAt)
-```
-
-### COALESCE for Partial Updates (PATCH semantics)
-
-When only some fields should be updated, use `COALESCE` to keep existing values for nil inputs:
-
-```go
-r.Pool.Exec(ctx, `
-    UPDATE fire_incidents SET
-        incident_status = COALESCE($1, incident_status),
-        alarm_status    = COALESCE($2, alarm_status),
-        ground_commander= COALESCE($3, ground_commander),
-        updated_at      = NOW()
-    WHERE id=$4`,
-    req.IncidentStatus,    // nil = keep existing value
-    req.AlarmStatus,       // nil = keep existing value
-    req.GroundCommander,   // nil = keep existing value
-    id)
 ```
 
 ### Always Pass Context
 
-Every repository method accepts `context.Context` as its first parameter. This allows:
-
-- **Request cancellation**: If the HTTP client disconnects, the SQL query is cancelled
-- **Timeouts**: You can set a deadline that propagates to the DB query
-- **Tracing**: Future instrumentation can trace DB calls back to HTTP requests
+Every method accepts `context.Context` for request cancellation, timeouts, and tracing:
 
 ```go
-// Handler always passes c.Request.Context() — this is the request's context
 data, err := h.Repo.GetAll(c.Request.Context())
 ```
 
 ---
 
-## 7. PostGIS Geo Handling Strategy
+## 7. Geo Handling Strategy
 
-PostGIS stores geographic points in a binary format that Go cannot scan directly into a struct. The solution is to use PostGIS functions to convert to/from standard float64 values.
+The project uses PostGIS Docker image but currently stores coordinates as plain `lat`/`lng` float64 columns (not PostGIS geography columns). This is a pragmatic choice that works for the current scale.
 
-### Reading: Binary → float64
+### Nearby Hydrant Search — Haversine Formula
 
-Use SQL functions `ST_Y()` (latitude) and `ST_X()` (longitude) in the SELECT:
-
-```sql
-SELECT
-    id,
-    engine_code,
-    ST_Y(current_location::geometry) AS lat,   -- extracts latitude
-    ST_X(current_location::geometry) AS lng    -- extracts longitude
-FROM fleets
-```
-
-Then scan normally:
+The hydrant nearby search uses a raw SQL Haversine formula against the `lat`/`lng` columns:
 
 ```go
-var lat, lng *float64  // pointer because the column can be NULL (no GPS fix)
-rows.Scan(&f.ID, &f.EngineCode, &lat, &lng)
-f.Lat = lat
-f.Lng = lng
+query := `
+    SELECT *, (
+        6371000 * acos(
+            cos(radians(?)) * cos(radians(lat)) * cos(radians(lng) - radians(?)) +
+            sin(radians(?)) * sin(radians(lat))
+        )
+    ) AS distance_meters
+    FROM hydrants
+    WHERE (...) <= ? AND lat IS NOT NULL AND lng IS NOT NULL
+    ORDER BY distance_meters
+`
 ```
 
-### Writing: float64 → PostGIS Point
+### Future: PostGIS Migration Path
 
-Use `ST_MakePoint(longitude, latitude)` — **note: longitude comes first**, not latitude:
+When scaling requires indexed spatial queries, the migration path is:
 
-```sql
-UPDATE fleets
-SET current_location = ST_MakePoint($1, $2)::geography
-WHERE id = $3
--- args: lng, lat, id
-```
-
-### Conditional Geo INSERT
-
-When lat/lng are optional (nullable), use a CASE expression instead of building dynamic SQL:
-
-```sql
-INSERT INTO fire_incidents (location_text, geo_location)
-VALUES ($1,
-    CASE
-        WHEN $2::float8 IS NOT NULL AND $3::float8 IS NOT NULL
-        THEN ST_MakePoint($3, $2)::geography   -- ST_MakePoint(lng, lat)
-        ELSE NULL
-    END
-)
--- args: locationText, lat, lng
-```
-
-### Nearest Neighbor Search with ST_DWithin
-
-For the hydrant nearby search, PostGIS compares geography objects and uses the GiST index automatically:
-
-```sql
-SELECT
-    id, hydrant_code,
-    ST_Y(location::geometry) AS lat,
-    ST_X(location::geometry) AS lng,
-    ST_Distance(location, ST_MakePoint($1,$2)::geography) AS distance_meters  -- actual distance in meters
-FROM hydrants
-WHERE ST_DWithin(location, ST_MakePoint($1,$2)::geography, $3)  -- within $3 meters
-ORDER BY distance_meters
--- args: lng, lat, radiusMeters
-```
-
-This query runs in milliseconds even with thousands of hydrants because it uses the GiST index.
-
-### Summary of PostGIS Functions Used
-
-| Function                   | Purpose                                                | Example                            |
-| -------------------------- | ------------------------------------------------------ | ---------------------------------- |
-| `ST_MakePoint(lng, lat)`   | Create a point geometry                                | `ST_MakePoint(121.034, 14.655)`    |
-| `::geography`              | Cast geometry to geography (uses meters for distances) | `ST_MakePoint(...)::geography`     |
-| `ST_Y(geom::geometry)`     | Extract latitude from geography                        | `ST_Y(location::geometry)`         |
-| `ST_X(geom::geometry)`     | Extract longitude from geography                       | `ST_X(location::geometry)`         |
-| `ST_DWithin(a, b, radius)` | True if two geographies are within `radius` meters     | `ST_DWithin(location, point, 500)` |
-| `ST_Distance(a, b)`        | Distance in meters between two geographies             | `ST_Distance(loc, point)`          |
+1. Add `geography(Point,4326)` columns alongside `lat`/`lng`
+2. Create GiST indexes on the geography columns
+3. Write PostGIS data on INSERT/UPDATE (using `ST_MakePoint(lng, lat)::geography`)
+4. Replace Haversine WHERE with `ST_DWithin(geo_column, ST_MakePoint(?, ?)::geography, ?)`
+5. Replace manual distance with `ST_Distance(geo_column, point)`
 
 ---
 
 ## 8. HTTP Handlers — Gin Framework
 
-Handlers are thin — they only deal with HTTP concerns. No SQL, no business logic.
-
-### Anatomy of a Handler
+Handlers are thin — HTTP concerns only. No SQL, no business logic.
 
 ```go
-type IncidentHandler struct {
-    Repo *repository.IncidentRepo  // dependency injected via constructor
-}
-
-func NewIncidentHandler(repo *repository.IncidentRepo) *IncidentHandler {
-    return &IncidentHandler{Repo: repo}
-}
-
 func (h *IncidentHandler) Create(c *gin.Context) {
-    // 1. Parse and validate the request body
     var req models.CreateIncidentRequest
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
-
-    // 2. Call the repository (pass request context for cancellation support)
     incident, err := h.Repo.Create(c.Request.Context(), req)
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        log.Printf("[IncidentHandler.Create] %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create incident"})
         return
     }
-
-    // 3. Return the result
     c.JSON(http.StatusCreated, incident)
 }
 ```
 
-### HTTP Status Code Conventions
+### HTTP Status Conventions
 
-| Situation                                 | Status Code                 |
-| ----------------------------------------- | --------------------------- |
-| Successful GET                            | `200 OK`                    |
-| Successful POST (created new resource)    | `201 Created`               |
-| Successful PATCH/PUT (updated)            | `200 OK`                    |
-| Invalid request body / bad UUID           | `400 Bad Request`           |
-| Resource not found                        | `404 Not Found`             |
-| Duplicate constraint (already checked in) | `409 Conflict`              |
-| Database or server error                  | `500 Internal Server Error` |
+| Situation                | Status Code          |
+| ------------------------ | -------------------- |
+| Successful GET           | `200 OK`             |
+| Successful POST          | `201 Created`        |
+| Invalid request / UUID   | `400 Bad Request`    |
+| Missing/invalid JWT      | `401 Unauthorized`   |
+| Not found                | `404 Not Found`      |
+| Duplicate / conflict     | `409 Conflict`       |
+| Rate limited             | `429 Too Many`       |
+| Server/DB error          | `500 Internal Error` |
 
-### UUID Parsing Pattern
+### Error Handling Pattern
 
-All IDs are UUIDs. Parse them early and return 400 if invalid:
+Internal errors are logged server-side with context. Clients receive generic messages:
 
 ```go
-id, err := uuid.Parse(c.Param("id"))
 if err != nil {
-    c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+    log.Printf("[HandlerName.Method] %v", err)                    // server log
+    c.JSON(500, gin.H{"error": "failed to perform operation"})    // client response
     return
 }
 ```
 
-### Differentiating "not found" from "DB error"
+### Not-Found vs DB-Error Pattern
 
-The repository returns `(nil, nil)` for not-found vs `(nil, err)` for actual errors:
+Repos return `(nil, nil)` for not-found, handlers differentiate:
 
 ```go
-// In repository:
-if errors.Is(err, pgx.ErrNoRows) {
-    return nil, nil  // not found — caller decides how to respond
-}
-return nil, err     // real error
-
-// In handler:
 result, err := h.Repo.GetByID(ctx, id)
-if err != nil {
-    c.JSON(500, gin.H{"error": err.Error()})  // DB error
-    return
-}
-if result == nil {
-    c.JSON(404, gin.H{"error": "not found"})  // not found
-    return
-}
-c.JSON(200, result)
+if err != nil { /* 500 — DB error */ }
+if result == nil { /* 404 — not found */ }
 ```
 
 ---
 
-## 9. NFC Check-in System
+## 9. NFC / PIN Check-in System
 
-The NFC check-in module (`internal/checkin/`) is the most operationally critical part of the system. It must be fast, idempotent, and clear in its responses.
+The check-in module (`internal/checkin/`) is operationally critical. It uses atomic transactions to prevent duplicate check-ins from scanner glitches or double-taps.
 
-### Flow Diagram
+### Flow
 
 ```
-NFC Scanner taps tag
-      ↓
-POST /api/v1/checkin/nfc
-  body: { "nfc_tag_id": "NFC-BFP-2026-001", "incident_id": "uuid" }
-      ↓
-1. GetPersonnelByNFCTag(tagID)
-   → SELECT ... FROM duty_personnel WHERE nfc_tag_id = $1
-   → If nil: 404 "NFC tag not registered"
-      ↓
-2. IsCheckedIn(personnelID, incidentID)
-   → SELECT COUNT(*) FROM personnel_incident_logs
-     WHERE personnel_id=$1 AND incident_id=$2 AND check_out_time IS NULL
-   → If true: 409 "Already checked in"
-      ↓
-3. CheckIn(personnelID, incidentID, "NFC")
-   → INSERT INTO personnel_incident_logs (...)
-   → Returns the new log record
-      ↓
-4. Response: 201 Created
-   {
-     "log": { "id": "...", "check_in_time": "...", "check_in_method": "NFC" },
-     "personnel": { "full_name": "Juan Dela Cruz", "rank": "SFO2", ... },
-     "message": "Check-in successful via NFC"
-   }
+NFC Scanner taps tag → POST /api/v1/checkin/nfc
+  1. GetPersonnelByNFCTag(tagID) → indexed lookup on nfc_tag_id (UNIQUE)
+  2. CheckInAtomic(personnelID, incidentID, "NFC")
+     └─ Transaction: COUNT active check-ins → if 0, INSERT new log
+  3. Response: 201 Created with log + personnel data
 ```
 
-### Why the Duplicate Check Matters
+### Race Prevention
 
-Without `IsCheckedIn`, a scanner glitch or double-tap could insert two check-in records for the same person at the same incident. The check is:
+`CheckInAtomic` runs the duplicate check AND insert inside a single GORM transaction, eliminating the TOCTOU (Time-of-Check-to-Time-of-Use) race condition:
 
-1. Cheap — hits the primary key index
-2. Correct — checks `check_out_time IS NULL` (meaning currently checked in, not just ever checked in)
-
-### The `duty_personnel.nfc_tag_id` Index
-
-The schema has a `UNIQUE` constraint on `nfc_tag_id`:
-
-```sql
-ALTER TABLE duty_personnel ADD CONSTRAINT duty_personnel_nfc_tag_id_key UNIQUE (nfc_tag_id);
+```go
+func (r *CheckInRepo) CheckInAtomic(ctx context.Context, ...) (*models.PersonnelIncidentLog, error) {
+    err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        var count int64
+        tx.Model(&models.PersonnelIncidentLog{}).
+            Where("personnel_id = ? AND incident_id = ? AND check_out_time IS NULL", ...).
+            Count(&count)
+        if count > 0 {
+            return ErrAlreadyCheckedIn
+        }
+        // ... create log entry atomically
+    })
+}
 ```
-
-A UNIQUE constraint automatically creates a B-tree index. So `WHERE nfc_tag_id = $1` is always an indexed lookup — O(log n) regardless of table size.
 
 ---
 
 ## 10. Router & Middleware
 
-### Route Grouping with Versioning
+### Route Structure
 
-```go
-v1 := r.Group("/api/v1")
-{
-    p := v1.Group("/personnel")
-    {
-        p.GET("", personnelH.GetAll)
-        p.GET("/:id", personnelH.GetByID)
-        p.POST("", personnelH.Create)
-        p.PATCH("/:id/duty-status", personnelH.UpdateDutyStatus)
-    }
-    // ...
-}
+```
+/api/v1/
+├── /health                 (public)
+├── /auth/
+│   ├── POST /register      (public, rate-limited)
+│   └── POST /login         (public, rate-limited)
+└── (all below require JWT)
+    ├── /personnel           CRUD + duty-status
+    ├── /fleets              CRUD + location + movement logs
+    ├── /incidents           CRUD + status updates
+    ├── /dispatches          dispatch fleet + status updates
+    ├── /deployments         CRUD + fleet assignments
+    ├── /hydrants            CRUD + nearby search
+    ├── /stations            CRUD
+    ├── /reports             create + query by incident/deployment
+    ├── /notifications       get + mark read (JWT-enforced ownership)
+    ├── /equipment           CRUD + borrow/return
+    └── /checkin             NFC + PIN + manual + logs
 ```
 
-Prefixing all routes with `/api/v1` allows you to introduce `/api/v2` alongside the existing API when breaking changes are needed, without disrupting existing clients.
+### Middleware Stack
 
-### CORS Middleware
-
-CORS (Cross-Origin Resource Sharing) is required for browser-based frontends to call the API from a different origin (domain). The middleware runs before every request:
-
-```go
-r.Use(func(c *gin.Context) {
-    c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-    c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
-    c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-    if c.Request.Method == "OPTIONS" {
-        c.AbortWithStatus(204)  // pre-flight request handled
-        return
-    }
-    c.Next()
-})
-```
-
-**For production**: Replace `"*"` with your specific frontend domain to prevent unauthorized cross-origin calls.
-
-### Health Check Endpoint
-
-```go
-r.GET("/health", func(c *gin.Context) {
-    c.JSON(200, gin.H{"status": "ok", "service": "BFPACS API"})
-})
-```
-
-Used by load balancers, uptime monitors (UptimeRobot, Grafana), and Docker healthcheck directives to verify the service is alive.
+| Middleware        | Scope    | Purpose                                        |
+| ----------------- | -------- | ---------------------------------------------- |
+| CORSMiddleware    | Global   | Exact-match origin allowlist (prevents bypass)  |
+| SecurityHeaders   | Global   | CSP, HSTS, X-Frame-Options, nosniff            |
+| RateLimiter       | Auth only| 5 req/sec per IP on login/register              |
+| RequireAuth       | Protected| JWT validation, sets userID + role in context    |
 
 ---
 
-## 11. Environment Configuration
+## 11. Authentication & Authorization
 
-### The `.env` File
+### JWT Flow
 
-```env
-DATABASE_URL=postgres://bfp_admin:password@localhost:5432/bfpacs_db
-PORT=8080
-```
+1. User registers/logs in → server returns JWT (24h expiry)
+2. Client sends `Authorization: Bearer <token>` on all subsequent requests
+3. `RequireAuth` middleware validates token, extracts `user_id` and `role`
+4. Handlers access via `c.Get("userID")` and `c.Get("role")`
 
-Loaded by `godotenv` at startup:
+### Password Security
 
-```go
-if err := godotenv.Load(); err != nil {
-    log.Println("No .env file found, reading environment variables directly")
-}
-```
+- Hashed with bcrypt at `DefaultCost` (currently 10 rounds)
+- `PasswordHash` field uses `json:"-"` tag — never serialized to JSON
+- Login returns generic "Invalid email or password" for both wrong email and wrong password
 
-The fallback is intentional — in production, environment variables are set by the server/container directly (not via `.env` file). The `.env` file is for local development only.
+### JWT Secret Safety
+
+- In production (`GIN_MODE=release`): server refuses to start without `JWT_SECRET`
+- In development: falls back to hardcoded default with warning log
+
+---
+
+## 12. Environment Configuration
+
+### Required Variables
+
+| Variable       | Required | Description                                    |
+| -------------- | -------- | ---------------------------------------------- |
+| `DATABASE_URL` | Yes      | PostgreSQL connection string                   |
+| `JWT_SECRET`   | Prod     | HMAC signing key for JWT (fatal if missing)    |
+| `PORT`         | No       | Server port (default: 8080)                    |
+| `GIN_MODE`     | No       | `release` for production, `debug` for dev      |
 
 ### Security Rules
 
-1. **Never commit `.env` to git.** Add it to `.gitignore`.
-2. In production, inject secrets via environment variables, not files.
-3. Use a secrets manager (AWS Secrets Manager, HashiCorp Vault) for production credentials.
-
-### Reading Environment Variables
-
-```go
-connStr := os.Getenv("DATABASE_URL")
-port := os.Getenv("PORT")
-if port == "" {
-    port = "8080"  // sensible default
-}
-```
+1. Never commit `.env` to git (it's in `.gitignore`)
+2. In Docker, set secrets via environment variables
+3. Production `JWT_SECRET` must be a strong random string
 
 ---
 
-## 12. Entry Point — main.go Wiring
+## 13. Entry Point — main.go Wiring
 
-`main.go` follows the **Dependency Injection** pattern — it constructs all components and injects their dependencies manually:
+Uses manual dependency injection — explicit, testable, no magic:
 
 ```go
 func main() {
-    godotenv.Load()                      // 1. Load config
-    pool := database.NewConnectionPool() // 2. Create shared DB pool
-    defer pool.Close()                   // 3. Close pool on shutdown (cleanup)
+    godotenv.Load()
+    db := database.NewConnectionPool()
 
-    // 4. Construct repositories (each gets the same pool)
-    personnelRepo := repository.NewPersonnelRepo(pool)
-    fleetRepo     := repository.NewFleetRepo(pool)
+    // Construct repos (all share the same *gorm.DB)
+    personnelRepo := repository.NewPersonnelRepo(db)
     // ...
 
-    // 5. Construct handlers (each gets its repo)
+    // Construct handlers (each gets its repo)
     personnelH := handlers.NewPersonnelHandler(personnelRepo)
-    fleetH     := handlers.NewFleetHandler(fleetRepo)
     // ...
 
-    // 6. Build the router and register routes
+    // Build router, register routes
     r := gin.Default()
-    // ... register routes ...
+    // ...
 
-    // 7. Start the server
-    r.Run(":" + os.Getenv("PORT"))
+    // Graceful shutdown with signal handling
+    srv := &http.Server{Addr: ":8080", Handler: r}
+    go srv.ListenAndServe()
+
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    srv.Shutdown(ctx)
 }
 ```
 
-### Why Manual Dependency Injection?
-
-- **Explicit**: You can see exactly what each component depends on
-- **Testable**: Swap out a real repo for a mock in tests
-- **No magic**: No reflection, no containers, no frameworks — just Go constructors
-
-The single `pool` is shared across all repositories. This is correct — the pool itself manages connection allocation and returns connections after each query.
-
 ---
 
-## 13. Production Readiness Checklist
+## 14. Docker Deployment
 
-### Security
+### Services (docker-compose.yml)
 
-- [ ] Replace CORS `"*"` with specific frontend origin
-- [ ] Add JWT authentication middleware (verify token on protected routes)
-- [ ] Hash passwords with bcrypt before storing (currently `password_hash` field)
-- [ ] Add rate limiting middleware (e.g. `golang.org/x/time/rate`)
-- [ ] Use HTTPS via reverse proxy (Nginx/Caddy) in front of the Go server
-- [ ] Never log sensitive fields (passwords, NFC tag IDs)
-- [ ] Remove `.env` from source control (add to `.gitignore`)
+| Service    | Image                     | Port       | Purpose                |
+| ---------- | ------------------------- | ---------- | ---------------------- |
+| `db`       | postgis/postgis:15-3.4    | 5433:5432  | PostgreSQL + PostGIS   |
+| `backend`  | Dockerfile.backend        | 8081:8080  | Go API server          |
+| `frontend` | Dockerfile.frontend       | 5173:80    | React SPA + Nginx proxy|
 
-### Performance
+### Health Checks
 
-- [ ] Switch Gin to release mode: `gin.SetMode(gin.ReleaseMode)` or `GIN_MODE=release`
-- [ ] Add database query timeouts: `ctx, cancel := context.WithTimeout(ctx, 5*time.Second)`
-- [ ] Add database indexes for frequently queried columns (already done via the backup schema)
-- [ ] Enable query result caching for slow, rarely-changing data (e.g. station list)
+- **db**: `pg_isready` every 10s
+- **backend**: HTTP GET `/api/v1/health` every 15s (10s start period)
+- **frontend**: depends on backend health before starting
 
-### Reliability
+### Backend Dockerfile
 
-- [ ] Add structured logging (e.g. `zap` or `slog`) instead of `log.Println`
-- [ ] Add database connection retry logic on startup
-- [ ] Implement graceful shutdown:
-  ```go
-  quit := make(chan os.Signal, 1)
-  signal.Notify(quit, os.Interrupt)
-  <-quit
-  pool.Close()
-  ```
-- [ ] Add request timeout middleware
-- [ ] Set up database connection string validation at startup
-
-### Observability
-
-- [ ] Add request logging middleware (Gin's default logger is good for dev)
-- [ ] Add Prometheus metrics endpoint (`/metrics`)
-- [ ] Set up distributed tracing (OpenTelemetry)
-- [ ] Configure alerting on error rate spikes
-
----
-
-## 14. Deployment Guide
-
-### Option A: Single VPS (Recommended for BFP Scale)
-
-**1. Build the binary on your development machine:**
-
-```bash
-# Cross-compile for Linux x86_64 (if your dev machine is different)
-GOOS=linux GOARCH=amd64 go build -o bfpacs-api ./cmd/api/main.go
-```
-
-**2. Copy to server:**
-
-```bash
-scp bfpacs-api user@your-server-ip:/opt/bfpacs/
-```
-
-**3. Create a systemd service file** (`/etc/systemd/system/bfpacs.service`):
-
-```ini
-[Unit]
-Description=BFPACS API Server
-After=network.target postgresql.service
-
-[Service]
-Type=simple
-User=bfpacs
-WorkingDirectory=/opt/bfpacs
-ExecStart=/opt/bfpacs/bfpacs-api
-Restart=always
-RestartSec=5
-Environment=DATABASE_URL=postgres://bfp_admin:password@localhost:5432/bfpacs_db
-Environment=PORT=8080
-Environment=GIN_MODE=release
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**4. Enable and start:**
-
-```bash
-systemctl daemon-reload
-systemctl enable bfpacs
-systemctl start bfpacs
-systemctl status bfpacs
-```
-
-**5. Set up Nginx as a reverse proxy** (`/etc/nginx/sites-available/bfpacs`):
-
-```nginx
-server {
-    listen 80;
-    server_name api.bfpacs.gov.ph;
-
-    location / {
-        proxy_pass http://localhost:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-**6. Add HTTPS with Certbot:**
-
-```bash
-certbot --nginx -d api.bfpacs.gov.ph
-```
-
-### Option B: Docker
-
-**`Dockerfile`:**
+Multi-stage build with static binary (no CGO):
 
 ```dockerfile
 FROM golang:1.25-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o bfpacs-api ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api-server ./cmd/api/main.go
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /app/bfpacs-api .
-EXPOSE 8080
-CMD ["./bfpacs-api"]
+COPY --from=builder /app/api-server .
+USER bfp  # non-root
+CMD ["./api-server"]
 ```
 
-**Build and run:**
+### Frontend Dockerfile
 
-```bash
-docker build -t bfpacs-api .
-docker run -d \
-  -p 8080:8080 \
-  -e DATABASE_URL="postgres://bfp_admin:password@host.docker.internal:5432/bfpacs_db" \
-  -e GIN_MODE=release \
-  bfpacs-api
-```
+React build → Nginx with SPA fallback and API reverse proxy:
+
+- All `/api/` requests proxied to `backend:8080`
+- All other paths serve `index.html` (React Router)
+- Static assets cached with 1-year expiry
+- Gzip compression enabled
 
 ---
 
 ## 15. API Reference Summary
 
-| Method | Path                                        | Description                                 |
-| ------ | ------------------------------------------- | ------------------------------------------- |
-| GET    | `/health`                                   | Service health check                        |
-| GET    | `/api/v1/personnel`                         | List all duty personnel                     |
-| GET    | `/api/v1/personnel/:id`                     | Get personnel by UUID                       |
-| POST   | `/api/v1/personnel`                         | Create new personnel record                 |
-| PATCH  | `/api/v1/personnel/:id/duty-status`         | Update duty status (On/Off Duty)            |
-| GET    | `/api/v1/fleets`                            | List all fleet vehicles                     |
-| GET    | `/api/v1/fleets/:id`                        | Get fleet vehicle by UUID                   |
-| POST   | `/api/v1/fleets`                            | Register new fleet vehicle                  |
-| PATCH  | `/api/v1/fleets/:id/location`               | Update GPS location `{lat, lng}`            |
-| POST   | `/api/v1/fleets/:id/log-movement`           | Log BFP status code movement                |
-| GET    | `/api/v1/fleets/:id/movement-logs`          | Get movement history                        |
-| GET    | `/api/v1/incidents`                         | List all fire incidents                     |
-| GET    | `/api/v1/incidents/:id`                     | Get incident by UUID                        |
-| POST   | `/api/v1/incidents`                         | Report new 10-70 (auto-notifies commanders) |
-| PATCH  | `/api/v1/incidents/:id/status`              | Update alarm/incident status                |
-| GET    | `/api/v1/dispatches?incident_id=`           | List dispatches for an incident             |
-| POST   | `/api/v1/dispatches`                        | Dispatch fleet to incident (En Route)       |
-| PATCH  | `/api/v1/dispatches/:id/status`             | Update BFP code (10-23 Arrived, etc.)       |
-| GET    | `/api/v1/deployments`                       | List all deployments                        |
-| GET    | `/api/v1/deployments/:id`                   | Get deployment by UUID                      |
-| POST   | `/api/v1/deployments`                       | Create new deployment                       |
-| POST   | `/api/v1/deployments/:id/assign-fleet`      | Assign fleet to deployment                  |
-| GET    | `/api/v1/deployments/:id/assignments`       | List fleet assignments                      |
-| GET    | `/api/v1/hydrants`                          | List all hydrants                           |
-| GET    | `/api/v1/hydrants/nearby?lat=&lng=&radius=` | Nearest hydrants (PostGIS)                  |
-| GET    | `/api/v1/hydrants/:id`                      | Get hydrant by UUID                         |
-| POST   | `/api/v1/hydrants`                          | Register new hydrant                        |
-| GET    | `/api/v1/stations`                          | List all fire stations                      |
-| GET    | `/api/v1/stations/:id`                      | Get station by UUID                         |
-| POST   | `/api/v1/stations`                          | Register new fire station                   |
-| POST   | `/api/v1/reports`                           | Submit situational report                   |
-| GET    | `/api/v1/reports/incident/:id`              | Reports for an incident                     |
-| GET    | `/api/v1/reports/deployment/:id`            | Reports for a deployment                    |
-| GET    | `/api/v1/notifications?user_id=`            | Get notifications for a user                |
-| PATCH  | `/api/v1/notifications/:id/read`            | Mark notification as read                   |
-| PATCH  | `/api/v1/notifications/read-all?user_id=`   | Mark all as read                            |
-| GET    | `/api/v1/equipment?station_id=`             | List equipment (filter by station)          |
-| POST   | `/api/v1/equipment`                         | Add new equipment                           |
-| PATCH  | `/api/v1/equipment/:id/borrow`              | Record equipment borrow                     |
-| PATCH  | `/api/v1/equipment/:id/return`              | Record equipment return                     |
-| POST   | `/api/v1/checkin/nfc`                       | NFC tag check-in to incident                |
-| POST   | `/api/v1/checkin/pin`                       | PIN check-in to incident                    |
-| GET    | `/api/v1/checkin/logs?incident_id=`         | Check-in log for an incident                |
+| Method | Path                                        | Auth | Description                    |
+| ------ | ------------------------------------------- | ---- | ------------------------------ |
+| GET    | `/api/v1/health`                            | No   | Health check                   |
+| POST   | `/api/v1/auth/register`                     | No   | Register new user              |
+| POST   | `/api/v1/auth/login`                        | No   | Login, get JWT                 |
+| GET    | `/api/v1/personnel`                         | JWT  | List all duty personnel        |
+| GET    | `/api/v1/personnel/:id`                     | JWT  | Get personnel by UUID          |
+| POST   | `/api/v1/personnel`                         | JWT  | Create personnel record        |
+| PATCH  | `/api/v1/personnel/:id/duty-status`         | JWT  | Update duty status             |
+| GET    | `/api/v1/fleets`                            | JWT  | List all fleet vehicles        |
+| GET    | `/api/v1/fleets/:id`                        | JWT  | Get fleet by UUID              |
+| POST   | `/api/v1/fleets`                            | JWT  | Register new fleet vehicle     |
+| PATCH  | `/api/v1/fleets/:id`                        | JWT  | Update fleet fields            |
+| PATCH  | `/api/v1/fleets/:id/location`               | JWT  | Update GPS location            |
+| POST   | `/api/v1/fleets/:id/log-movement`           | JWT  | Log BFP status code            |
+| GET    | `/api/v1/fleets/:id/movement-logs`          | JWT  | Get movement history           |
+| GET    | `/api/v1/incidents`                         | JWT  | List all fire incidents        |
+| GET    | `/api/v1/incidents/:id`                     | JWT  | Get incident by UUID           |
+| POST   | `/api/v1/incidents`                         | JWT  | Report new 10-70               |
+| PATCH  | `/api/v1/incidents/:id/status`              | JWT  | Update alarm/status            |
+| GET    | `/api/v1/dispatches?incident_id=`           | JWT  | List dispatches for incident   |
+| POST   | `/api/v1/dispatches`                        | JWT  | Dispatch fleet to incident     |
+| PATCH  | `/api/v1/dispatches/:id/status`             | JWT  | Update BFP radio code          |
+| GET    | `/api/v1/deployments`                       | JWT  | List all deployments           |
+| GET    | `/api/v1/deployments/:id`                   | JWT  | Get deployment by UUID         |
+| POST   | `/api/v1/deployments`                       | JWT  | Create new deployment          |
+| POST   | `/api/v1/deployments/:id/assign-fleet`      | JWT  | Assign fleet to deployment     |
+| GET    | `/api/v1/deployments/:id/assignments`       | JWT  | List fleet assignments         |
+| GET    | `/api/v1/hydrants`                          | JWT  | List all hydrants              |
+| GET    | `/api/v1/hydrants/nearby?lat=&lng=&radius=` | JWT  | Nearest hydrants (Haversine)   |
+| GET    | `/api/v1/hydrants/:id`                      | JWT  | Get hydrant by UUID            |
+| POST   | `/api/v1/hydrants`                          | JWT  | Register new hydrant           |
+| GET    | `/api/v1/stations`                          | JWT  | List all fire stations         |
+| GET    | `/api/v1/stations/:id`                      | JWT  | Get station by UUID            |
+| POST   | `/api/v1/stations`                          | JWT  | Register new station           |
+| POST   | `/api/v1/reports`                           | JWT  | Submit situational report      |
+| GET    | `/api/v1/reports/incident/:id`              | JWT  | Reports for incident           |
+| GET    | `/api/v1/reports/deployment/:id`            | JWT  | Reports for deployment         |
+| GET    | `/api/v1/notifications`                     | JWT  | Get own notifications          |
+| PATCH  | `/api/v1/notifications/:id/read`            | JWT  | Mark notification read         |
+| PATCH  | `/api/v1/notifications/read-all`            | JWT  | Mark all own notifications read|
+| GET    | `/api/v1/equipment?station_id=`             | JWT  | List equipment (filter)        |
+| POST   | `/api/v1/equipment`                         | JWT  | Add new equipment              |
+| PUT    | `/api/v1/equipment/:id`                     | JWT  | Update equipment               |
+| DELETE | `/api/v1/equipment/:id`                     | JWT  | Delete equipment               |
+| PATCH  | `/api/v1/equipment/:id/borrow`              | JWT  | Record equipment borrow        |
+| PATCH  | `/api/v1/equipment/:id/return`              | JWT  | Record equipment return        |
+| POST   | `/api/v1/checkin/nfc`                       | JWT  | NFC tag check-in               |
+| POST   | `/api/v1/checkin/pin`                       | JWT  | PIN check-in                   |
+| POST   | `/api/v1/checkin/manual`                    | JWT  | Admin deploy by UUID           |
+| GET    | `/api/v1/checkin/logs?incident_id=`         | JWT  | Check-in log for incident      |
 
 ---
 
 ## 16. Common Patterns & Recipes
 
-### Pattern: Adding a New Domain (e.g. "Vehicles")
+### Adding a New Domain (e.g. "Vehicles")
 
-1. **Add the model** → `internal/models/vehicle.go`
-2. **Add the repository** → `internal/repository/vehicle_repo.go`
-3. **Add the handler** → `internal/handlers/vehicle_handler.go`
+1. **Model** → `internal/models/vehicle.go` (struct with GORM + JSON tags)
+2. **Repository** → `internal/repository/vehicle_repo.go` (GORM queries)
+3. **Handler** → `internal/handlers/vehicle_handler.go` (HTTP logic)
 4. **Wire in main.go**:
    ```go
-   vehicleRepo := repository.NewVehicleRepo(pool)
-   vehicleH    := handlers.NewVehicleHandler(vehicleRepo)
-   v := v1.Group("/vehicles")
+   vehicleRepo := repository.NewVehicleRepo(db)
+   vehicleH := handlers.NewVehicleHandler(vehicleRepo)
+   v := protected.Group("/vehicles")
    v.GET("", vehicleH.GetAll)
    v.POST("", vehicleH.Create)
    ```
 
-### Pattern: Adding Authentication
-
-Add a JWT middleware that runs before protected route groups:
+### Query Timeout
 
 ```go
-authMiddleware := func(c *gin.Context) {
-    token := c.GetHeader("Authorization")
-    // validate JWT...
-    if invalid {
-        c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
-        return
-    }
-    c.Next()
-}
-
-protected := v1.Group("/")
-protected.Use(authMiddleware)
-protected.POST("/incidents", incidentH.Create)  // now requires valid JWT
-```
-
-### Pattern: Query Timeout
-
-Always add a timeout to prevent slow queries from holding connections:
-
-```go
-func (r *IncidentRepo) GetAll(ctx context.Context) ([]models.FireIncident, error) {
+func (r *Repo) SlowQuery(ctx context.Context) ([]Model, error) {
     ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
     defer cancel()
-    rows, err := r.Pool.Query(ctx, `SELECT ...`)
-    // ...
+    var list []Model
+    err := r.db.WithContext(ctx).Find(&list).Error
+    return list, err
 }
 ```
 
-### Pattern: Transaction for Multi-Table Operations
-
-Use a transaction when multiple inserts must succeed or fail together:
+### Transactional Multi-Table Operations
 
 ```go
-tx, err := r.Pool.Begin(ctx)
-if err != nil {
-    return nil, err
-}
-defer tx.Rollback(ctx)  // no-op if already committed
-
-_, err = tx.Exec(ctx, `INSERT INTO incidents ...`)
-_, err = tx.Exec(ctx, `INSERT INTO dispatches ...`)
-
-if err := tx.Commit(ctx); err != nil {
-    return nil, err
-}
+err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+    if err := tx.Create(&incident).Error; err != nil {
+        return err  // triggers rollback
+    }
+    if err := tx.Create(&dispatch).Error; err != nil {
+        return err  // triggers rollback
+    }
+    return nil  // commit
+})
 ```
 
 ---
 
-_Built with Go 1.25, Gin v1.12, pgx/v5, PostgreSQL 17, PostGIS — March 2026_
+_Built with Go 1.25, Gin v1.12, GORM v1.31, PostgreSQL 15, PostGIS — 2026_

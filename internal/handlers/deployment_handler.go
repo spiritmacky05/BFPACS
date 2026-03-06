@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,8 @@ func NewDeploymentHandler(repo *repository.DeploymentRepo) *DeploymentHandler {
 func (h *DeploymentHandler) GetAll(c *gin.Context) {
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DeploymentHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve deployments"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -34,7 +36,8 @@ func (h *DeploymentHandler) GetByID(c *gin.Context) {
 	}
 	d, err := h.Repo.GetByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DeploymentHandler.GetByID] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve deployment"})
 		return
 	}
 	if d == nil {
@@ -52,7 +55,8 @@ func (h *DeploymentHandler) Create(c *gin.Context) {
 	}
 	d, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DeploymentHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create deployment"})
 		return
 	}
 	c.JSON(http.StatusCreated, d)
@@ -71,7 +75,8 @@ func (h *DeploymentHandler) AssignFleet(c *gin.Context) {
 	}
 	a, err := h.Repo.AssignFleet(c.Request.Context(), id, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DeploymentHandler.AssignFleet] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to assign fleet"})
 		return
 	}
 	c.JSON(http.StatusCreated, a)
@@ -85,7 +90,8 @@ func (h *DeploymentHandler) GetAssignments(c *gin.Context) {
 	}
 	list, err := h.Repo.GetAssignments(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DeploymentHandler.GetAssignments] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve assignments"})
 		return
 	}
 	c.JSON(http.StatusOK, list)

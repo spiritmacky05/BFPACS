@@ -1,10 +1,7 @@
 # Build stage
-FROM golang:alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
-
-# Install build dependencies
-RUN apk add --no-cache gcc musl-dev
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -13,7 +10,7 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (static binary, no CGO)
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api-server ./cmd/api/main.go
 
 # Final stage

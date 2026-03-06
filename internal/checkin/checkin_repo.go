@@ -19,6 +19,9 @@ func NewCheckInRepo(db *gorm.DB) *CheckInRepo {
 	return &CheckInRepo{db: db}
 }
 
+// ErrAlreadyCheckedIn is returned when personnel is already checked in to the incident
+var ErrAlreadyCheckedIn = errors.New("personnel is already checked in to this incident")
+
 // IsCheckedIn returns true if the personnel is currently checked in (no check_out_time) for the incident
 func (r *CheckInRepo) IsCheckedIn(ctx context.Context, personnelID, incidentID uuid.UUID) (bool, error) {
 	var count int64
@@ -28,20 +31,39 @@ func (r *CheckInRepo) IsCheckedIn(ctx context.Context, personnelID, incidentID u
 	return count > 0, err
 }
 
-// CheckIn inserts a new check-in log entry for a personnel member
-func (r *CheckInRepo) CheckIn(ctx context.Context, personnelID, incidentID uuid.UUID, method string) (*models.PersonnelIncidentLog, error) {
-	incID := incidentID
-	perID := personnelID
-	log := models.PersonnelIncidentLog{
-		IncidentID:    &incID,
-		PersonnelID:   &perID,
-		CheckInMethod: method,
-		EntryType:     method,
-	}
-	if err := r.db.WithContext(ctx).Create(&log).Error; err != nil {
-		return nil, err
-	}
-	return &log, nil
+// CheckInAtomic performs a check-in within a transaction to prevent TOCTOU race conditions.
+// It checks for existing active check-in and creates a new one atomically.
+func (r *CheckInRepo) CheckInAtomic(ctx context.Context, personnelID, incidentID uuid.UUID, method string) (*models.PersonnelIncidentLog, error) {
+	var result *models.PersonnelIncidentLog
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Lock-free duplicate check within the transaction
+		var count int64
+		if err := tx.Model(&models.PersonnelIncidentLog{}).
+			Where("personnel_id = ? AND incident_id = ? AND check_out_time IS NULL", personnelID, incidentID).
+			Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return ErrAlreadyCheckedIn
+		}
+
+		incID := incidentID
+		perID := personnelID
+		logEntry := models.PersonnelIncidentLog{
+			IncidentID:    &incID,
+			PersonnelID:   &perID,
+			CheckInMethod: method,
+			EntryType:     method,
+		}
+		if err := tx.Create(&logEntry).Error; err != nil {
+			return err
+		}
+		result = &logEntry
+		return nil
+	})
+
+	return result, err
 }
 
 // CheckOut sets the check_out_time for an open log entry

@@ -10,7 +10,7 @@ import (
 // current_location (PostGIS) is decomposed to Lat/Lng float64 for JSON serialization
 type Fleet struct {
 	ID                      uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	StationID               *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
+	StationID               *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid;index"`
 	UserID                  *uuid.UUID `json:"user_id,omitempty" gorm:"type:uuid"`
 	EngineCode              string     `json:"engine_code"`
 	PlateNumber             string     `json:"plate_number"`
@@ -48,11 +48,11 @@ type UpdateFleetLocationRequest struct {
 type FleetMovementLog struct {
 	ID              uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	DispatchID      *uuid.UUID `json:"dispatch_id,omitempty" gorm:"type:uuid"`
-	FleetID         *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
+	FleetID         *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid;index"`
 	StatusCode      string     `json:"status_code"` // e.g. "10-70", "10-23"
 	Lat             *float64   `json:"lat,omitempty"`
 	Lng             *float64   `json:"lng,omitempty"`
-	RecordedAt      time.Time  `json:"recorded_at"`
+	RecordedAt      time.Time  `json:"recorded_at" gorm:"autoCreateTime"`
 	BatteryLevel    *int       `json:"battery_level,omitempty"`
 	Heading         *float64   `json:"heading,omitempty"`
 	Purpose         *string    `json:"purpose,omitempty"`

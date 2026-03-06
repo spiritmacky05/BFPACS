@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,8 @@ func NewHydrantHandler(repo *repository.HydrantRepo) *HydrantHandler {
 func (h *HydrantHandler) GetAll(c *gin.Context) {
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[HydrantHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve hydrants"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -35,7 +37,8 @@ func (h *HydrantHandler) GetByID(c *gin.Context) {
 	}
 	hy, err := h.Repo.GetByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[HydrantHandler.GetByID] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve hydrant"})
 		return
 	}
 	if hy == nil {
@@ -45,7 +48,7 @@ func (h *HydrantHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, hy)
 }
 
-// GetNearby returns hydrants within a radius (meters) using PostGIS ST_DWithin
+// GetNearby returns hydrants within a radius (meters) using the Haversine formula
 func (h *HydrantHandler) GetNearby(c *gin.Context) {
 	latStr := c.Query("lat")
 	lngStr := c.Query("lng")
@@ -69,7 +72,8 @@ func (h *HydrantHandler) GetNearby(c *gin.Context) {
 
 	list, err := h.Repo.GetNearby(c.Request.Context(), lat, lng, radius)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[HydrantHandler.GetNearby] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve nearby hydrants"})
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -83,7 +87,8 @@ func (h *HydrantHandler) Create(c *gin.Context) {
 	}
 	hy, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[HydrantHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create hydrant"})
 		return
 	}
 	c.JSON(http.StatusCreated, hy)

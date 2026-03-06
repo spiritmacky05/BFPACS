@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -61,7 +66,6 @@ func main() {
 	// Global Middlewares
 	r.Use(middleware.CORSMiddleware())
 	r.Use(middleware.SecurityHeaders())
-	r.Use(middleware.RateLimiter())
 
 	v1 := r.Group("/api/v1")
 	{
@@ -70,8 +74,9 @@ func main() {
 			c.JSON(200, gin.H{"status": "ok", "service": "BFPACS API"})
 		})
 
-		// ── Public Auth ────────────────────────────────────────────────────
+		// ── Public Auth (rate-limited to prevent brute force) ──────────
 		auth := v1.Group("/auth")
+		auth.Use(middleware.RateLimiter())
 		{
 			auth.POST("/register", authH.Register)
 			auth.POST("/login", authH.Login)
@@ -188,8 +193,35 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("🚒 BFPACS API server starting on :%s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("Server failed: %v", err)
+
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
+
+	// Start server in a goroutine so it doesn't block signal handling
+	go func() {
+		log.Printf("🚒 BFPACS API server starting on :%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	// Graceful shutdown: wait for SIGINT or SIGTERM
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("🛑 Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	log.Println("✅ Server exited cleanly")
 }

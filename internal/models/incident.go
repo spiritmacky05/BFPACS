@@ -58,10 +58,10 @@ type UpdateIncidentStatusRequest struct {
 // IncidentDispatch maps to public.incident_dispatches
 type IncidentDispatch struct {
 	ID                uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	IncidentID        *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid"`
-	FleetID           *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
+	IncidentID        *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid;index"`
+	FleetID           *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid;index"`
 	DispatchStatus    *string    `json:"dispatch_status,omitempty"` // e.g. "En Route", "10-23 Arrived at Scene"
-	CheckInTime       time.Time  `json:"check_in_time"`
+	CheckInTime       time.Time  `json:"check_in_time" gorm:"autoCreateTime"`
 	CheckOutTime      *time.Time `json:"check_out_time,omitempty"`
 	SituationalReport *string    `json:"situational_report,omitempty"`
 }

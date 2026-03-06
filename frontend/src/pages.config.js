@@ -47,19 +47,19 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import CheckIn from './pages/CheckIn';
-import Dashboard from './pages/Dashboard';
-import Dispatch from './pages/Dispatch';
-import DutyPersonnel from './pages/DutyPersonnel';
-import Equipment from './pages/Equipment';
-import Fleet from './pages/Fleet';
-import Hydrants from './pages/Hydrants';
-import IncidentDetail from './pages/IncidentDetail';
-import Incidents from './pages/Incidents';
-import Personnel from './pages/Personnel';
-import PersonnelProfile from './pages/PersonnelProfile';
-import Profile from './pages/Profile';
-import SuperAdmin from './pages/SuperAdmin';
+import CheckIn from './pages/CheckIn/CheckIn';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Dispatch from './pages/Dispatch/Dispatch';
+import DutyPersonnel from './pages/DutyPersonnel/DutyPersonnel';
+import Equipment from './pages/Equipment/Equipment';
+import Fleet from './pages/Fleet/Fleet';
+import Hydrants from './pages/Hydrants/Hydrants';
+import IncidentDetail from './pages/IncidentDetail/IncidentDetail';
+import Incidents from './pages/Incidents/Incidents';
+import Personnel from './pages/Personnel/Personnel';
+import PersonnelProfile from './pages/PersonnelProfile/PersonnelProfile';
+import Profile from './pages/Profile/Profile';
+import SuperAdmin from './pages/SuperAdmin/SuperAdmin';
 import __Layout from './Layout.jsx';
 
 

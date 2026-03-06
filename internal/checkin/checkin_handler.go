@@ -1,6 +1,8 @@
 package checkin
 
 import (
+	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +20,7 @@ func NewHandler(repo *CheckInRepo) *Handler {
 }
 
 // NFCCheckIn handles POST /api/v1/checkin/nfc
-// Looks up the personnel by nfc_tag_id, checks for duplicate, then logs the check-in.
+// Looks up the personnel by nfc_tag_id, then atomically checks for duplicate and logs the check-in.
 func (h *Handler) NFCCheckIn(c *gin.Context) {
 	var req models.NFCCheckInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -31,7 +33,8 @@ func (h *Handler) NFCCheckIn(c *gin.Context) {
 	// Step 1: Find personnel by NFC tag ID (indexed lookup)
 	personnel, err := h.Repo.GetPersonnelByNFCTag(ctx, req.NFCTagID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[CheckIn.NFCCheckIn] GetPersonnelByNFCTag: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to look up NFC tag"})
 		return
 	}
 	if personnel == nil {
@@ -39,29 +42,23 @@ func (h *Handler) NFCCheckIn(c *gin.Context) {
 		return
 	}
 
-	// Step 2: Prevent duplicate check-in
-	alreadyIn, err := h.Repo.IsCheckedIn(ctx, personnel.ID, req.IncidentID)
+	// Step 2: Atomically check for duplicate and create check-in (prevents TOCTOU race)
+	checkinLog, err := h.Repo.CheckInAtomic(ctx, personnel.ID, req.IncidentID, "NFC")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if alreadyIn {
-		c.JSON(http.StatusConflict, gin.H{
-			"error":     "Personnel is already checked in to this incident",
-			"personnel": personnel,
-		})
-		return
-	}
-
-	// Step 3: Log the check-in
-	log, err := h.Repo.CheckIn(ctx, personnel.ID, req.IncidentID, "NFC")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, ErrAlreadyCheckedIn) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":     "Personnel is already checked in to this incident",
+				"personnel": personnel,
+			})
+			return
+		}
+		log.Printf("[CheckIn.NFCCheckIn] CheckInAtomic: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record check-in"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, models.CheckInResponse{
-		Log:       *log,
+		Log:       *checkinLog,
 		Personnel: *personnel,
 		Message:   "Check-in successful via NFC",
 	})
@@ -79,7 +76,8 @@ func (h *Handler) PINCheckIn(c *gin.Context) {
 
 	personnel, err := h.Repo.GetPersonnelByPIN(ctx, req.PinCode)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[CheckIn.PINCheckIn] GetPersonnelByPIN: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to look up PIN"})
 		return
 	}
 	if personnel == nil {
@@ -87,27 +85,22 @@ func (h *Handler) PINCheckIn(c *gin.Context) {
 		return
 	}
 
-	alreadyIn, err := h.Repo.IsCheckedIn(ctx, personnel.ID, req.IncidentID)
+	checkinLog, err := h.Repo.CheckInAtomic(ctx, personnel.ID, req.IncidentID, "PIN")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if alreadyIn {
-		c.JSON(http.StatusConflict, gin.H{
-			"error":     "Personnel is already checked in to this incident",
-			"personnel": personnel,
-		})
-		return
-	}
-
-	log, err := h.Repo.CheckIn(ctx, personnel.ID, req.IncidentID, "PIN")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, ErrAlreadyCheckedIn) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":     "Personnel is already checked in to this incident",
+				"personnel": personnel,
+			})
+			return
+		}
+		log.Printf("[CheckIn.PINCheckIn] CheckInAtomic: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record check-in"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, models.CheckInResponse{
-		Log:       *log,
+		Log:       *checkinLog,
 		Personnel: *personnel,
 		Message:   "Check-in successful via PIN",
 	})
@@ -122,7 +115,8 @@ func (h *Handler) GetLogsForIncident(c *gin.Context) {
 	}
 	list, err := h.Repo.GetLogsForIncident(c.Request.Context(), incidentID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[CheckIn.GetLogsForIncident] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve check-in logs"})
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -142,7 +136,8 @@ func (h *Handler) ManualCheckIn(c *gin.Context) {
 	// Step 1: Verify personnel exists
 	personnel, err := h.Repo.GetPersonnelByID(ctx, req.PersonnelID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[CheckIn.ManualCheckIn] GetPersonnelByID: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to look up personnel"})
 		return
 	}
 	if personnel == nil {
@@ -150,29 +145,23 @@ func (h *Handler) ManualCheckIn(c *gin.Context) {
 		return
 	}
 
-	// Step 2: Prevent duplicate active check-in
-	alreadyIn, err := h.Repo.IsCheckedIn(ctx, personnel.ID, req.IncidentID)
+	// Step 2: Atomically check and create check-in (prevents TOCTOU race)
+	checkinLog, err := h.Repo.CheckInAtomic(ctx, personnel.ID, req.IncidentID, "Manual")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if alreadyIn {
-		c.JSON(http.StatusConflict, gin.H{
-			"error":     "Personnel is already deployed to this incident",
-			"personnel": personnel,
-		})
-		return
-	}
-
-	// Step 3: Log the check-in with method "Manual"
-	log, err := h.Repo.CheckIn(ctx, personnel.ID, req.IncidentID, "Manual")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, ErrAlreadyCheckedIn) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":     "Personnel is already deployed to this incident",
+				"personnel": personnel,
+			})
+			return
+		}
+		log.Printf("[CheckIn.ManualCheckIn] CheckInAtomic: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record check-in"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, models.CheckInResponse{
-		Log:       *log,
+		Log:       *checkinLog,
 		Personnel: *personnel,
 		Message:   "Personnel successfully deployed to incident",
 	})

@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,7 +21,8 @@ func NewFleetHandler(repo *repository.FleetRepo) *FleetHandler {
 func (h *FleetHandler) GetAll(c *gin.Context) {
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve fleets"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -35,7 +36,8 @@ func (h *FleetHandler) GetByID(c *gin.Context) {
 	}
 	f, err := h.Repo.GetByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.GetByID] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve fleet"})
 		return
 	}
 	if f == nil {
@@ -53,7 +55,8 @@ func (h *FleetHandler) Create(c *gin.Context) {
 	}
 	f, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create fleet"})
 		return
 	}
 	c.JSON(http.StatusCreated, f)
@@ -84,7 +87,8 @@ func (h *FleetHandler) Update(c *gin.Context) {
 	}
 	f, err := h.Repo.Update(c.Request.Context(), id, updates)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.Update] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update fleet"})
 		return
 	}
 	if f == nil {
@@ -106,7 +110,8 @@ func (h *FleetHandler) UpdateLocation(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.UpdateLocation(c.Request.Context(), id, req.Lat, req.Lng); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.UpdateLocation] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update location"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "location updated"})
@@ -123,12 +128,13 @@ func (h *FleetHandler) LogMovement(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	log, err := h.Repo.LogMovement(c.Request.Context(), id, req)
+	movementLog, err := h.Repo.LogMovement(c.Request.Context(), id, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.LogMovement] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to log movement"})
 		return
 	}
-	c.JSON(http.StatusCreated, log)
+	c.JSON(http.StatusCreated, movementLog)
 }
 
 func (h *FleetHandler) GetMovementLogs(c *gin.Context) {
@@ -137,11 +143,10 @@ func (h *FleetHandler) GetMovementLogs(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
 		return
 	}
-	// Suppress unused import warning for strconv
-	_ = strconv.Itoa(0)
 	logs, err := h.Repo.GetMovementLogs(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[FleetHandler.GetMovementLogs] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve movement logs"})
 		return
 	}
 	c.JSON(http.StatusOK, logs)

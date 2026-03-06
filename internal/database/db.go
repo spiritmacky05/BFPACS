@@ -3,6 +3,7 @@ package database
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/sassinzz13/bfp-backend/internal/models"
 	"gorm.io/driver/postgres"
@@ -17,8 +18,13 @@ func NewConnectionPool() *gorm.DB {
 		log.Fatal("DATABASE_URL environment variable not set")
 	}
 
+	logLevel := logger.Warn
+	if os.Getenv("GIN_MODE") != "release" {
+		logLevel = logger.Info
+	}
+
 	config := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logLevel),
 	}
 
 	db, err := gorm.Open(postgres.Open(connStr), config)
@@ -51,8 +57,10 @@ func NewConnectionPool() *gorm.DB {
 	if err != nil {
 		log.Fatalf("Failed to get generic db object: %v", err)
 	}
-	sqlDB.SetMaxIdleConns(2)
-	sqlDB.SetMaxOpenConns(20)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(3 * time.Minute)
 
 	log.Println("✅ Database connection pool established (GORM)")
 

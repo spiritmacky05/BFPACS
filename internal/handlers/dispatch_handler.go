@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,8 @@ func (h *DispatchHandler) DispatchFleet(c *gin.Context) {
 	}
 	d, err := h.Repo.DispatchFleet(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DispatchHandler.DispatchFleet] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to dispatch fleet"})
 		return
 	}
 	c.JSON(http.StatusCreated, d)
@@ -44,8 +46,20 @@ func (h *DispatchHandler) UpdateStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Validate dispatch status against BFP radio codes
+	validStatuses := map[string]bool{
+		"En Route": true, "10-23 Arrived at Scene": true, "Operational": true,
+		"Fire Out": true, "Returning": true, "Available": true, "Cancelled": true,
+	}
+	if !validStatuses[req.DispatchStatus] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dispatch_status"})
+		return
+	}
+
 	if err := h.Repo.UpdateStatus(c.Request.Context(), id, req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DispatchHandler.UpdateStatus] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update dispatch status"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "dispatch status updated"})
@@ -60,7 +74,8 @@ func (h *DispatchHandler) GetByIncident(c *gin.Context) {
 	}
 	list, err := h.Repo.GetByIncident(c.Request.Context(), incidentID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[DispatchHandler.GetByIncident] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve dispatches"})
 		return
 	}
 	c.JSON(http.StatusOK, list)

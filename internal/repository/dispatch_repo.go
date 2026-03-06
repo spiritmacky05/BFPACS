@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/sassinzz13/bfp-backend/internal/models"
@@ -48,7 +49,7 @@ func (r *DispatchRepo) GetByIncident(ctx context.Context, incidentID uuid.UUID) 
 func (r *DispatchRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.IncidentDispatch, error) {
 	var d models.IncidentDispatch
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&d).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err

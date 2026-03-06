@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,8 @@ func NewPersonnelHandler(repo *repository.PersonnelRepo) *PersonnelHandler {
 func (h *PersonnelHandler) GetAll(c *gin.Context) {
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[PersonnelHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve personnel"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -34,7 +36,8 @@ func (h *PersonnelHandler) GetByID(c *gin.Context) {
 	}
 	p, err := h.Repo.GetByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[PersonnelHandler.GetByID] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve personnel"})
 		return
 	}
 	if p == nil {
@@ -52,7 +55,8 @@ func (h *PersonnelHandler) Create(c *gin.Context) {
 	}
 	p, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[PersonnelHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create personnel"})
 		return
 	}
 	c.JSON(http.StatusCreated, p)
@@ -69,8 +73,19 @@ func (h *PersonnelHandler) UpdateDutyStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Validate duty status against allowed values
+	validStatuses := map[string]bool{
+		"On Duty": true, "Off Duty": true, "On Leave": true, "Deployed": true,
+	}
+	if !validStatuses[req.DutyStatus] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid duty_status, must be one of: On Duty, Off Duty, On Leave, Deployed"})
+		return
+	}
+
 	if err := h.Repo.UpdateDutyStatus(c.Request.Context(), id, req.DutyStatus); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[PersonnelHandler.UpdateDutyStatus] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update duty status"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "duty status updated"})

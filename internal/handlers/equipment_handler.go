@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +29,8 @@ func (h *EquipmentHandler) GetAll(c *gin.Context) {
 		}
 		list, err := h.Repo.GetByStation(c.Request.Context(), stationID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("[EquipmentHandler.GetAll] %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 			return
 		}
 		c.JSON(http.StatusOK, list)
@@ -35,7 +38,8 @@ func (h *EquipmentHandler) GetAll(c *gin.Context) {
 	}
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[EquipmentHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -49,7 +53,8 @@ func (h *EquipmentHandler) Create(c *gin.Context) {
 	}
 	e, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[EquipmentHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create equipment"})
 		return
 	}
 	c.JSON(http.StatusCreated, e)
@@ -67,7 +72,12 @@ func (h *EquipmentHandler) BorrowItem(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.BorrowItem(c.Request.Context(), id, req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, repository.ErrAlreadyBorrowed) {
+			c.JSON(http.StatusConflict, gin.H{"error": "equipment is already borrowed"})
+			return
+		}
+		log.Printf("[EquipmentHandler.BorrowItem] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to borrow equipment"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "equipment borrowed"})
@@ -80,7 +90,12 @@ func (h *EquipmentHandler) ReturnItem(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.ReturnItem(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, repository.ErrNotBorrowed) {
+			c.JSON(http.StatusConflict, gin.H{"error": "equipment is not currently borrowed"})
+			return
+		}
+		log.Printf("[EquipmentHandler.ReturnItem] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to return equipment"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "equipment returned"})
@@ -98,7 +113,8 @@ func (h *EquipmentHandler) Update(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.Update(c.Request.Context(), id, req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[EquipmentHandler.Update] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update equipment"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "equipment updated"})
@@ -111,7 +127,12 @@ func (h *EquipmentHandler) Delete(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.Delete(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, repository.ErrCannotDeleteBorrowed) {
+			c.JSON(http.StatusConflict, gin.H{"error": "cannot delete equipment that is currently borrowed"})
+			return
+		}
+		log.Printf("[EquipmentHandler.Delete] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete equipment"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "equipment deleted"})

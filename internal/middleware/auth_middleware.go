@@ -29,7 +29,11 @@ func RequireAuth() gin.HandlerFunc {
 
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
-			secret = "bfpacs_super_secret_key_change_me_in_prod" // Fallback for dev
+			if os.Getenv("GIN_MODE") == "release" {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "server misconfiguration"})
+				return
+			}
+			secret = "bfpacs_super_secret_key_change_me_in_prod"
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

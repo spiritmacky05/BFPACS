@@ -35,11 +35,13 @@ func (r *DeploymentRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Dep
 }
 
 func (r *DeploymentRepo) Create(ctx context.Context, req models.CreateDeploymentRequest) (*models.Deployment, error) {
+	status := "Active"
 	d := models.Deployment{
 		NameOfDeployment: req.NameOfDeployment,
 		LocationText:     req.LocationText,
 		Lat:              req.Lat,
 		Lng:              req.Lng,
+		Status:           status,
 		TeamLeader:       req.TeamLeader,
 		Remarks:          req.Remarks,
 	}

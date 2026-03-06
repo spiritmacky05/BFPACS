@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,8 @@ func NewStationHandler(repo *repository.StationRepo) *StationHandler {
 func (h *StationHandler) GetAll(c *gin.Context) {
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[StationHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve stations"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -34,7 +36,8 @@ func (h *StationHandler) GetByID(c *gin.Context) {
 	}
 	s, err := h.Repo.GetByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[StationHandler.GetByID] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve station"})
 		return
 	}
 	if s == nil {
@@ -52,7 +55,8 @@ func (h *StationHandler) Create(c *gin.Context) {
 	}
 	s, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[StationHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create station"})
 		return
 	}
 	c.JSON(http.StatusCreated, s)

@@ -10,7 +10,7 @@ import (
 // location/geo_location (PostGIS) decomposed to Lat/Lng
 type Hydrant struct {
 	ID          uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	StationID   *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
+	StationID   *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid;index"`
 	AddressText *string    `json:"address_text,omitempty"`
 	City        *string    `json:"city,omitempty"`
 	Status      string     `json:"status"`

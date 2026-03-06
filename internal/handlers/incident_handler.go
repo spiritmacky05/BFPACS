@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,8 @@ func NewIncidentHandler(repo *repository.IncidentRepo) *IncidentHandler {
 func (h *IncidentHandler) GetAll(c *gin.Context) {
 	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[IncidentHandler.GetAll] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve incidents"})
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -34,7 +36,8 @@ func (h *IncidentHandler) GetByID(c *gin.Context) {
 	}
 	incident, err := h.Repo.GetByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[IncidentHandler.GetByID] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve incident"})
 		return
 	}
 	if incident == nil {
@@ -53,7 +56,8 @@ func (h *IncidentHandler) Create(c *gin.Context) {
 	}
 	incident, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[IncidentHandler.Create] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create incident"})
 		return
 	}
 	c.JSON(http.StatusCreated, incident)
@@ -71,7 +75,8 @@ func (h *IncidentHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.UpdateStatus(c.Request.Context(), id, req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[IncidentHandler.UpdateStatus] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update incident"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "incident updated"})

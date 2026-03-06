@@ -6,14 +6,14 @@
  *   import { incidentsApi, fleetApi, checkinApi } from '@/api';
  */
 
-export { default as api }                from './client';
-export { ApiError }                      from './client';
-export { incidentsApi }                  from './incidents';
-export { fleetApi }                      from './fleet';
-export { personnelApi }                  from './personnel';
-export { dispatchesApi }                 from './dispatches';
-export { checkinApi }                    from './checkin';
-export { hydrantsApi }                   from './hydrants';
-export { equipmentApi }                  from './equipment';
-export { notificationsApi }              from './notifications';
-export { stationsApi }                   from './stations';
+export { default as api }                from './client/client';
+export { ApiError }                      from './client/client';
+export { incidentsApi }                  from './incidents/incidents';
+export { fleetApi }                      from './fleet/fleet';
+export { personnelApi }                  from './personnel/personnel';
+export { dispatchesApi }                 from './dispatches/dispatches';
+export { checkinApi }                    from './checkin/checkin';
+export { hydrantsApi }                   from './hydrants/hydrants';
+export { equipmentApi }                  from './equipment/equipment';
+export { notificationsApi }              from './notifications/notifications';
+export { stationsApi }                   from './stations/stations';

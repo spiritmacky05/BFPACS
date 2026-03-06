@@ -9,16 +9,16 @@ import (
 // DutyPersonnel maps to public.duty_personnel
 type DutyPersonnel struct {
 	ID                 uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	StationID          *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
-	FleetID            *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid"`
+	StationID          *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid;index"`
+	FleetID            *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid;index"`
 	FullName           string     `json:"full_name"`
 	Rank               string     `json:"rank"`
 	Designation        *string    `json:"designation,omitempty"`
 	Shift              *string    `json:"shift,omitempty"`
-	DutyStatus         string     `json:"duty_status"`
+	DutyStatus         string     `json:"duty_status" gorm:"index"`
 	IsStationCommander bool       `json:"is_station_commander"`
-	NFCTagID           *string    `json:"nfc_tag_id,omitempty"`
-	PinCode            *string    `json:"pin_code,omitempty"`
+	NFCTagID           *string    `json:"nfc_tag_id,omitempty" gorm:"uniqueIndex"`
+	PinCode            *string    `json:"pin_code,omitempty" gorm:"uniqueIndex"`
 	CreatedAt          time.Time  `json:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +17,15 @@ type EquipmentRepo struct {
 func NewEquipmentRepo(db *gorm.DB) *EquipmentRepo {
 	return &EquipmentRepo{db: db}
 }
+
+// ErrAlreadyBorrowed is returned when equipment is already borrowed
+var ErrAlreadyBorrowed = errors.New("equipment is already borrowed")
+
+// ErrNotBorrowed is returned when trying to return equipment that isn't borrowed
+var ErrNotBorrowed = errors.New("equipment is not currently borrowed")
+
+// ErrCannotDeleteBorrowed is returned when trying to delete borrowed equipment
+var ErrCannotDeleteBorrowed = errors.New("cannot delete equipment that is currently borrowed")
 
 func (r *EquipmentRepo) GetAll(ctx context.Context) ([]models.LogisticalEquipment, error) {
 	var list []models.LogisticalEquipment
@@ -52,23 +62,44 @@ func (r *EquipmentRepo) Create(ctx context.Context, req models.CreateEquipmentRe
 }
 
 func (r *EquipmentRepo) BorrowItem(ctx context.Context, id uuid.UUID, req models.BorrowEquipmentRequest) error {
-	now := time.Now()
-	updates := map[string]interface{}{
-		"borrower_name": req.BorrowerName,
-		"borrowed_at":   &now,
-		"status":        "Borrowed",
-	}
-	return r.db.WithContext(ctx).Model(&models.LogisticalEquipment{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Check current status within the transaction to prevent double-borrow
+		var equip models.LogisticalEquipment
+		if err := tx.Where("id = ?", id).First(&equip).Error; err != nil {
+			return err
+		}
+		if equip.Status == "Borrowed" {
+			return ErrAlreadyBorrowed
+		}
+
+		now := time.Now()
+		updates := map[string]interface{}{
+			"borrower_name": req.BorrowerName,
+			"borrowed_at":   &now,
+			"status":        "Borrowed",
+		}
+		return tx.Model(&models.LogisticalEquipment{}).Where("id = ?", id).Updates(updates).Error
+	})
 }
 
 func (r *EquipmentRepo) ReturnItem(ctx context.Context, id uuid.UUID) error {
-	now := time.Now()
-	updates := map[string]interface{}{
-		"returned_at":   &now,
-		"status":        "Serviceable",
-		"borrower_name": nil,
-	}
-	return r.db.WithContext(ctx).Model(&models.LogisticalEquipment{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var equip models.LogisticalEquipment
+		if err := tx.Where("id = ?", id).First(&equip).Error; err != nil {
+			return err
+		}
+		if equip.Status != "Borrowed" {
+			return ErrNotBorrowed
+		}
+
+		now := time.Now()
+		updates := map[string]interface{}{
+			"returned_at":   &now,
+			"status":        "Serviceable",
+			"borrower_name": nil,
+		}
+		return tx.Model(&models.LogisticalEquipment{}).Where("id = ?", id).Updates(updates).Error
+	})
 }
 
 func (r *EquipmentRepo) Update(ctx context.Context, id uuid.UUID, req models.UpdateEquipmentRequest) error {
@@ -84,5 +115,14 @@ func (r *EquipmentRepo) Update(ctx context.Context, id uuid.UUID, req models.Upd
 }
 
 func (r *EquipmentRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&models.LogisticalEquipment{}, id).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var equip models.LogisticalEquipment
+		if err := tx.Where("id = ?", id).First(&equip).Error; err != nil {
+			return err
+		}
+		if equip.Status == "Borrowed" {
+			return ErrCannotDeleteBorrowed
+		}
+		return tx.Delete(&models.LogisticalEquipment{}, id).Error
+	})
 }

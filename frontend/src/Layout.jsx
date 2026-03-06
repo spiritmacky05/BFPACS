@@ -14,7 +14,7 @@ import {
   UserCheck, Package, Droplets, User, ShieldCheck,
   FolderOpen, ChevronDown, ChevronRight, Activity, LayoutDashboard,
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext/AuthContext';
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
 const styles = {
