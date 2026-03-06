@@ -52,6 +52,7 @@ func (r *IncidentRepo) Create(ctx context.Context, req models.CreateIncidentRequ
 		OccupancyType:              req.OccupancyType,
 		InvolvedType:               req.InvolvedType,
 		AlarmStatus:                alarmStatus,
+		IncidentStatus:             "Active", // Defaults to Active
 		GroundCommander:            req.GroundCommander,
 		OccupancyCategory:          req.OccupancyCategory,
 		InvolvesHazardousMaterials: req.InvolvesHazardousMaterials,

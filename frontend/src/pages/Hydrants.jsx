@@ -82,7 +82,8 @@ const STATUS_COLORS = {
 };
 
 const EMPTY_FORM = {
-  address: '',
+  hydrant_code: '',
+  address_text: '',
   status: 'Serviceable',
   hydrant_type: 'Dry Barrel',
   psi: '',
@@ -244,13 +245,22 @@ export default function Hydrants() {
             </div>
             <div className={styles.modal.body}>
 
-              {/* Address */}
-              <div>
-                <label className={styles.modal.label}>Address *</label>
-                <input value={form.address}
-                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                  placeholder="123 Rizal Ave"
-                  className={styles.modal.input} />
+              {/* Hydrant Code & Address */}
+              <div className={styles.modal.gridRow}>
+                <div>
+                  <label className={styles.modal.label}>Hydrant Code *</label>
+                  <input value={form.hydrant_code}
+                    onChange={e => setForm(f => ({ ...f, hydrant_code: e.target.value }))}
+                    placeholder="HYD-001"
+                    className={styles.modal.input} />
+                </div>
+                <div>
+                  <label className={styles.modal.label}>Address *</label>
+                  <input value={form.address_text}
+                    onChange={e => setForm(f => ({ ...f, address_text: e.target.value }))}
+                    placeholder="123 Rizal Ave"
+                    className={styles.modal.input} />
+                </div>
               </div>
 
               {/* Status + Type row */}
@@ -302,7 +312,7 @@ export default function Hydrants() {
               <button onClick={() => setShowForm(false)}
                 className={styles.modal.cancelBtn}>Cancel</button>
               <button onClick={handleCreate}
-                disabled={saving || !form.address || !form.lat || !form.lng}
+                disabled={saving || !form.address_text || !form.hydrant_code || !form.lat || !form.lng}
                 className={styles.modal.submitBtn}>
                 {saving ? 'Registering...' : 'Register Hydrant'}
               </button>
