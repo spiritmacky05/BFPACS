@@ -1,4 +1,8 @@
 # Go binaries
+/api
+/seed
+backend/api
+backend/seed
 main
 *.exe
 *.out
@@ -27,5 +31,3 @@ docker-compose.override.yml
 # OS
 .DS_Store
 Thumbs.db
-/api
-seed

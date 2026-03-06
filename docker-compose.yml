@@ -20,8 +20,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: bfpacs_backend
     environment:
       - DATABASE_URL=postgres://bfp_admin:${DB_PASSWORD:-Ultraman13}@db:5432/bfpacs_db
@@ -42,8 +42,8 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
+      context: ./frontend
+      dockerfile: Dockerfile
       args:
         - VITE_API_URL=/api/v1
     container_name: bfpacs_frontend

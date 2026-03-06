@@ -16,17 +16,14 @@ Thumbs.db
 .env.*
 
 # Build outputs
+api
+seed
 *.exe
 *.out
 *.log
 
-# Node
-frontend/node_modules
-frontend/dist
+# Documentation
+*.md
 
-# Go build artifacts
-backend/api
-backend/seed
-
-# Docker (avoid recursive copy)
-docker-compose*.yml
+# Docker
+Dockerfile

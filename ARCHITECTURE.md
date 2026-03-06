@@ -47,73 +47,83 @@
 ```
 BFPACS/
 ├── .env                        # Environment variables (never commit to git)
-├── .dockerignore               # Docker build exclusions
-├── go.mod / go.sum             # Go module definition
+├── .gitignore                  # Git ignore rules
 ├── docker-compose.yml          # Docker orchestration (db + backend + frontend)
-├── Dockerfile.backend          # Multi-stage Go build
-├── Dockerfile.frontend         # Multi-stage React + Nginx build
-├── ARCHITECTURE.md             # This file
+├── bfpacs_backup.sql           # Database seed / backup SQL
 ├── setup_db.sh                 # One-time local database setup script
+├── ARCHITECTURE.md             # This file
 │
-├── cmd/
-│   ├── api/
-│   │   └── main.go             # Application entry point — wires everything together
-│   └── seed/
-│       └── main.go             # Standalone seeder (alternative to auto-seed)
+├── backend/                    # Go REST API (standalone Go module)
+│   ├── .dockerignore           # Docker build exclusions for backend
+│   ├── Dockerfile              # Multi-stage Go build
+│   ├── go.mod / go.sum         # Go module definition
+│   ├── cmd/
+│   │   ├── api/
+│   │   │   └── main.go         # Application entry point — wires everything together
+│   │   └── seed/
+│   │       └── main.go         # Standalone seeder (alternative to auto-seed)
+│   └── internal/
+│       ├── database/
+│       │   ├── db.go           # GORM connection pool + AutoMigrate
+│       │   └── seed.go         # Initial user seeding (superadmin, admin, user)
+│       ├── models/             # Go structs with GORM + JSON tags
+│       │   ├── auth.go         # RegisterRequest, LoginRequest, AuthResponse
+│       │   ├── checkin.go      # PersonnelIncidentLog, NFC/PIN/Manual requests
+│       │   ├── deployment.go   # Deployment, DeploymentAssignment
+│       │   ├── equipment.go    # LogisticalEquipment, borrow/return requests
+│       │   ├── fleet.go        # Fleet, FleetMovementLog
+│       │   ├── hydrant.go      # Hydrant, NearbyHydrant
+│       │   ├── incident.go     # FireIncident, IncidentDispatch
+│       │   ├── notification.go # Notification
+│       │   ├── personnel.go    # DutyPersonnel
+│       │   ├── report.go       # SituationalReport
+│       │   ├── station.go      # Station
+│       │   └── user.go         # User (with BeforeSave hook)
+│       ├── repository/         # Data access layer — one file per domain
+│       │   ├── deployment_repo.go
+│       │   ├── dispatch_repo.go
+│       │   ├── equipment_repo.go
+│       │   ├── fleet_repo.go
+│       │   ├── hydrant_repo.go
+│       │   ├── incident_repo.go
+│       │   ├── notification_repo.go
+│       │   ├── personnel_repo.go
+│       │   ├── report_repo.go
+│       │   ├── station_repo.go
+│       │   └── user_repo.go
+│       ├── handlers/           # HTTP layer — one file per domain
+│       │   ├── auth_handler.go # Register, Login + JWT generation
+│       │   ├── deployment_handler.go
+│       │   ├── dispatch_handler.go
+│       │   ├── equipment_handler.go
+│       │   ├── fleet_handler.go
+│       │   ├── hydrant_handler.go
+│       │   ├── incident_handler.go
+│       │   ├── notification_handler.go
+│       │   ├── personnel_handler.go
+│       │   ├── report_handler.go
+│       │   └── station_handler.go
+│       ├── middleware/         # HTTP middleware
+│       │   ├── auth_middleware.go   # JWT validation (RequireAuth)
+│       │   ├── rate_limiter.go     # 5 req/sec on auth routes
+│       │   └── security_middleware.go # CORS, CSP, HSTS, security headers
+│       └── checkin/            # Self-contained NFC/PIN check-in module
+│           ├── checkin_repo.go # Atomic check-in with transaction
+│           └── checkin_handler.go # NFC, PIN, Manual check-in handlers
 │
-└── internal/
-    ├── database/
-    │   ├── db.go               # GORM connection pool + AutoMigrate
-    │   └── seed.go             # Initial user seeding (superadmin, admin, user)
-    │
-    ├── models/                 # Go structs with GORM + JSON tags
-    │   ├── auth.go             # RegisterRequest, LoginRequest, AuthResponse
-    │   ├── checkin.go          # PersonnelIncidentLog, NFC/PIN/Manual requests
-    │   ├── deployment.go       # Deployment, DeploymentAssignment
-    │   ├── equipment.go        # LogisticalEquipment, borrow/return requests
-    │   ├── fleet.go            # Fleet, FleetMovementLog
-    │   ├── hydrant.go          # Hydrant, NearbyHydrant
-    │   ├── incident.go         # FireIncident, IncidentDispatch
-    │   ├── notification.go     # Notification
-    │   ├── personnel.go        # DutyPersonnel
-    │   ├── report.go           # SituationalReport
-    │   ├── station.go          # Station
-    │   └── user.go             # User (with BeforeSave hook)
-    │
-    ├── repository/             # Data access layer — one file per domain
-    │   ├── deployment_repo.go
-    │   ├── dispatch_repo.go
-    │   ├── equipment_repo.go
-    │   ├── fleet_repo.go
-    │   ├── hydrant_repo.go
-    │   ├── incident_repo.go
-    │   ├── notification_repo.go
-    │   ├── personnel_repo.go
-    │   ├── report_repo.go
-    │   ├── station_repo.go
-    │   └── user_repo.go
-    │
-    ├── handlers/               # HTTP layer — one file per domain
-    │   ├── auth_handler.go     # Register, Login + JWT generation
-    │   ├── deployment_handler.go
-    │   ├── dispatch_handler.go
-    │   ├── equipment_handler.go
-    │   ├── fleet_handler.go
-    │   ├── hydrant_handler.go
-    │   ├── incident_handler.go
-    │   ├── notification_handler.go
-    │   ├── personnel_handler.go
-    │   ├── report_handler.go
-    │   └── station_handler.go
-    │
-    ├── middleware/              # HTTP middleware
-    │   ├── auth_middleware.go   # JWT validation (RequireAuth)
-    │   ├── rate_limiter.go     # 5 req/sec on auth routes
-    │   └── security_middleware.go # CORS, CSP, HSTS, security headers
-    │
-    └── checkin/                # Self-contained NFC/PIN check-in module
-        ├── checkin_repo.go     # Atomic check-in with transaction
-        └── checkin_handler.go  # NFC, PIN, Manual check-in handlers
+└── frontend/                   # React SPA (Vite + Tailwind)
+    ├── .dockerignore           # Docker build exclusions for frontend
+    ├── Dockerfile              # Multi-stage React + Nginx build
+    ├── package.json            # Node dependencies
+    ├── vite.config.js          # Vite build config
+    └── src/                    # React source code
+        ├── api/                # API client modules
+        ├── components/         # Reusable UI components
+        ├── context/            # React context providers
+        ├── hooks/              # Custom React hooks
+        ├── lib/                # Utility libraries
+        ├── pages/              # Page components
+        └── utils/              # Helper functions
 ```
 
 ### Why `internal/`?
@@ -597,8 +607,8 @@ func main() {
 | Service    | Image                     | Port       | Purpose                |
 | ---------- | ------------------------- | ---------- | ---------------------- |
 | `db`       | postgis/postgis:15-3.4    | 5433:5432  | PostgreSQL + PostGIS   |
-| `backend`  | Dockerfile.backend        | 8081:8080  | Go API server          |
-| `frontend` | Dockerfile.frontend       | 5173:80    | React SPA + Nginx proxy|
+| `backend`  | backend/Dockerfile        | 8081:8080  | Go API server          |
+| `frontend` | frontend/Dockerfile       | 5173:80    | React SPA + Nginx proxy|
 
 ### Health Checks
 
@@ -606,9 +616,9 @@ func main() {
 - **backend**: HTTP GET `/api/v1/health` every 15s (10s start period)
 - **frontend**: depends on backend health before starting
 
-### Backend Dockerfile
+### Backend Dockerfile (`backend/Dockerfile`)
 
-Multi-stage build with static binary (no CGO):
+Multi-stage build with static binary (no CGO). Build context is `./backend`:
 
 ```dockerfile
 FROM golang:1.25-alpine AS builder
@@ -621,9 +631,9 @@ USER bfp  # non-root
 CMD ["./api-server"]
 ```
 
-### Frontend Dockerfile
+### Frontend Dockerfile (`frontend/Dockerfile`)
 
-React build → Nginx with SPA fallback and API reverse proxy:
+React build → Nginx with SPA fallback and API reverse proxy. Build context is `./frontend`:
 
 - All `/api/` requests proxied to `backend:8080`
 - All other paths serve `index.html` (React Router)
