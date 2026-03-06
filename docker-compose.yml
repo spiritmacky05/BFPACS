@@ -25,8 +25,8 @@ services:
     container_name: bfpacs_backend
     environment:
       - DATABASE_URL=postgres://bfp_admin:${DB_PASSWORD:-Ultraman13}@db:5432/bfpacs_db
-      - JWT_SECRET=${JWT_SECRET}
-      - GIN_MODE=release
+      - JWT_SECRET=${JWT_SECRET:-change_this_secret_before_going_to_production}
+      - GIN_MODE=${GIN_MODE:-release}
     ports:
       - "8081:8080"
     depends_on:

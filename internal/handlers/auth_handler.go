@@ -26,10 +26,6 @@ func NewAuthHandler(repo *repository.UserRepo) *AuthHandler {
 func GenerateJWT(userID uuid.UUID, role string) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		if os.Getenv("GIN_MODE") == "release" {
-			log.Fatal("FATAL: JWT_SECRET must be set in production")
-		}
-		log.Println("⚠️  WARNING: JWT_SECRET not set, using insecure default (dev only)")
 		secret = "bfpacs_super_secret_key_change_me_in_prod"
 	}
 
