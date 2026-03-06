@@ -121,6 +121,21 @@ export default function Fleet() {
 
   useEffect(() => { load(); }, []);
 
+  // Status codes that mean the unit is back in service
+  const RETURN_TO_SERVICE_CODES = [
+    '10-24 (Operation finished/Clear)',
+    '10-25 (Return to base)',
+    'Serviceable (Available)',
+  ];
+
+  // Status codes that mean the unit is out for maintenance
+  const MAINTENANCE_CODES = ['Maintenance (Out of Service)'];
+
+  const handleMarkServiceable = async (fleet) => {
+    await fleetApi.update(fleet.id, { status: 'Serviceable' });
+    load();
+  };
+
   const handleCreate = async () => {
     setSaving(true);
     // ft_capacity is required by DB check constraint — always include it
@@ -149,11 +164,17 @@ export default function Fleet() {
       lat: logForm.lat ? parseFloat(logForm.lat) : undefined,
       lng: logForm.lng ? parseFloat(logForm.lng) : undefined,
     });
+    // Sync the fleet's top-level status badge to match the logged movement code
+    if (RETURN_TO_SERVICE_CODES.includes(logForm.status_code)) {
+      await fleetApi.update(selectedFleet.id, { status: 'Serviceable' });
+    } else if (MAINTENANCE_CODES.includes(logForm.status_code)) {
+      await fleetApi.update(selectedFleet.id, { status: 'Maintenance' });
+    }
     setLoggingMove(false);
     setShowLogForm(false);
     setLogForm({ status_code: '', lat: '', lng: '' });
     loadLogs(selectedFleet.id);
-    load(); // refresh fleet status
+    load();
   };
 
   return (
@@ -207,6 +228,13 @@ export default function Fleet() {
                       <MapPin className={styles.fleetList.gpsIcon} />
                       <span>{f.lat.toFixed(4)}, {f.lng.toFixed(4)}</span>
                     </div>
+                  )}
+                  {isAdmin && f.status === 'Dispatched' && (
+                    <button
+                      onClick={e => { e.stopPropagation(); handleMarkServiceable(f); }}
+                      className="mt-3 w-full text-xs bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 text-green-400 rounded-lg py-1.5 transition-all">
+                      ✓ Mark as Serviceable
+                    </button>
                   )}
                 </div>
               ))}
