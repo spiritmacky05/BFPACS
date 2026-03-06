@@ -54,7 +54,7 @@ import { dispatchesApi } from '@/api/dispatches/dispatches';
 import { incidentsApi  } from '@/api/incidents/incidents';
 import { fleetApi      } from '@/api/fleet/fleet';
 import { personnelApi  } from '@/api/personnel/personnel';
-import { RADIO_CODES   } from './constants';
+import { RADIO_CODES } from './constants';
 
 // ─── localStorage history helpers (temporary — see TODO above) ────────────────
 
@@ -186,7 +186,14 @@ export function useDispatchManager() {
       newStatus,
       selectedInc,
     );
-    loadDispatches(selectedInc);
+
+    // When fire is out, the fleet unit is no longer committed to this incident —
+    // mark it Serviceable so it can be selected for a new dispatch.
+    if (newStatus === RADIO_CODES.FIRE_OUT) {
+      await fleetApi.update(dispatch.fleet_id, { status: 'Serviceable' });
+    }
+
+    await Promise.all([loadDispatches(selectedInc), loadFleets()]);
   };
 
   const toggleExpand      = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
