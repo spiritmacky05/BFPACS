@@ -122,8 +122,8 @@ export default function Layout({ children, currentPageName }) {
   const [resourcesOpen, setResourcesOpen] = useState(false);
 
   const { role } = useAuth();
-  const isSuperAdmin = role === 'superadmin';
-  const isAdmin      = role === 'admin';
+  const isSuperAdmin = role?.toLowerCase() === 'superadmin';
+  const isAdmin      = role?.toLowerCase() === 'admin';
   const showResources = isSuperAdmin || isAdmin;
   const navItems = isSuperAdmin
     ? superAdminNavItems
