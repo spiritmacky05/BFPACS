@@ -1,14 +1,21 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 // isSuperAdmin returns true if the current user has the superadmin role.
+// Case-insensitive so it handles "SuperAdmin", "superadmin", etc.
 func isSuperAdmin(c *gin.Context) bool {
-	role, _ := c.Get("role")
-	return role == "superadmin"
+	raw, exists := c.Get("role")
+	if !exists {
+		return false
+	}
+	roleStr, ok := raw.(string)
+	return ok && strings.EqualFold(roleStr, "superadmin")
 }
 
 // getStationID extracts the station_id from the JWT context and returns it
