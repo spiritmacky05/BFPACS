@@ -1,11 +1,11 @@
 /**
  * pages/DutyPersonnel.jsx
  *
- * Duty personnel list with duty status management.
+ * Duty personnel list with duty status management, edit, and training skills.
  */
 
 import { useState, useEffect } from 'react';
-import { UserCheck, Plus, X, RefreshCw } from 'lucide-react';
+import { UserCheck, Plus, X, RefreshCw, Pencil } from 'lucide-react';
 import { personnelApi } from '@/api/personnel/personnel';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
 import PersonnelLink    from '@/components/PersonnelLink/PersonnelLink';
@@ -13,7 +13,7 @@ import PersonnelLink    from '@/components/PersonnelLink/PersonnelLink';
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
 const styles = {
   pageContainer: "space-y-6",
-  
+
   header: {
     wrapper: "flex items-center justify-between",
     titleFlex: "flex items-center gap-2",
@@ -26,14 +26,14 @@ const styles = {
     addBtn: "flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all",
     addIcon: "w-4 h-4"
   },
-  
+
   filter: {
     wrapper: "flex gap-2",
     btnBase: "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
     btnActive: "bg-red-600 border-red-600 text-white",
     btnInactive: "border-[#1f1f1f] text-gray-400 hover:border-red-600/40 hover:text-white"
   },
-  
+
   table: {
     loading: "text-center text-gray-500 py-16",
     empty: "text-center text-gray-600 py-16",
@@ -48,10 +48,11 @@ const styles = {
     tdAction: "px-4 py-3",
     commanderBadge: "ml-2 text-xs text-yellow-400 border border-yellow-600/30 bg-yellow-600/10 px-1.5 py-0.5 rounded",
     statusBadgeBase: "text-xs px-2 py-0.5 rounded border",
-    nfcTd: "px-4 py-3 text-xs text-gray-500 font-mono",
-    select: "bg-[#0a0a0a] border border-[#2a2a2a] text-gray-400 rounded px-2 py-1 text-xs focus:border-red-600 outline-none"
+    select: "bg-[#0a0a0a] border border-[#2a2a2a] text-gray-400 rounded px-2 py-1 text-xs focus:border-red-600 outline-none",
+    editBtn: "p-1.5 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white hover:border-red-600/40 transition-all",
+    editIcon: "w-3.5 h-3.5",
   },
-  
+
   modal: {
     overlay: "fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4",
     container: "bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto",
@@ -64,8 +65,23 @@ const styles = {
     input: "w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outline-none",
     footer: "p-6 border-t border-[#1f1f1f] flex gap-3 justify-end",
     cancelBtn: "px-4 py-2 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white text-sm",
-    submitBtn: "px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50"
-  }
+    submitBtn: "px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50",
+    skillsGrid: "grid grid-cols-2 gap-2",
+    skillItem: "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-all",
+    skillActive: "border-red-600/50 bg-red-600/10 text-white",
+    skillInactive: "border-[#2a2a2a] text-gray-400 hover:border-[#3a3a3a]",
+    skillHint: "text-gray-500 text-xs mt-1",
+  },
+
+  confirm: {
+    overlay: "fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4",
+    box: "bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-sm p-6 space-y-4",
+    title: "text-white font-semibold text-center",
+    message: "text-gray-400 text-sm text-center",
+    actions: "flex gap-3 justify-center",
+    noBtn: "px-6 py-2 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white text-sm font-medium transition-all",
+    yesBtn: "px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-all",
+  },
 };
 
 const DUTY_COLORS = {
@@ -75,38 +91,45 @@ const DUTY_COLORS = {
 };
 
 const BFP_RANKS = [
-  'FO1','FO2','FO3','SFO1','SFO2','SFO3','SFO4',
-  'SINSP','CINSP','SINSP','FSupt','SFSupt','CSupt','DCFSCO','CFSCO',
+  'FO1','FO2','FO3',
+  'SFO1','SFO2','SFO3','SFO4',
+  'FINSP','FSINSP','FCINSP',
+  'FSUPT','FSSUPT','FCSUPT',
 ];
 
-const BFP_CERTIFICATIONS = [
-  'None',
-  'Basic Fire Fighting (BFF)',
-  'Structural Fire Fighting (SFF)',
-  'Wildland Fire Fighting (WFF)',
-  'Hazardous Materials (HazMat) Response',
-  'Search and Rescue (SAR)',
-  'Emergency Medical Technician – Basic (EMT-B)',
-  'Technical Rescue Operations',
-  'Fire Safety Inspector (FSI)',
-  'Fire Investigation Technician',
+const BFP_SHIFTS = ['Shift A', 'Shift B', 'Station Commander'];
+
+const TRAINING_SKILLS = [
+  'HAZMAT','BRTC','CBRN','EMT',
+  'ICS Level 1','ICS Level 2','ICS Level 3','ICS Level 4','ICS Level 5',
+  'ICS CADRE','USAR','ICT','EORA',
 ];
 
 const EMPTY_FORM = {
   full_name: '', rank: 'FO1', shift: 'Shift A',
-  duty_status: 'On Duty', certification: 'None',
+  duty_status: 'On Duty', certification: '',
 };
+
+/** Parse comma-separated certification string into array */
+const parseCert = (cert) => cert ? cert.split(',').map(s => s.trim()).filter(Boolean) : [];
+/** Join skills array into comma-separated string */
+const joinCert = (arr) => arr.join(', ');
 
 export default function DutyPersonnel() {
   const [personnel, setPersonnel] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [showForm,  setShowForm]  = useState(false);
+  const [editId,    setEditId]    = useState(null);     // null = create, uuid = edit
   const [form,      setForm]      = useState(EMPTY_FORM);
+  const [skills,    setSkills]    = useState([]);        // selected training skills
   const [saving,    setSaving]    = useState(false);
   const [filter,    setFilter]    = useState('All');
 
+  // Confirmation modal state
+  const [confirm,   setConfirm]   = useState(null);
+  // { title, message, onYes }
+
   const { role } = useAuth();
-  // All authenticated roles can add personnel and update duty status
   const canModify = role === 'superadmin' || role === 'admin' || role === 'user';
 
   const load = async () => {
@@ -117,21 +140,69 @@ export default function DutyPersonnel() {
 
   useEffect(() => { load(); }, []);
 
-  const handleCreate = async () => {
+  // ── Skill toggle ────────────────────────────────────────────────────────────
+  const toggleSkill = (skill) => {
+    setSkills(prev => {
+      if (prev.includes(skill)) return prev.filter(s => s !== skill);
+      if (prev.length >= 5) return prev; // max 5
+      return [...prev, skill];
+    });
+  };
+
+  // ── Open create modal ──────────────────────────────────────────────────────
+  const openCreate = () => {
+    setEditId(null);
+    setForm(EMPTY_FORM);
+    setSkills([]);
+    setShowForm(true);
+  };
+
+  // ── Open edit modal ────────────────────────────────────────────────────────
+  const openEdit = (p) => {
+    setEditId(p.id);
+    setForm({
+      full_name: p.full_name,
+      rank: p.rank,
+      shift: p.shift ?? 'Shift A',
+      duty_status: p.duty_status,
+      certification: p.certification ?? '',
+    });
+    setSkills(parseCert(p.certification));
+    setShowForm(true);
+  };
+
+  // ── Save (create or update) ────────────────────────────────────────────────
+  const handleSave = async () => {
     setSaving(true);
-    await personnelApi.create({ ...form });
+    const payload = { ...form, certification: joinCert(skills) };
+    if (editId) {
+      await personnelApi.update(editId, payload);
+    } else {
+      await personnelApi.create(payload);
+    }
     setSaving(false);
     setShowForm(false);
     setForm(EMPTY_FORM);
+    setSkills([]);
+    setEditId(null);
     load();
   };
 
-  const handleStatusChange = async (id, status) => {
-    await personnelApi.updateDutyStatus(id, status);
-    load();
+  // ── Status change with confirmation ────────────────────────────────────────
+  const requestStatusChange = (id, name, newStatus) => {
+    setConfirm({
+      title: 'Change Duty Status',
+      message: `Set ${name} to "${newStatus}"?`,
+      onYes: async () => {
+        await personnelApi.updateDutyStatus(id, newStatus);
+        load();
+        setConfirm(null);
+      },
+    });
   };
 
   const filtered = filter === 'All' ? personnel : personnel.filter(p => p.duty_status === filter);
+  const skillsValid = skills.length >= 3 && skills.length <= 5;
 
   return (
     <div className={styles.pageContainer}>
@@ -148,8 +219,7 @@ export default function DutyPersonnel() {
             <RefreshCw className={styles.header.refreshIcon} />
           </button>
           {canModify && (
-            <button onClick={() => setShowForm(true)}
-              className={styles.header.addBtn}>
+            <button onClick={openCreate} className={styles.header.addBtn}>
               <Plus className={styles.header.addIcon} /> Add Personnel
             </button>
           )}
@@ -177,7 +247,7 @@ export default function DutyPersonnel() {
           <table className={styles.table.table}>
             <thead>
               <tr className={styles.table.theadTr}>
-                {['Name', 'Rank', ...(role === 'superadmin' ? ['Station'] : []), 'Shift', 'Status', 'Certification', canModify ? 'Actions' : ''].filter(Boolean).map(h => (
+                {['Name', 'Rank', ...(role === 'superadmin' ? ['Station'] : []), 'Shift', 'Status', 'Training / Skills', canModify ? 'Actions' : ''].filter(Boolean).map(h => (
                   <th key={h} className={styles.table.th}>{h}</th>
                 ))}
               </tr>
@@ -188,9 +258,7 @@ export default function DutyPersonnel() {
                   <td className={`${styles.table.tdTextBase} ${styles.table.tdWhite}`}>
                     <PersonnelLink id={p.id} name={p.full_name} className="text-white font-medium" />
                     {p.is_station_commander && (
-                      <span className={styles.table.commanderBadge}>
-                        Commander
-                      </span>
+                      <span className={styles.table.commanderBadge}>Commander</span>
                     )}
                   </td>
                   <td className={`${styles.table.tdTextBase} ${styles.table.tdGray}`}>{p.rank}</td>
@@ -206,18 +274,31 @@ export default function DutyPersonnel() {
                     </span>
                   </td>
                   <td className={`${styles.table.tdTextBase} text-blue-300/80`}>
-                    {p.certification && p.certification !== 'None' ? p.certification : <span className="text-gray-600">—</span>}
+                    {p.certification ? (
+                      <div className="flex flex-wrap gap-1">
+                        {parseCert(p.certification).map(s => (
+                          <span key={s} className="text-xs bg-blue-600/10 border border-blue-600/20 text-blue-300 px-1.5 py-0.5 rounded">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    ) : <span className="text-gray-600">—</span>}
                   </td>
                   {canModify && (
                     <td className={styles.table.tdAction}>
-                      <select
-                        value={p.duty_status}
-                        onChange={e => handleStatusChange(p.id, e.target.value)}
-                        className={styles.table.select}>
-                        <option>On Duty</option>
-                        <option>Off Duty</option>
-                        <option>On Leave</option>
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={p.duty_status}
+                          onChange={e => requestStatusChange(p.id, p.full_name, e.target.value)}
+                          className={styles.table.select}>
+                          <option>On Duty</option>
+                          <option>Off Duty</option>
+                          <option>On Leave</option>
+                        </select>
+                        <button onClick={() => openEdit(p)} className={styles.table.editBtn} title="Edit">
+                          <Pencil className={styles.table.editIcon} />
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -227,12 +308,12 @@ export default function DutyPersonnel() {
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* ── Create / Edit Modal ───────────────────────────────────────────── */}
       {showForm && (
         <div className={styles.modal.overlay}>
           <div className={styles.modal.container}>
             <div className={styles.modal.header}>
-              <h2 className={styles.modal.title}>Add Personnel</h2>
+              <h2 className={styles.modal.title}>{editId ? 'Edit Personnel' : 'Add Personnel'}</h2>
               <button onClick={() => setShowForm(false)} className={styles.modal.closeBtn}>
                 <X className={styles.modal.closeIcon} />
               </button>
@@ -258,25 +339,53 @@ export default function DutyPersonnel() {
                 <select value={form.shift}
                   onChange={e => setForm(f => ({ ...f, shift: e.target.value }))}
                   className={styles.modal.input}>
-                  {['Shift A', 'Shift B'].map(s => <option key={s} value={s}>{s}</option>)}
+                  {BFP_SHIFTS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className={styles.modal.label}>Certification / Training</label>
-                <select value={form.certification}
-                  onChange={e => setForm(f => ({ ...f, certification: e.target.value }))}
-                  className={styles.modal.input}>
-                  {BFP_CERTIFICATIONS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <label className={styles.modal.label}>Training / Skills (select 3–5)</label>
+                <div className={styles.modal.skillsGrid}>
+                  {TRAINING_SKILLS.map(skill => {
+                    const active = skills.includes(skill);
+                    return (
+                      <div key={skill}
+                        onClick={() => toggleSkill(skill)}
+                        className={`${styles.modal.skillItem} ${active ? styles.modal.skillActive : styles.modal.skillInactive}`}>
+                        <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${active ? 'bg-red-600 border-red-600' : 'border-gray-600'}`}>
+                          {active && <span className="text-white text-[10px]">✓</span>}
+                        </span>
+                        {skill}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className={styles.modal.skillHint}>
+                  {skills.length}/5 selected {skills.length < 3 ? '(minimum 3)' : ''}
+                </p>
               </div>
             </div>
             <div className={styles.modal.footer}>
               <button onClick={() => setShowForm(false)}
                 className={styles.modal.cancelBtn}>Cancel</button>
-              <button onClick={handleCreate} disabled={saving || !form.full_name}
+              <button onClick={handleSave}
+                disabled={saving || !form.full_name || !skillsValid}
                 className={styles.modal.submitBtn}>
-                {saving ? 'Adding...' : 'Add Personnel'}
+                {saving ? 'Saving...' : editId ? 'Save Changes' : 'Add Personnel'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmation Modal ────────────────────────────────────────────── */}
+      {confirm && (
+        <div className={styles.confirm.overlay}>
+          <div className={styles.confirm.box}>
+            <h3 className={styles.confirm.title}>{confirm.title}</h3>
+            <p className={styles.confirm.message}>{confirm.message}</p>
+            <div className={styles.confirm.actions}>
+              <button onClick={() => setConfirm(null)} className={styles.confirm.noBtn}>No</button>
+              <button onClick={confirm.onYes} className={styles.confirm.yesBtn}>Yes</button>
             </div>
           </div>
         </div>

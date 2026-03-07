@@ -104,6 +104,7 @@ func main() {
 				p.GET("", personnelH.GetAll)
 				p.GET("/:id", personnelH.GetByID)
 				p.POST("", personnelH.Create)
+				p.PUT("/:id", personnelH.Update)
 				p.PATCH("/:id/duty-status", personnelH.UpdateDutyStatus)
 			}
 

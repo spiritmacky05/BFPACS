@@ -119,3 +119,27 @@ func (h *PersonnelHandler) UpdateDutyStatus(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "duty status updated"})
 }
+
+func (h *PersonnelHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	var req models.UpdatePersonnelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	p, err := h.Repo.Update(c.Request.Context(), id, req)
+	if err != nil {
+		log.Printf("[PersonnelHandler.Update] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update personnel"})
+		return
+	}
+	if p == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	c.JSON(http.StatusOK, p)
+}

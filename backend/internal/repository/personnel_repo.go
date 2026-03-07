@@ -78,11 +78,41 @@ func (r *PersonnelRepo) Create(ctx context.Context, req models.CreatePersonnelRe
 		IsStationCommander: req.IsStationCommander,
 		NFCTagID:           req.NFCTagID,
 		PinCode:            req.PinCode,
+		Certification:      req.Certification,
 	}
 	if err := r.db.WithContext(ctx).Create(&p).Error; err != nil {
 		return nil, err
 	}
 	return &p, nil
+}
+
+func (r *PersonnelRepo) Update(ctx context.Context, id uuid.UUID, req models.UpdatePersonnelRequest) (*models.DutyPersonnel, error) {
+	updates := map[string]interface{}{}
+	if req.FullName != nil {
+		updates["full_name"] = *req.FullName
+	}
+	if req.Rank != nil {
+		updates["rank"] = *req.Rank
+	}
+	if req.Shift != nil {
+		updates["shift"] = *req.Shift
+	}
+	if req.DutyStatus != nil {
+		updates["duty_status"] = *req.DutyStatus
+	}
+	if req.Certification != nil {
+		updates["certification"] = *req.Certification
+	}
+	if req.IsStationCommander != nil {
+		updates["is_station_commander"] = *req.IsStationCommander
+	}
+	if len(updates) == 0 {
+		return r.GetByID(ctx, id)
+	}
+	if err := r.db.WithContext(ctx).Model(&models.DutyPersonnel{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+	return r.GetByID(ctx, id)
 }
 
 func (r *PersonnelRepo) UpdateDutyStatus(ctx context.Context, id uuid.UUID, status string) error {

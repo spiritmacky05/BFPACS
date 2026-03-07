@@ -21,6 +21,12 @@ export const personnelApi = {
 
   /**
    * @param {string} id
+   * @param {object} data — partial update fields
+   */
+  update: (id, data) => api.put(`/personnel/${id}`, data),
+
+  /**
+   * @param {string} id
    * @param {'On Duty' | 'Off Duty' | 'On Leave'} status
    */
   updateDutyStatus: (id, status) =>
