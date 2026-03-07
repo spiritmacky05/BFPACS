@@ -21,6 +21,9 @@ type DutyPersonnel struct {
 	PinCode            *string    `json:"pin_code,omitempty" gorm:"uniqueIndex"`
 	CreatedAt          time.Time  `json:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
+
+	// Relation – populated via Preload("Station")
+	Station *Station `json:"station,omitempty" gorm:"foreignKey:StationID"`
 }
 
 // CreatePersonnelRequest is the request body for creating a new personnel record

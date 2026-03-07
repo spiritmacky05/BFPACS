@@ -19,19 +19,19 @@ func NewPersonnelRepo(db *gorm.DB) *PersonnelRepo {
 
 func (r *PersonnelRepo) GetAll(ctx context.Context) ([]models.DutyPersonnel, error) {
 	var list []models.DutyPersonnel
-	err := r.db.WithContext(ctx).Order("full_name").Find(&list).Error
+	err := r.db.WithContext(ctx).Preload("Station").Order("full_name").Find(&list).Error
 	return list, err
 }
 
 func (r *PersonnelRepo) GetByStation(ctx context.Context, stationID uuid.UUID) ([]models.DutyPersonnel, error) {
 	var list []models.DutyPersonnel
-	err := r.db.WithContext(ctx).Where("station_id = ?", stationID).Order("full_name").Find(&list).Error
+	err := r.db.WithContext(ctx).Preload("Station").Where("station_id = ?", stationID).Order("full_name").Find(&list).Error
 	return list, err
 }
 
 func (r *PersonnelRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.DutyPersonnel, error) {
 	var p models.DutyPersonnel
-	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&p).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Station").Where("id = ?", id).First(&p).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

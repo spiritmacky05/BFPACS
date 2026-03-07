@@ -177,7 +177,7 @@ export default function DutyPersonnel() {
           <table className={styles.table.table}>
             <thead>
               <tr className={styles.table.theadTr}>
-                {['Name', 'Rank', 'Shift', 'Status', 'Certification', canModify ? 'Actions' : ''].filter(Boolean).map(h => (
+                {['Name', 'Rank', ...(role === 'superadmin' ? ['Station'] : []), 'Shift', 'Status', 'Certification', canModify ? 'Actions' : ''].filter(Boolean).map(h => (
                   <th key={h} className={styles.table.th}>{h}</th>
                 ))}
               </tr>
@@ -194,6 +194,11 @@ export default function DutyPersonnel() {
                     )}
                   </td>
                   <td className={`${styles.table.tdTextBase} ${styles.table.tdGray}`}>{p.rank}</td>
+                  {role === 'superadmin' && (
+                    <td className={`${styles.table.tdTextBase} ${styles.table.tdGray}`}>
+                      {p.station?.station_name || <span className="text-gray-600">—</span>}
+                    </td>
+                  )}
                   <td className={`${styles.table.tdTextBase} ${styles.table.tdGray}`}>{p.shift ?? '—'}</td>
                   <td className={styles.table.tdAction}>
                     <span className={`${styles.table.statusBadgeBase} ${DUTY_COLORS[p.duty_status] ?? DUTY_COLORS['Off Duty']}`}>

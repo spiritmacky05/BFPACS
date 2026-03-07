@@ -3,7 +3,9 @@
  * User profile and role switcher (for development).
  */
 import { useAuth } from '@/context/AuthContext/AuthContext';
-import { User, Shield, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Shield, LogOut, Building2 } from 'lucide-react';
+import { stationsApi } from '@/api/stations/stations';
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
 const styles = {
@@ -29,6 +31,15 @@ const styles = {
 
 export default function Profile() {
   const { user, role, logout } = useAuth();
+  const [stationName, setStationName] = useState(null);
+
+  useEffect(() => {
+    if (user?.station_id) {
+      stationsApi.getById(user.station_id)
+        .then(s => setStationName(s?.station_name ?? null))
+        .catch(() => {});
+    }
+  }, [user?.station_id]);
 
   return (
     <div className={styles.pageContainer}>
@@ -51,6 +62,18 @@ export default function Profile() {
             </div>
             <span className={styles.card.roleValue}>{role}</span>
           </div>
+
+          {user?.station_id && (
+            <div className={styles.card.roleRow}>
+              <div className={styles.card.roleLabelFlex}>
+                <Building2 className={styles.card.roleIcon} />
+                Assigned Station
+              </div>
+              <span className={styles.card.roleValue} style={{ textTransform: 'none' }}>
+                {stationName || 'Loading...'}
+              </span>
+            </div>
+          )}
 
           <button onClick={logout} className={styles.card.dangerBtn}>
             <LogOut className="w-4 h-4" />

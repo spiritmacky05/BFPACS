@@ -21,7 +21,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, UserCheck, Award, Shield, Package, X,
   Clock, CheckCircle2, XCircle, Flame, Radio, AlertTriangle,
-  Send, CheckCheck,
+  Send, CheckCheck, Building2,
 } from 'lucide-react';
 import { personnelApi } from '@/api/personnel/personnel';
 import { equipmentApi } from '@/api/equipment/equipment';
@@ -296,6 +296,17 @@ export default function PersonnelProfile() {
         {/* Meta */}
         <div className={S.id.divider}>
           <div className={S.id.metaGrid}>
+            <div>
+              <div className={S.id.metaLabel}>Station</div>
+              {person.station ? (
+                <div className="flex items-center gap-1.5 text-sm">
+                  <Building2 className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <span className="text-white font-medium">{person.station.station_name}</span>
+                </div>
+              ) : (
+                <div className="text-gray-600 text-sm">Unassigned</div>
+              )}
+            </div>
             <div>
               <div className={S.id.metaLabel}>Shift</div>
               <div className={S.id.metaValue}>{person.shift ?? '—'}</div>
