@@ -12,7 +12,7 @@ import { createPageUrl } from '@/utils';
 import {
   Truck, AlertTriangle, ClipboardList, Menu, Shield,
   UserCheck, Package, Droplets, User, ShieldCheck,
-  FolderOpen, ChevronDown, ChevronRight, Activity, LayoutDashboard,
+  FolderOpen, ChevronDown, ChevronRight, Activity, LayoutDashboard, Building2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext/AuthContext';
 
@@ -99,6 +99,7 @@ const superAdminNavItems = [
   { label: 'Incidents',  page: 'Incidents',  icon: AlertTriangle },
   { label: 'Fleet',      page: 'Fleet',      icon: Truck },
   { label: 'Dispatch System',   page: 'Dispatch',   icon: ClipboardList },
+  { label: 'Fire Stations', page: 'Stations', icon: Building2 },
   { label: 'Profile',    page: 'Profile',    icon: User },
   { label: 'SuperAdmin', page: 'SuperAdmin', icon: ShieldCheck },
 ];

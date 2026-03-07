@@ -161,6 +161,8 @@ func main() {
 				s.GET("", stationH.GetAll)
 				s.GET("/:id", stationH.GetByID)
 				s.POST("", stationH.Create)
+				s.PUT("/:id", stationH.Update)
+				s.DELETE("/:id", stationH.Delete)
 			}
 
 			// ── Situational Reports ────────────────────────────────────────────

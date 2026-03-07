@@ -51,3 +51,29 @@ func (r *StationRepo) Create(ctx context.Context, req models.CreateStationReques
 	}
 	return &s, nil
 }
+
+func (r *StationRepo) Update(ctx context.Context, id uuid.UUID, req models.CreateStationRequest) (*models.Station, error) {
+	updates := map[string]interface{}{
+		"station_name":        req.StationName,
+		"contact_number":      req.ContactNumber,
+		"team_leader_contact": req.TeamLeaderContact,
+		"address_text":        req.AddressText,
+		"city":                req.City,
+		"district":            req.District,
+		"region":              req.Region,
+		"lat":                 req.Lat,
+		"lng":                 req.Lng,
+	}
+	if err := r.db.WithContext(ctx).Model(&models.Station{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+	var s models.Station
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&s).Error; err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *StationRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&models.Station{}, id).Error
+}

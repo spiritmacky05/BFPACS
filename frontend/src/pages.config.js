@@ -60,6 +60,7 @@ import Personnel from './pages/Personnel/Personnel';
 import PersonnelProfile from './pages/PersonnelProfile/PersonnelProfile';
 import Profile from './pages/Profile/Profile';
 import SuperAdmin from './pages/SuperAdmin/SuperAdmin';
+import Stations from './pages/Stations/Stations';
 import __Layout from './Layout.jsx';
 
 
@@ -77,6 +78,7 @@ export const PAGES = {
     "PersonnelProfile": PersonnelProfile,
     "Profile": Profile,
     "SuperAdmin": SuperAdmin,
+    "Stations": Stations,
 }
 
 export const pagesConfig = {

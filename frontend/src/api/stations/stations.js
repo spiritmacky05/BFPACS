@@ -6,6 +6,8 @@ export const stationsApi = {
   list: () => api.get('/stations'),
   getById: (id) => api.get(`/stations/${id}`),
   create: (data) => api.post('/stations', data),
+  update: (id, data) => api.put(`/stations/${id}`, data),
+  delete: (id) => api.delete(`/stations/${id}`),
 
   /** Public list — no auth required (for registration dropdown) */
   listPublic: async () => {
