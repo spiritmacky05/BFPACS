@@ -20,29 +20,47 @@ func NewEquipmentHandler(repo *repository.EquipmentRepo) *EquipmentHandler {
 }
 
 func (h *EquipmentHandler) GetAll(c *gin.Context) {
-	// If station_id query param provided, filter by station
-	if stationIDStr := c.Query("station_id"); stationIDStr != "" {
-		stationID, err := uuid.Parse(stationIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid station_id"})
+	// Superadmin sees all equipment; normal users see only their station's equipment
+	if isSuperAdmin(c) {
+		// If station_id query param provided, filter by station
+		if stationIDStr := c.Query("station_id"); stationIDStr != "" {
+			stationID, err := uuid.Parse(stationIDStr)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid station_id"})
+				return
+			}
+			list, err := h.Repo.GetByStation(c.Request.Context(), stationID)
+			if err != nil {
+				log.Printf("[EquipmentHandler.GetAll] %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
+				return
+			}
+			c.JSON(http.StatusOK, list)
 			return
 		}
-		list, err := h.Repo.GetByStation(c.Request.Context(), stationID)
+		data, err := h.Repo.GetAll(c.Request.Context())
 		if err != nil {
 			log.Printf("[EquipmentHandler.GetAll] %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 			return
 		}
-		c.JSON(http.StatusOK, list)
+		c.JSON(http.StatusOK, data)
 		return
 	}
-	data, err := h.Repo.GetAll(c.Request.Context())
+
+	// Normal user: filter by their station
+	stationID := getStationID(c)
+	if stationID == nil {
+		c.JSON(http.StatusOK, []models.LogisticalEquipment{})
+		return
+	}
+	list, err := h.Repo.GetByStation(c.Request.Context(), *stationID)
 	if err != nil {
 		log.Printf("[EquipmentHandler.GetAll] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 		return
 	}
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, list)
 }
 
 func (h *EquipmentHandler) Create(c *gin.Context) {
@@ -51,6 +69,17 @@ func (h *EquipmentHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Non-superadmin users: force station_id to their own station
+	if !isSuperAdmin(c) {
+		stationID := getStationID(c)
+		if stationID == nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": "your account is not assigned to a station"})
+			return
+		}
+		req.StationID = stationID
+	}
+
 	e, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[EquipmentHandler.Create] %v", err)

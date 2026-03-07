@@ -20,7 +20,24 @@ func NewHydrantHandler(repo *repository.HydrantRepo) *HydrantHandler {
 }
 
 func (h *HydrantHandler) GetAll(c *gin.Context) {
-	data, err := h.Repo.GetAll(c.Request.Context())
+	// Superadmin sees all hydrants; normal users see only their station's hydrants
+	if isSuperAdmin(c) {
+		data, err := h.Repo.GetAll(c.Request.Context())
+		if err != nil {
+			log.Printf("[HydrantHandler.GetAll] %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve hydrants"})
+			return
+		}
+		c.JSON(http.StatusOK, data)
+		return
+	}
+
+	stationID := getStationID(c)
+	if stationID == nil {
+		c.JSON(http.StatusOK, []models.Hydrant{})
+		return
+	}
+	data, err := h.Repo.GetByStation(c.Request.Context(), *stationID)
 	if err != nil {
 		log.Printf("[HydrantHandler.GetAll] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve hydrants"})
@@ -85,6 +102,17 @@ func (h *HydrantHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Non-superadmin users: force station_id to their own station
+	if !isSuperAdmin(c) {
+		stationID := getStationID(c)
+		if stationID == nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": "your account is not assigned to a station"})
+			return
+		}
+		req.StationID = stationID
+	}
+
 	hy, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[HydrantHandler.Create] %v", err)

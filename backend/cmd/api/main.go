@@ -91,6 +91,9 @@ func main() {
 			auth.POST("/login", authH.Login)
 		}
 
+		// ── Public Stations list (for registration dropdown) ──────────
+		v1.GET("/stations/public", stationH.GetAll)
+
 		// ── Protected Routes ───────────────────────────────────────────────
 		protected := v1.Group("")
 		protected.Use(middleware.RequireAuth())

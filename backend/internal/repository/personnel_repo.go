@@ -23,6 +23,12 @@ func (r *PersonnelRepo) GetAll(ctx context.Context) ([]models.DutyPersonnel, err
 	return list, err
 }
 
+func (r *PersonnelRepo) GetByStation(ctx context.Context, stationID uuid.UUID) ([]models.DutyPersonnel, error) {
+	var list []models.DutyPersonnel
+	err := r.db.WithContext(ctx).Where("station_id = ?", stationID).Order("full_name").Find(&list).Error
+	return list, err
+}
+
 func (r *PersonnelRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.DutyPersonnel, error) {
 	var p models.DutyPersonnel
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&p).Error; err != nil {

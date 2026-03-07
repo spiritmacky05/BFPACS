@@ -23,17 +23,22 @@ func NewAuthHandler(repo *repository.UserRepo) *AuthHandler {
 }
 
 // GenerateJWT creates a new token valid for 24 hours
-func GenerateJWT(userID uuid.UUID, role string) (string, error) {
+func GenerateJWT(userID uuid.UUID, role string, stationID *uuid.UUID) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		secret = "bfpacs_super_secret_key_change_me_in_prod"
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"user_id": userID.String(),
 		"role":    role,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-	})
+	}
+	if stationID != nil {
+		claims["station_id"] = stationID.String()
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString([]byte(secret))
 }
@@ -72,7 +77,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	// Generate JWT for immediate login
-	tokenStr, err := GenerateJWT(user.ID, user.Role)
+	tokenStr, err := GenerateJWT(user.ID, user.Role, user.StationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -109,7 +114,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	tokenStr, err := GenerateJWT(user.ID, user.Role)
+	tokenStr, err := GenerateJWT(user.ID, user.Role, user.StationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
