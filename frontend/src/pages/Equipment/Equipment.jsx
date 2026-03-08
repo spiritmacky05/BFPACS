@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react';
 import { Package, Plus, X, ArrowLeft, ArrowRight, Edit2, Trash2 } from 'lucide-react';
 import { equipmentApi } from '@/api/equipment/equipment';
-import { personnelApi } from '@/api/personnel/personnel';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
@@ -67,7 +66,6 @@ const EMPTY_FORM = { equipment_name: '', quantity: 1, condition: 'Good' };
 
 export default function Equipment() {
   const [items,    setItems]    = useState([]);
-  const [personnel, setPersonnel] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form,     setForm]     = useState(EMPTY_FORM);
@@ -83,12 +81,8 @@ export default function Equipment() {
 
   const load = async () => {
     try {
-      const [equipData, personnelData] = await Promise.all([
-        equipmentApi.list(),
-        personnelApi.list()
-      ]);
+      const equipData = await equipmentApi.list();
       setItems(equipData ?? []);
-      setPersonnel(personnelData ?? []);
     } catch (err) {
       console.error('Error loading equipment data:', err);
     } finally {
@@ -317,18 +311,11 @@ export default function Equipment() {
               </div>
               <div>
                 <label className={styles.modal.labelSpaced}>Borrower Name (Optional)</label>
-                <select 
-                  value={editItem.borrower_name || ''} 
-                  onChange={e => setEditItem(f => ({ ...f, borrower_name: e.target.value }))}
-                  className={styles.modal.input}
-                >
-                  <option value="">— None —</option>
-                  {personnel.map(p => (
-                    <option key={p.id} value={p.full_name}>
-                      {p.full_name} ({p.rank || p.personnel_type || 'BFP'})
-                    </option>
-                  ))}
-                </select>
+                <input
+                  value={editItem.borrower_name || user?.full_name || ''}
+                  readOnly
+                  className={`${styles.modal.input} opacity-70 cursor-not-allowed`}
+                />
               </div>
             </div>
             <div className={styles.modal.footer}>
