@@ -202,7 +202,7 @@ export default function DutyPersonnel() {
   };
 
   const filtered = filter === 'All' ? personnel : personnel.filter(p => p.duty_status === filter);
-  const skillsValid = skills.length <= 5;
+  const skillsValid = true;
 
   return (
     <div className={styles.pageContainer}>
@@ -343,7 +343,7 @@ export default function DutyPersonnel() {
                 </select>
               </div>
               <div>
-                <label className={styles.modal.label}>Training / Skills (select up to 5)</label>
+                <label className={styles.modal.label}>Training / Skills</label>
                 <div className={styles.modal.skillsGrid}>
                   {TRAINING_SKILLS.map(skill => {
                     const active = skills.includes(skill);
@@ -360,7 +360,7 @@ export default function DutyPersonnel() {
                   })}
                 </div>
                 <p className={styles.modal.skillHint}>
-                  {skills.length}/5 selected
+                  {skills.length} selected
                 </p>
               </div>
             </div>
