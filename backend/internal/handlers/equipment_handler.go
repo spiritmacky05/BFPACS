@@ -20,47 +20,31 @@ func NewEquipmentHandler(repo *repository.EquipmentRepo) *EquipmentHandler {
 }
 
 func (h *EquipmentHandler) GetAll(c *gin.Context) {
-	// Superadmin sees all equipment; normal users see only their station's equipment
-	if isSuperAdmin(c) {
-		// If station_id query param provided, filter by station
-		if stationIDStr := c.Query("station_id"); stationIDStr != "" {
-			stationID, err := uuid.Parse(stationIDStr)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid station_id"})
-				return
-			}
-			list, err := h.Repo.GetByStation(c.Request.Context(), stationID)
-			if err != nil {
-				log.Printf("[EquipmentHandler.GetAll] %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
-				return
-			}
-			c.JSON(http.StatusOK, list)
+	// If station_id query param provided, filter by station (superadmin use)
+	if stationIDStr := c.Query("station_id"); stationIDStr != "" {
+		stationID, err := uuid.Parse(stationIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid station_id"})
 			return
 		}
-		data, err := h.Repo.GetAll(c.Request.Context())
+		list, err := h.Repo.GetByStation(c.Request.Context(), stationID)
 		if err != nil {
 			log.Printf("[EquipmentHandler.GetAll] %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 			return
 		}
-		c.JSON(http.StatusOK, data)
+		c.JSON(http.StatusOK, list)
 		return
 	}
 
-	// Normal user: filter by their station
-	stationID := getStationID(c)
-	if stationID == nil {
-		c.JSON(http.StatusOK, []models.LogisticalEquipment{})
-		return
-	}
-	list, err := h.Repo.GetByStation(c.Request.Context(), *stationID)
+	// All authenticated users see all equipment
+	data, err := h.Repo.GetAll(c.Request.Context())
 	if err != nil {
 		log.Printf("[EquipmentHandler.GetAll] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 		return
 	}
-	c.JSON(http.StatusOK, list)
+	c.JSON(http.StatusOK, data)
 }
 
 func (h *EquipmentHandler) Create(c *gin.Context) {
