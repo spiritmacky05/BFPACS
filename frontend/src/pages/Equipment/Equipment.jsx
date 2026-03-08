@@ -77,7 +77,7 @@ export default function Equipment() {
   const [editItem, setEditItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
 
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   // All authenticated roles can add/edit/borrow equipment
   const isAdmin = role === 'superadmin' || role === 'admin' || role === 'user';
 
@@ -189,7 +189,7 @@ export default function Equipment() {
                     <td className={styles.table.tdAction}>
                       <div className={styles.table.actionFlex}>
                         {!item.borrower_name ? (
-                          <button onClick={() => setBorrowItem(item)}
+                          <button onClick={() => { setBorrowItem(item); setBorrowerName(user?.full_name ?? ''); }}
                             className={styles.table.actionBtnBorrowed}>
                             <ArrowRight className={styles.table.actionIcon} /> Borrow
                           </button>
@@ -228,19 +228,12 @@ export default function Equipment() {
               </button>
             </div>
             <div className={styles.modal.body}>
-              <label className={styles.modal.label}>Borrower Name *</label>
-              <select 
-                value={borrowerName} 
-                onChange={e => setBorrowerName(e.target.value)}
-                className={styles.modal.input}
-              >
-                <option value="">— Select Personnel —</option>
-                {personnel.map(p => (
-                  <option key={p.id} value={p.full_name}>
-                    {p.full_name} ({p.rank || p.personnel_type || 'BFP'})
-                  </option>
-                ))}
-              </select>
+              <label className={styles.modal.label}>Borrower Name</label>
+              <input
+                value={borrowerName}
+                readOnly
+                className={`${styles.modal.input} opacity-70 cursor-not-allowed`}
+              />
             </div>
             <div className={styles.modal.footer}>
               <button onClick={() => setBorrowItem(null)}
