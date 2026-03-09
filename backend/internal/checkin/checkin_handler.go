@@ -106,9 +106,22 @@ func (h *Handler) PINCheckIn(c *gin.Context) {
 	})
 }
 
-// GetLogsForIncident handles GET /api/v1/checkin/logs?incident_id=
+// GetLogsForIncident handles GET /api/v1/checkin/logs
+// Optional ?incident_id= filter. Without it, returns all logs (dashboard use).
 func (h *Handler) GetLogsForIncident(c *gin.Context) {
-	incidentID, err := uuid.Parse(c.Query("incident_id"))
+	incidentIDStr := c.Query("incident_id")
+	if incidentIDStr == "" {
+		// No filter — return all logs for dashboard
+		list, err := h.Repo.GetAllLogs(c.Request.Context())
+		if err != nil {
+			log.Printf("[CheckIn.GetAllLogs] %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve check-in logs"})
+			return
+		}
+		c.JSON(http.StatusOK, list)
+		return
+	}
+	incidentID, err := uuid.Parse(incidentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid incident_id"})
 		return
@@ -120,6 +133,22 @@ func (h *Handler) GetLogsForIncident(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, list)
+}
+
+// CheckOut handles POST /api/v1/checkin/:id/checkout
+// Sets check_out_time on the given PersonnelIncidentLog entry.
+func (h *Handler) CheckOut(c *gin.Context) {
+	logID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid log id"})
+		return
+	}
+	if err := h.Repo.CheckOutByID(c.Request.Context(), logID); err != nil {
+		log.Printf("[CheckIn.CheckOut] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check out"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "checked out successfully"})
 }
 
 // ManualCheckIn handles POST /api/v1/checkin/manual

@@ -105,15 +105,16 @@ const superAdminNavItems = [
 ];
 
 const allNavItems = [
-  { label: 'Dashboard',     page: 'Dashboard',    icon: LayoutDashboard },
-  { label: 'Incidents',     page: 'Incidents',    icon: AlertTriangle },
-  { label: 'Fleet',         page: 'Fleet',        icon: Truck },
-  { label: 'Dispatch System',      page: 'Dispatch',     icon: ClipboardList },
-  { label: 'Duty Personnel',page: 'DutyPersonnel',icon: UserCheck },
-  { label: 'Equipment',     page: 'Equipment',    icon: Package },
-  { label: 'Fire Hydrants', page: 'Hydrants',     icon: Droplets },
-  { label: 'Profile',       page: 'Profile',      icon: User },
-  { label: 'SuperAdmin',    page: 'SuperAdmin',   icon: ShieldCheck },
+  { label: 'Dashboard',       page: 'Dashboard',    icon: LayoutDashboard },
+  { label: 'Incidents',       page: 'Incidents',    icon: AlertTriangle },
+  { label: 'Incident Detail', page: 'IncidentDetail', icon: AlertTriangle },
+  { label: 'Fleet',           page: 'Fleet',        icon: Truck },
+  { label: 'Dispatch System', page: 'Dispatch',     icon: ClipboardList },
+  { label: 'Duty Personnel',  page: 'DutyPersonnel',icon: UserCheck },
+  { label: 'Equipment',       page: 'Equipment',    icon: Package },
+  { label: 'Fire Hydrants',   page: 'Hydrants',     icon: Droplets },
+  { label: 'Profile',         page: 'Profile',      icon: User },
+  { label: 'SuperAdmin',      page: 'SuperAdmin',   icon: ShieldCheck },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────

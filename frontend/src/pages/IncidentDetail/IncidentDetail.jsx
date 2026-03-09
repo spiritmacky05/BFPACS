@@ -11,7 +11,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import {
   AlertTriangle, ArrowLeft, Printer, Pencil, MapPin,
-  Shield, Users, FileText, Activity, Lock, Wifi,
+  Shield, Users, FileText, Activity, Lock, Wifi, LayoutGrid,
 } from "lucide-react";
 import { createPageUrl }    from "@/utils";
 import { incidentsApi }     from "@/api/incidents/incidents";
@@ -54,7 +54,25 @@ export default function IncidentDetail() {
   const [editing,     setEditing]     = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showACSPortal, setShowACSPortal] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const printRef = useRef();
+
+  // Section refs for in-page navigation
+  const overviewRef  = useRef(null);
+  const personnelRef = useRef(null);
+  const fleetRef     = useRef(null);
+  const historyRef   = useRef(null);
+
+  const scrollTo = (ref) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const TABS = [
+    { id: 'overview',  label: 'Overview',           Icon: LayoutGrid,  ref: overviewRef },
+    { id: 'personnel', label: 'Personnel',           Icon: Users,       ref: personnelRef },
+    { id: 'fleet',     label: 'Fleet & Equipment',   Icon: Activity,    ref: fleetRef },
+    { id: 'history',   label: 'History',             Icon: FileText,    ref: historyRef },
+  ];
 
   const { role } = useAuth();
   const isAdmin  = role === "admin" || role === "superadmin";
@@ -232,8 +250,25 @@ export default function IncidentDetail() {
         </div>
       </div>
 
+      {/* Sticky in-page section navbar */}
+      <div className="sticky top-0 z-10 -mx-4 lg:-mx-6 px-4 lg:px-6 bg-[#0a0a0a] border-b border-[#1f1f1f] py-2">
+        <div className="flex gap-1 overflow-x-auto">
+          {TABS.map(({ id, label, Icon, ref }) => (
+            <button key={id}
+              onClick={() => { setActiveTab(id); scrollTo(ref); }}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === id
+                  ? 'bg-red-600/20 border border-red-600/40 text-red-400'
+                  : 'text-gray-500 hover:text-white border border-transparent hover:border-[#2a2a2a]'
+              }`}>
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Header Card */}
-      <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6">
+      <div ref={overviewRef} className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6 scroll-mt-16">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div className="text-xs text-gray-600 mb-1 font-mono">{incident.id?.slice(0, 8)}</div>
@@ -256,7 +291,9 @@ export default function IncidentDetail() {
       </div>
 
       {/* Personnel Asset Dashboard */}
-      <PersonnelBreakdownDashboard incidentId={incidentId} />
+      <div ref={personnelRef} className="scroll-mt-16">
+        <PersonnelBreakdownDashboard incidentId={incidentId} />
+      </div>
 
       {/* Details Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -319,7 +356,9 @@ export default function IncidentDetail() {
       </div>
 
       {/* Fleet Asset Dashboard */}
-      <FleetForIncidentDashboard incidentId={incidentId} />
+      <div ref={fleetRef} className="scroll-mt-16">
+        <FleetForIncidentDashboard incidentId={incidentId} />
+      </div>
 
       {/* Checked-In Personnel */}
       <CheckedInPersonnelList incidentId={incidentId} />
@@ -331,7 +370,7 @@ export default function IncidentDetail() {
       <div ref={printRef} style={{ display: "none" }} dangerouslySetInnerHTML={{ __html: printableContent }} />
 
       {/* Status History */}
-      <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+      <div ref={historyRef} className="bg-[#111] border border-[#1f1f1f] rounded-xl p-5 scroll-mt-16">
         <div className="flex items-center gap-2 text-xs text-red-400 uppercase tracking-widest font-semibold mb-4">
           <Activity className="w-3.5 h-3.5" /> Status History
         </div>

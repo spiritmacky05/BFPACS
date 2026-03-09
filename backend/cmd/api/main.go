@@ -199,8 +199,9 @@ func main() {
 			{
 				ci.POST("/nfc", checkinH.NFCCheckIn)
 				ci.POST("/pin", checkinH.PINCheckIn)
-				ci.POST("/manual", checkinH.ManualCheckIn)   // admin deploy by UUID
-				ci.GET("/logs", checkinH.GetLogsForIncident) // ?incident_id=
+				ci.POST("/manual", checkinH.ManualCheckIn)
+				ci.GET("/logs", checkinH.GetLogsForIncident) // ?incident_id= (optional)
+				ci.POST("/:id/checkout", checkinH.CheckOut)
 			}
 		}
 	}

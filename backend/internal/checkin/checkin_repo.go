@@ -114,3 +114,17 @@ func (r *CheckInRepo) GetLogsForIncident(ctx context.Context, incidentID uuid.UU
 	err := r.db.WithContext(ctx).Where("incident_id = ?", incidentID).Order("check_in_time DESC").Find(&list).Error
 	return list, err
 }
+
+// GetAllLogs returns all check-in records (no incident filter), ordered newest first.
+// Used by the dashboard to show system-wide today's activity.
+func (r *CheckInRepo) GetAllLogs(ctx context.Context) ([]models.PersonnelIncidentLog, error) {
+	var list []models.PersonnelIncidentLog
+	err := r.db.WithContext(ctx).Order("check_in_time DESC").Limit(1000).Find(&list).Error
+	return list, err
+}
+
+// CheckOutByID sets check_out_time for the given log entry
+func (r *CheckInRepo) CheckOutByID(ctx context.Context, logID uuid.UUID) error {
+	now := time.Now()
+	return r.db.WithContext(ctx).Model(&models.PersonnelIncidentLog{}).Where("id = ?", logID).Update("check_out_time", &now).Error
+}

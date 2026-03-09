@@ -4,7 +4,9 @@
  * NFC / PIN check-in API calls. Maps to:
  *   POST   /api/v1/checkin/nfc
  *   POST   /api/v1/checkin/pin
- *   GET    /api/v1/checkin/logs?incident_id=
+ *   POST   /api/v1/checkin/manual
+ *   GET    /api/v1/checkin/logs?incident_id= (incident_id optional)
+ *   POST   /api/v1/checkin/:id/checkout
  */
 
 import api from '../client/client';
@@ -37,4 +39,16 @@ export const checkinApi = {
    */
   getLogsForIncident: (incidentId) =>
     api.get(`/checkin/logs?incident_id=${incidentId}`),
+
+  /**
+   * Get ALL check-in logs across all incidents (for dashboard stats).
+   */
+  getAllLogs: () => api.get('/checkin/logs'),
+
+  /**
+   * Check out a personnel log entry by its UUID.
+   * Sets check_out_time to now.
+   * @param {string} logId
+   */
+  checkout: (logId) => api.post(`/checkin/${logId}/checkout`),
 };
