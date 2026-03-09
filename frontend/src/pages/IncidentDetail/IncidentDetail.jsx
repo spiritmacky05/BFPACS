@@ -54,6 +54,7 @@ export default function IncidentDetail() {
   const [editing,     setEditing]     = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showACSPortal, setShowACSPortal] = useState(false);
+  const [checkInVersion, setCheckInVersion] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const printRef = useRef();
 
@@ -292,7 +293,7 @@ export default function IncidentDetail() {
 
       {/* Personnel Asset Dashboard */}
       <div ref={personnelRef} className="scroll-mt-16">
-        <PersonnelBreakdownDashboard incidentId={incidentId} />
+        <PersonnelBreakdownDashboard key={checkInVersion} incidentId={incidentId} />
       </div>
 
       {/* Details Sections */}
@@ -361,10 +362,10 @@ export default function IncidentDetail() {
       </div>
 
       {/* Checked-In Personnel */}
-      <CheckedInPersonnelList incidentId={incidentId} />
+      <CheckedInPersonnelList key={`personnel-${checkInVersion}`} incidentId={incidentId} />
 
       {/* Checked-In Equipment */}
-      <CheckedInEquipmentList incidentId={incidentId} />
+      <CheckedInEquipmentList key={`equipment-${checkInVersion}`} incidentId={incidentId} />
 
       {/* Printable content (hidden visually, used for print) */}
       <div ref={printRef} style={{ display: "none" }} dangerouslySetInnerHTML={{ __html: printableContent }} />
@@ -382,7 +383,7 @@ export default function IncidentDetail() {
         <ACSCheckInPortal
           incidentId={incidentId}
           onClose={() => setShowACSPortal(false)}
-          onCheckInComplete={() => { setShowACSPortal(false); load(); }}
+          onCheckInComplete={() => { setShowACSPortal(false); setCheckInVersion(v => v + 1); load(); }}
         />
       )}
 
