@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../../lib/axios/axios';
+import { usersApi } from '../../api/users/users';
 
 const AuthContext = createContext(null);
 
@@ -8,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from local storage on mount
+  // Load user from local storage on mount, then refresh from server
   useEffect(() => {
     const storedUser = localStorage.getItem('bfp_user');
     const storedToken = localStorage.getItem('bfp_token');
@@ -16,6 +17,14 @@ export const AuthProvider = ({ children }) => {
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
+
+      // Fetch fresh user data from the server (role may have changed)
+      usersApi.me()
+        .then((freshUser) => {
+          setUser(freshUser);
+          localStorage.setItem('bfp_user', JSON.stringify(freshUser));
+        })
+        .catch(() => { /* token expired, handled by 401 interceptor */ });
     }
     setLoading(false);
   }, []);
@@ -43,15 +52,12 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      const { user, token } = response.data;
-
-      localStorage.setItem('bfp_user', JSON.stringify(user));
-      localStorage.setItem('bfp_token', token);
-
-      setUser(user);
-      setToken(token);
-
-      return { success: true };
+      // Registration no longer returns a token — account is pending approval
+      return {
+        success: true,
+        pending: true,
+        message: response.data?.message || 'Registration successful. Your account is pending approval.',
+      };
     } catch (error) {
       if (error.response?.data?.error) {
         return { success: false, error: error.response.data.error };

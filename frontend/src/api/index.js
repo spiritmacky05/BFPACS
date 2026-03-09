@@ -17,3 +17,4 @@ export { hydrantsApi }                   from './hydrants/hydrants';
 export { equipmentApi }                  from './equipment/equipment';
 export { notificationsApi }              from './notifications/notifications';
 export { stationsApi }                   from './stations/stations';
+export { usersApi }                      from './users/users';

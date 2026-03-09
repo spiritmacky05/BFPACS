@@ -9,6 +9,11 @@ import (
 )
 
 func SeedInitialUsers(db *gorm.DB) {
+	// Ensure existing users (created before the `approved` column) can still log in.
+	db.Model(&models.User{}).Where("approved IS NULL OR (role IN ? AND approved = false)",
+		[]string{"SuperAdmin", "superadmin", "Admin", "admin"},
+	).Update("approved", true)
+
 	users := []struct{ Email, Name, Role string }{
 		{"superadmin@bfp.gov.ph", "Super Admin", "SuperAdmin"},
 		{"admin@bfp.gov.ph", "Regional Admin", "Admin"},
@@ -30,6 +35,7 @@ func SeedInitialUsers(db *gorm.DB) {
 				FullName:     u.Name,
 				PasswordHash: string(hash),
 				Role:         u.Role,
+				Approved:     true,
 			}
 
 			if err := db.Create(&user).Error; err != nil {

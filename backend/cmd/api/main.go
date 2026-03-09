@@ -57,6 +57,7 @@ func main() {
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
 	authH := handlers.NewAuthHandler(authRepo, stationRepo)
+	adminH := handlers.NewAdminHandler(authRepo)
 	personnelH := handlers.NewPersonnelHandler(personnelRepo)
 	fleetH := handlers.NewFleetHandler(fleetRepo)
 	incidentH := handlers.NewIncidentHandler(incidentRepo)
@@ -202,6 +203,18 @@ func main() {
 				ci.POST("/manual", checkinH.ManualCheckIn)
 				ci.GET("/logs", checkinH.GetLogsForIncident) // ?incident_id= (optional)
 				ci.POST("/:id/checkout", checkinH.CheckOut)
+			}
+
+			// ── Auth – current user ─────────────────────────────────────────────
+			protected.GET("/auth/me", adminH.GetCurrentUser)
+
+			// ── Admin / SuperAdmin ──────────────────────────────────────────────
+			adm := protected.Group("/admin")
+			{
+				adm.GET("/users", adminH.GetAllUsers)
+				adm.GET("/users/:id", adminH.GetUser)
+				adm.PATCH("/users/:id", adminH.UpdateUser)
+				adm.PATCH("/users/:id/approve", adminH.QuickApprove)
 			}
 		}
 	}

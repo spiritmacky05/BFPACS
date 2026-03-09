@@ -81,16 +81,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT for immediate login
-	tokenStr, err := GenerateJWT(user.ID, user.Role, user.StationID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, models.AuthResponse{
-		Token: tokenStr,
-		User:  *user,
+	// Registration is pending — no token issued until SuperAdmin approves
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Registration successful. Your account is pending approval by a SuperAdmin.",
+		"user": map[string]interface{}{
+			"id":        user.ID,
+			"email":     user.Email,
+			"full_name": user.FullName,
+			"role":      user.Role,
+			"approved":  user.Approved,
+		},
 	})
 }
 
@@ -116,6 +116,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	if !user.IsActive {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Account is inactive. Please contact administrator."})
+		return
+	}
+
+	if !user.Approved {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Your account is pending approval. Please wait for a SuperAdmin to approve your registration."})
 		return
 	}
 

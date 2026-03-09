@@ -12,6 +12,7 @@ const Register = () => {
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState('');
   
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -36,7 +37,12 @@ const Register = () => {
 
       const result = await register(payload);
       if (result.success) {
-        navigate('/'); // Redirect to dashboard
+        if (result.pending) {
+          // Show pending approval message instead of redirecting
+          setPendingMessage(result.message);
+        } else {
+          navigate('/');
+        }
       } else {
         setError(result.error);
       }
@@ -110,6 +116,32 @@ const Register = () => {
             <p className="text-neutral-400">Create an account to join the grid.</p>
           </motion.div>
 
+          {pendingMessage ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col items-center gap-4 p-8 bg-green-500/10 border border-green-500/20 rounded-xl text-center">
+                <div className="bg-green-500/20 p-3 rounded-full">
+                  <ShieldCheck className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-green-400">Registration Submitted!</h3>
+                <p className="text-neutral-300 text-sm max-w-sm">
+                  {pendingMessage}
+                </p>
+                <p className="text-neutral-500 text-xs">
+                  You will be able to log in once a SuperAdmin approves your account.
+                </p>
+              </div>
+              <Link
+                to="/login"
+                className="block w-full text-center py-3 rounded-xl border border-neutral-800 text-neutral-300 hover:text-white hover:border-orange-500/50 transition-all text-sm font-medium"
+              >
+                Go to Login
+              </Link>
+            </motion.div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <motion.div variants={itemVariants} className="space-y-1.5">
               <label className="text-sm font-medium text-neutral-300 ml-1">Station Name</label>
@@ -214,6 +246,7 @@ const Register = () => {
               </Link>
             </motion.p>
           </form>
+          )}
         </motion.div>
       </div>
     </div>
