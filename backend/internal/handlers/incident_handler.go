@@ -81,3 +81,18 @@ func (h *IncidentHandler) UpdateStatus(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "incident updated"})
 }
+
+// Delete removes an incident permanently. Only superadmin should call this.
+func (h *IncidentHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	if err := h.Repo.Delete(c.Request.Context(), id); err != nil {
+		log.Printf("[IncidentHandler.Delete] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete incident"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "incident deleted"})
+}

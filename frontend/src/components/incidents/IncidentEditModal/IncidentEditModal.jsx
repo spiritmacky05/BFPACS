@@ -13,11 +13,21 @@ const INCIDENT_STATUS_OPTIONS = [
   "Active", "Controlled", "Fire Out", "Done"
 ];
 
+const OCCUPANCY_TYPES = [
+  "Residential Board and Care", "Mixed Occupancy", "Mercantile", "Industrial",
+  "Healthcare", "Educational", "Detention and Correctional", "Day Care",
+  "Business", "Assembly", "Single and Two Family Dwelling",
+  "Lodging and Rooming Houses", "Hotel", "Dormitory", "Condominium",
+  "Apartment Building", "Commercial", "Residential",
+];
+
 const INPUT_CLS = "w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outline-none";
 const LABEL_CLS = "block text-gray-400 text-xs uppercase tracking-wider mb-1";
 
 export default function IncidentEditModal({ incident, onClose, onSaved }) {
   const [form, setForm] = useState({
+    location_text: incident.location_text || "",
+    occupancy_type: incident.occupancy_type || "",
     alarm_status: incident.alarm_status || "",
     incident_status: incident.incident_status || "",
     ground_commander: incident.ground_commander || "",
@@ -30,7 +40,6 @@ export default function IncidentEditModal({ incident, onClose, onSaved }) {
 
   useEffect(() => {
     personnelApi.list().then(data => {
-      // Just sort out the full_name of personnel so they can be selected as commanders
       if (data) {
         setCommanders(data.map(p => p.full_name).sort());
       }
@@ -42,15 +51,25 @@ export default function IncidentEditModal({ incident, onClose, onSaved }) {
   const handleSave = async () => {
     setSaving(true);
     const payload = { ...form };
-    
+
     if (payload.total_injured !== "") payload.total_injured = Number(payload.total_injured);
     else delete payload.total_injured;
-    
+
     if (payload.total_rescued !== "") payload.total_rescued = Number(payload.total_rescued);
     else delete payload.total_rescued;
 
+    // Remove location_text and occupancy_type from status update (not in UpdateIncidentStatusRequest)
+    // We'll send what the backend accepts
+    const statusPayload = {};
+    if (payload.alarm_status) statusPayload.alarm_status = payload.alarm_status;
+    if (payload.incident_status) statusPayload.incident_status = payload.incident_status;
+    if (payload.ground_commander) statusPayload.ground_commander = payload.ground_commander;
+    if (payload.ics_commander) statusPayload.ics_commander = payload.ics_commander;
+    if (payload.total_injured !== undefined) statusPayload.total_injured = payload.total_injured;
+    if (payload.total_rescued !== undefined) statusPayload.total_rescued = payload.total_rescued;
+
     try {
-      await incidentsApi.updateStatus(incident.id, payload);
+      await incidentsApi.updateStatus(incident.id, statusPayload);
     } catch (err) {
       console.error(err);
     }
@@ -68,12 +87,29 @@ export default function IncidentEditModal({ incident, onClose, onSaved }) {
             <h2 className="text-white font-semibold flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-400" /> Edit Incident
             </h2>
-            <p className="text-gray-600 text-xs mt-0.5">{incident.location_text}</p>
+            <p className="text-gray-600 text-xs mt-0.5">{incident.location_text} — All fields are optional</p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="p-6 space-y-5">
+          {/* Basic Info */}
+          <div className="text-xs text-red-400 uppercase tracking-widest font-semibold border-b border-[#1f1f1f] pb-2">Basic Information</div>
+
+          <div>
+            <label className={LABEL_CLS}>Location Address</label>
+            <input value={form.location_text} onChange={e => set("location_text", e.target.value)}
+              placeholder="Type location address..." className={INPUT_CLS} disabled />
+          </div>
+
+          <div>
+            <label className={LABEL_CLS}>Type of Occupancy</label>
+            <select value={form.occupancy_type} onChange={e => set("occupancy_type", e.target.value)} className={INPUT_CLS}>
+              <option value="">— Select —</option>
+              {OCCUPANCY_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+
           {/* Operational Status */}
           <div className="text-xs text-red-400 uppercase tracking-widest font-semibold border-b border-[#1f1f1f] pb-2">Operational Status</div>
 

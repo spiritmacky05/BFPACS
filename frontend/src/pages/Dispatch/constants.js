@@ -8,10 +8,10 @@
  *                                   the badge AND writes a bad value to the DB
  *
  * Object.freeze() prevents accidental mutation at runtime.
- * The JSDoc @enum tag gives IDE autocompletion in plain JS files.
+ * JSDoc annotations provide IDE autocompletion in plain JS files.
  */
 
-/** @readonly @enum {string} */
+/** @type {Readonly<Record<string, string>>} */
 export const RADIO_CODES = Object.freeze({
   EN_ROUTE:   '10-70 En Route',
   ARRIVED:    '10-23 Arrived at Scene',

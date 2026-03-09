@@ -90,3 +90,7 @@ func (r *IncidentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, req model
 	}
 	return r.db.WithContext(ctx).Model(&models.FireIncident{}).Where("id = ?", id).Updates(updates).Error
 }
+
+func (r *IncidentRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&models.FireIncident{}).Error
+}

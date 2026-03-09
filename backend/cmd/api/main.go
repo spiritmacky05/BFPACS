@@ -127,6 +127,7 @@ func main() {
 				i.GET("/:id", incidentH.GetByID)
 				i.POST("", incidentH.Create)
 				i.PATCH("/:id/status", incidentH.UpdateStatus)
+				i.DELETE("/:id", incidentH.Delete)
 			}
 
 			// ── Incident Dispatches ─────────────────────────────────────────────

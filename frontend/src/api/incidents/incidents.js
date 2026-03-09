@@ -37,4 +37,10 @@ export const incidentsApi = {
    * @param {{ incident_status?: string, alarm_status?: string, ground_commander?: string, total_injured?: number, total_rescued?: number }} data
    */
   updateStatus: (id, data) => api.patch(`/incidents/${id}/status`, data),
+
+  /**
+   * Permanently delete an incident. Superadmin only.
+   * @param {string} id
+   */
+  delete: (id) => api.delete(`/incidents/${id}`),
 };

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { fleetApi } from "@/api/fleet/fleet";
 import { dispatchesApi } from "@/api/dispatches/dispatches";
-import { Truck, AlertTriangle } from "lucide-react";
+import { checkinApi } from "@/api/checkin/checkin";
+import { Truck } from "lucide-react";
 
 const truckTypeColors = {
   Pumper: "text-blue-400 bg-blue-600/10 border-blue-600/30",
@@ -13,6 +14,7 @@ const truckTypeColors = {
 
 const statusColors = {
   Available: "text-gray-400 bg-gray-600/10 border-gray-600/30",
+  Serviceable: "text-green-400 bg-green-600/10 border-green-600/30",
   Deployed: "text-red-400 bg-red-600/10 border-red-600/30",
   "Under Maintenance": "text-orange-400 bg-orange-600/10 border-orange-600/30",
   "Out of Service": "text-gray-500 bg-gray-600/10 border-gray-600/30",
@@ -20,6 +22,7 @@ const statusColors = {
 
 export default function FleetForIncidentDashboard({ incidentId }) {
   const [trucks, setTrucks] = useState([]);
+  const [totalPersonnel, setTotalPersonnel] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,13 +36,15 @@ export default function FleetForIncidentDashboard({ incidentId }) {
         const dispatches = await dispatchesApi.getByIncident(incidentId);
 
         // Fetch truck details for each dispatch
-        const truckIds = dispatches.map(d => d.fleet_id);
-        const truckPromises = truckIds.map(id =>
-          fleetApi.getById(id)
-        );
-
+        const truckIds = (dispatches || []).map(d => d.fleet_id).filter(Boolean);
+        const truckPromises = truckIds.map(id => fleetApi.getById(id).catch(() => null));
         const truckData = await Promise.all(truckPromises);
         setTrucks(truckData.filter(t => t));
+
+        // Fetch check-in logs for personnel count
+        const checkIns = await checkinApi.getLogsForIncident(incidentId);
+        const uniquePersonnel = new Set((checkIns || []).map(c => c.personnel_id).filter(Boolean));
+        setTotalPersonnel(uniquePersonnel.size);
       } catch (error) {
         console.error("Error fetching fleet data:", error);
       } finally {
@@ -77,13 +82,23 @@ export default function FleetForIncidentDashboard({ incidentId }) {
       <div className="flex items-center gap-2 text-xs text-red-400 uppercase tracking-widest font-semibold mb-4">
         <Truck className="w-3.5 h-3.5" /> Fleet Asset
       </div>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3 text-center">
+          <div className="text-2xl font-bold text-red-400">{totalPersonnel}</div>
+          <div className="text-xs text-gray-500 mt-1">Total Personnel On-Scene</div>
+        </div>
+        <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3 text-center">
+          <div className="text-2xl font-bold text-orange-400">{trucks.length}</div>
+          <div className="text-xs text-gray-500 mt-1">Vehicles Dispatched</div>
+        </div>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {trucks.map(truck => (
           <div key={truck.id} className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
-            <div className="text-xs font-mono text-gray-500 mb-2">{truck.unit_code}</div>
+            <div className="text-xs font-mono text-gray-500 mb-2">{truck.engine_code}</div>
             <div className="mb-2">
-              <span className={`text-xs px-2 py-0.5 rounded border font-semibold ${truckTypeColors[truck.truck_type] || truckTypeColors.Pumper}`}>
-                {truck.truck_type}
+              <span className={`text-xs px-2 py-0.5 rounded border font-semibold ${truckTypeColors[truck.vehicle_type] || truckTypeColors.Pumper}`}>
+                {truck.vehicle_type}
               </span>
             </div>
             <div className="text-xs text-gray-400 mb-2">{truck.plate_number}</div>
