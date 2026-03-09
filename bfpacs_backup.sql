@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict aUGBSMekId18PzHPurdGWMf26JC3dklLgG0T14n1DiXNyJPaewWuhy1weXvap0g
 
 -- Dumped from database version 17.7 (Ubuntu 17.7-0ubuntu0.25.10.1)
 -- Dumped by pg_dump version 17.7 (Ubuntu 17.7-0ubuntu0.25.10.1)
@@ -1177,5 +1176,4 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict aUGBSMekId18PzHPurdGWMf26JC3dklLgG0T14n1DiXNyJPaewWuhy1weXvap0g
 
