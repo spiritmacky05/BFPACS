@@ -15,11 +15,12 @@ import (
 )
 
 type AuthHandler struct {
-	userRepo *repository.UserRepo
+	userRepo    *repository.UserRepo
+	stationRepo *repository.StationRepo
 }
 
-func NewAuthHandler(repo *repository.UserRepo) *AuthHandler {
-	return &AuthHandler{userRepo: repo}
+func NewAuthHandler(repo *repository.UserRepo, stationRepo *repository.StationRepo) *AuthHandler {
+	return &AuthHandler{userRepo: repo, stationRepo: stationRepo}
 }
 
 // GenerateJWT creates a new token valid for 24 hours
@@ -58,17 +59,21 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Safely parse optional stationID
-	var stationIDPtr *uuid.UUID
-	if req.StationID != nil && *req.StationID != "" {
-		id, err := uuid.Parse(*req.StationID)
-		if err == nil {
-			stationIDPtr = &id
-		}
+	// Auto-create a station using full_name as station_name
+	station, err := h.stationRepo.Create(c.Request.Context(), models.CreateStationRequest{
+		StationName: req.FullName,
+		City:        "—",
+		District:    "—",
+		Region:      "—",
+	})
+	if err != nil {
+		log.Printf("Auto-create station error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create station"})
+		return
 	}
 
-	// Create user in DB
-	user, err := h.userRepo.CreateUser(c.Request.Context(), req.Email, req.FullName, string(hashedPassword), "user", stationIDPtr)
+	// Create user linked to the new station
+	user, err := h.userRepo.CreateUser(c.Request.Context(), req.Email, req.FullName, string(hashedPassword), "user", &station.ID)
 	if err != nil {
 		log.Printf("Create user error: %v", err)
 		// Usually indicates a unique constraint violation on email

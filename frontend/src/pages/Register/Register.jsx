@@ -1,30 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, User, Building2 } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, ShieldCheck, Building2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext/AuthContext';
-import { stationsApi } from '../../api/stations/stations';
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [stationId, setStationId] = useState('');
-  const [stations, setStations] = useState([]);
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const { register } = useAuth();
   const navigate = useNavigate();
-
-  // Load stations for dropdown
-  useEffect(() => {
-    stationsApi.listPublic()
-      .then(data => setStations(data ?? []))
-      .catch(() => setStations([]));
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +33,6 @@ const Register = () => {
 
     try {
       const payload = { full_name: fullName, email, password };
-      if (stationId) payload.station_id = stationId;
 
       const result = await register(payload);
       if (result.success) {
@@ -123,10 +112,10 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <motion.div variants={itemVariants} className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Full Name</label>
+              <label className="text-sm font-medium text-neutral-300 ml-1">Station Name</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
-                  <User className="w-5 h-5" />
+                  <Building2 className="w-5 h-5" />
                 </div>
                 <input
                   type="text"
@@ -134,7 +123,7 @@ const Register = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
-                  placeholder="Juan Dela Cruz"
+                  placeholder="e.g. BFP Taguig Station 1"
                 />
               </div>
             </motion.div>
@@ -153,26 +142,6 @@ const Register = () => {
                   className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
                   placeholder="name@bfp.gov.ph"
                 />
-              </div>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Fire Station</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <select
-                  required
-                  value={stationId}
-                  onChange={(e) => setStationId(e.target.value)}
-                  className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none appearance-none"
-                >
-                  <option value="">— Select your fire station —</option>
-                  {stations.map(s => (
-                    <option key={s.id} value={s.id}>{s.station_name}</option>
-                  ))}
-                </select>
               </div>
             </motion.div>
 
