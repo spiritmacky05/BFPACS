@@ -143,3 +143,17 @@ func (h *PersonnelHandler) Update(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, p)
 }
+
+func (h *PersonnelHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	if err := h.Repo.Delete(c.Request.Context(), id); err != nil {
+		log.Printf("[PersonnelHandler.Delete] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete personnel"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

@@ -107,6 +107,7 @@ func main() {
 				p.POST("", personnelH.Create)
 				p.PUT("/:id", personnelH.Update)
 				p.PATCH("/:id/duty-status", personnelH.UpdateDutyStatus)
+				p.DELETE("/:id", personnelH.Delete)
 			}
 
 			// ── Fleets ─────────────────────────────────────────────────────────
@@ -156,6 +157,8 @@ func main() {
 				h.GET("/nearby", hydrantH.GetNearby) // ?lat=&lng=&radius=
 				h.GET("/:id", hydrantH.GetByID)
 				h.POST("", hydrantH.Create)
+				h.PUT("/:id", hydrantH.Update)
+				h.DELETE("/:id", hydrantH.Delete)
 			}
 
 			// ── Stations ───────────────────────────────────────────────────────
@@ -207,6 +210,7 @@ func main() {
 
 			// ── Auth – current user ─────────────────────────────────────────────
 			protected.GET("/auth/me", adminH.GetCurrentUser)
+			protected.PATCH("/auth/me", adminH.UpdateCurrentUser)
 
 			// ── Admin / SuperAdmin ──────────────────────────────────────────────
 			adm := protected.Group("/admin")

@@ -118,3 +118,7 @@ func (r *PersonnelRepo) Update(ctx context.Context, id uuid.UUID, req models.Upd
 func (r *PersonnelRepo) UpdateDutyStatus(ctx context.Context, id uuid.UUID, status string) error {
 	return r.db.WithContext(ctx).Model(&models.DutyPersonnel{}).Where("id = ?", id).Update("duty_status", status).Error
 }
+
+func (r *PersonnelRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&models.DutyPersonnel{}).Error
+}

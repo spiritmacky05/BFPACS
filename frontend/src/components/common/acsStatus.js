@@ -13,3 +13,11 @@ export const ACS_STATUS_COLORS = {
   "ACS Activated":     "text-blue-400 bg-blue-500/10 border-blue-500/20",
   "Deployed":          "text-red-400 bg-red-500/10 border-red-500/20",
 };
+
+export const ACS_STATUS_LABELS = {
+  "Serviceable":       "Serviceable",
+  "Under Maintenance": "Under Maintenance",
+  "Responding":        "Responding",
+  "ACS Activated":     "ACS Activated",
+  "Deployed":          "Deployed",
+};

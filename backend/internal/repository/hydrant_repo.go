@@ -70,17 +70,69 @@ func (r *HydrantRepo) Create(ctx context.Context, req models.CreateHydrantReques
 	lat := req.Lat
 	lng := req.Lng
 	h := models.Hydrant{
-		StationID:   req.StationID,
-		AddressText: req.AddressText,
-		City:        req.City,
-		District:    req.District,
-		Region:      req.Region,
-		Status:      status,
-		Lat:         &lat,
-		Lng:         &lng,
+		StationID:          req.StationID,
+		AddressText:        req.AddressText,
+		City:               req.City,
+		District:           req.District,
+		Region:             req.Region,
+		Status:             status,
+		Lat:                &lat,
+		Lng:                &lng,
+		HydrantType:        req.HydrantType,
+		PSI:                req.PSI,
+		LastInspectionDate: req.LastInspectionDate,
 	}
 	if err := r.db.WithContext(ctx).Create(&h).Error; err != nil {
 		return nil, err
 	}
 	return &h, nil
+}
+
+func (r *HydrantRepo) Update(ctx context.Context, id uuid.UUID, req models.UpdateHydrantRequest) (*models.Hydrant, error) {
+	updates := map[string]interface{}{}
+	if req.AddressText != nil {
+		updates["address_text"] = *req.AddressText
+	}
+	if req.Status != nil {
+		updates["status"] = *req.Status
+	}
+	if req.Lat != nil {
+		updates["lat"] = *req.Lat
+	}
+	if req.Lng != nil {
+		updates["lng"] = *req.Lng
+	}
+	if req.HydrantType != nil {
+		updates["hydrant_type"] = *req.HydrantType
+	}
+	if req.PSI != nil {
+		updates["psi"] = *req.PSI
+	}
+	if req.LastInspectionDate != nil {
+		updates["last_inspection_date"] = *req.LastInspectionDate
+	}
+	if req.City != nil {
+		updates["city"] = *req.City
+	}
+	if req.District != nil {
+		updates["district"] = *req.District
+	}
+	if req.Region != nil {
+		updates["region"] = *req.Region
+	}
+	if len(updates) == 0 {
+		return r.GetByID(ctx, id)
+	}
+	res := r.db.WithContext(ctx).Model(&models.Hydrant{}).Where("id = ?", id).Updates(updates)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, nil
+	}
+	return r.GetByID(ctx, id)
+}
+
+func (r *HydrantRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&models.Hydrant{}).Error
 }

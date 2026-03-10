@@ -31,4 +31,9 @@ export const personnelApi = {
    */
   updateDutyStatus: (id, status) =>
     api.patch(`/personnel/${id}/duty-status`, { duty_status: status }),
+
+  /**
+   * @param {string} id
+   */
+  delete: (id) => api.delete(`/personnel/${id}`),
 };

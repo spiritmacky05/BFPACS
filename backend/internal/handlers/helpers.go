@@ -7,15 +7,29 @@ import (
 	"github.com/google/uuid"
 )
 
+// getRole returns the lowercase role string from JWT context.
+func getRole(c *gin.Context) string {
+	raw, exists := c.Get("role")
+	if !exists {
+		return ""
+	}
+	roleStr, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	return strings.ToLower(roleStr)
+}
+
 // isSuperAdmin returns true if the current user has the superadmin role.
 // Case-insensitive so it handles "SuperAdmin", "superadmin", etc.
 func isSuperAdmin(c *gin.Context) bool {
-	raw, exists := c.Get("role")
-	if !exists {
-		return false
-	}
-	roleStr, ok := raw.(string)
-	return ok && strings.EqualFold(roleStr, "superadmin")
+	return getRole(c) == "superadmin"
+}
+
+// isAdminOrSuperAdmin returns true if the current user is admin or superadmin.
+func isAdminOrSuperAdmin(c *gin.Context) bool {
+	r := getRole(c)
+	return r == "admin" || r == "superadmin"
 }
 
 // getStationID extracts the station_id from the JWT context and returns it

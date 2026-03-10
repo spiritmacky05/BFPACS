@@ -13,6 +13,8 @@ export const hydrantsApi = {
   list: () => api.get('/hydrants'),
   getById: (id) => api.get(`/hydrants/${id}`),
   create: (data) => api.post('/hydrants', data),
+  update: (id, data) => api.put(`/hydrants/${id}`, data),
+  delete: (id) => api.delete(`/hydrants/${id}`),
   /**
    * Get hydrants within radius meters of a GPS point.
    * @param {number} lat

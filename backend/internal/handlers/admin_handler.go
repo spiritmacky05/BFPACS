@@ -18,10 +18,10 @@ func NewAdminHandler(userRepo *repository.UserRepo) *AdminHandler {
 	return &AdminHandler{userRepo: userRepo}
 }
 
-// GetAllUsers — SuperAdmin only: list every user
+// GetAllUsers — Admin or SuperAdmin: list every user
 func (h *AdminHandler) GetAllUsers(c *gin.Context) {
-	if !isSuperAdmin(c) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "SuperAdmin access required"})
+	if !isAdminOrSuperAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 		return
 	}
 
@@ -34,10 +34,10 @@ func (h *AdminHandler) GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUser — SuperAdmin only: get a single user by ID
+// GetUser — Admin or SuperAdmin: get a single user by ID
 func (h *AdminHandler) GetUser(c *gin.Context) {
-	if !isSuperAdmin(c) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "SuperAdmin access required"})
+	if !isAdminOrSuperAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 		return
 	}
 
@@ -60,10 +60,11 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// UpdateUser — SuperAdmin only: update role, approval, and other fields
+// UpdateUser — Admin or SuperAdmin: update user fields.
+// Only SuperAdmin can change role and approval status.
 func (h *AdminHandler) UpdateUser(c *gin.Context) {
-	if !isSuperAdmin(c) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "SuperAdmin access required"})
+	if !isAdminOrSuperAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 		return
 	}
 
@@ -77,6 +78,12 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Non-superadmin admins cannot change role or approval
+	if !isSuperAdmin(c) {
+		req.Role = nil
+		req.Approved = nil
 	}
 
 	// Validate role if provided
@@ -163,5 +170,48 @@ func (h *AdminHandler) GetCurrentUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
+	c.JSON(http.StatusOK, user)
+}
+
+// UpdateCurrentUser — allows authenticated users to update their own profile fields.
+// Role and Approved cannot be self-changed.
+func (h *AdminHandler) UpdateCurrentUser(c *gin.Context) {
+	raw, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
+	userIDStr, ok := raw.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user context"})
+		return
+	}
+	id, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	var req models.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Self-update: users cannot change their own role or approval status
+	req.Role = nil
+	req.Approved = nil
+
+	user, err := h.userRepo.UpdateUser(c.Request.Context(), id, req)
+	if err != nil {
+		log.Printf("[AdminHandler.UpdateCurrentUser] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update profile"})
+		return
+	}
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
 	c.JSON(http.StatusOK, user)
 }
