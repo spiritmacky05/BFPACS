@@ -169,6 +169,8 @@ CREATE TABLE public.deployments (
     name_of_deployment character varying(255) NOT NULL,
     location_text text NOT NULL,
     geo_location public.geography(Point,4326),
+    lat double precision,
+    lng double precision,
     status character varying(20) DEFAULT 'Active'::character varying,
     team_leader character varying(255),
     remarks text,
@@ -199,6 +201,7 @@ CREATE TABLE public.duty_personnel (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     nfc_tag_id character varying(50),
     pin_code character varying(4),
+    certification text,
     CONSTRAINT check_bfp_rank CHECK (((rank)::text = ANY ((ARRAY['FO1'::character varying, 'FO2'::character varying, 'FO3'::character varying, 'SFO1'::character varying, 'SFO2'::character varying, 'SFO3'::character varying, 'SFO4'::character varying, 'FINSP'::character varying, 'FSINSP'::character varying, 'FCINSP'::character varying, 'FSUPT'::character varying, 'FSSUPT'::character varying, 'FCSUPT'::character varying])::text[])))
 );
 
@@ -230,6 +233,8 @@ CREATE TABLE public.fire_incidents (
     reported_by uuid,
     location_text text NOT NULL,
     geo_location public.geography(Point,4326),
+    lat double precision,
+    lng double precision,
     date_time_reported timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     occupancy_type character varying(100),
     involved_type character varying(100),
@@ -261,6 +266,8 @@ CREATE TABLE public.fleet_movement_logs (
     fleet_id uuid,
     status_code character varying(10) NOT NULL,
     location_point public.geography(Point,4326),
+    lat double precision,
+    lng double precision,
     recorded_at timestamp with time zone DEFAULT now(),
     battery_level integer,
     heading double precision,
@@ -287,6 +294,8 @@ CREATE TABLE public.fleets (
     status character varying(50) DEFAULT 'Serviceable'::character varying,
     acs_status character varying(20) DEFAULT 'Inactive'::character varying,
     current_location public.geography(Point,4326),
+    lat double precision,
+    lng double precision,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     current_assignment_status text,
@@ -303,16 +312,21 @@ ALTER TABLE public.fleets OWNER TO bfp_admin;
 CREATE TABLE public.hydrants (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     station_id uuid,
-    hydrant_code character varying(50) NOT NULL,
+    hydrant_code character varying(50),
     address_text text,
     city character varying(100),
     status character varying(50) DEFAULT 'Serviceable'::character varying,
     location public.geography(Point,4326),
+    lat double precision,
+    lng double precision,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     geo_location public.geography(Point,4326),
     district character varying(100),
-    region character varying(100)
+    region character varying(100),
+    hydrant_type text,
+    psi integer,
+    last_inspection_date text
 );
 
 
@@ -442,6 +456,8 @@ CREATE TABLE public.stations (
     district character varying(100) NOT NULL,
     region character varying(100) NOT NULL,
     location public.geography(Point,4326),
+    lat double precision,
+    lng double precision,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
@@ -472,7 +488,7 @@ CREATE TABLE public.users (
     city_fire_marshal text,
     station_commander text,
     station_contact_number text,
-    a_csstatus text,
+    acs_status text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

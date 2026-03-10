@@ -17,7 +17,7 @@ type Fleet struct {
 	VehicleType             string     `json:"vehicle_type"`
 	FTCapacity              *string    `json:"ft_capacity,omitempty"`
 	Status                  string     `json:"status"`
-	ACSStatus               string     `json:"acs_status"`
+	ACSStatus               string     `json:"acs_status" gorm:"column:acs_status"`
 	Lat                     *float64   `json:"lat,omitempty"`
 	Lng                     *float64   `json:"lng,omitempty"`
 	CurrentAssignmentStatus *string    `json:"current_assignment_status,omitempty"`

@@ -30,7 +30,7 @@ type User struct {
 	CityFireMarshal      *string `json:"city_fire_marshal,omitempty"`
 	StationCommander     *string `json:"station_commander,omitempty"`
 	StationContactNumber *string `json:"station_contact_number,omitempty"`
-	ACSStatus            *string `json:"acs_status,omitempty"`
+	ACSStatus            *string `json:"acs_status,omitempty" gorm:"column:acs_status"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
