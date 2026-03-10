@@ -30,7 +30,7 @@ services:
       - path: ./.env
         required: false       # Start even without .env; fall back to defaults below
     environment:
-      - DATABASE_URL=postgres://bfp_admin:${DB_PASSWORD:-change_this_password_before_going_to_production}@db:5432/bfpacs_db
+      - DATABASE_URL=postgres://bfp_admin:${DB_PASSWORD:-change_this_password_before_going_to_production}@db:5432/bfpacs_db?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-change_this_secret_before_going_to_production}
       - GIN_MODE=${GIN_MODE:-release}
     ports:
