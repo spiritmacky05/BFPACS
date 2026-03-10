@@ -50,7 +50,7 @@ func NewConnectionPool() *gorm.DB {
 		&models.PersonnelIncidentLog{},
 	)
 	if err != nil {
-		log.Fatalf("Warning: Database AutoMigrate failed: %v", err)
+		log.Printf("⚠️  AutoMigrate warning (non-fatal, existing schema used): %v", err)
 	}
 
 	sqlDB, err := db.DB()

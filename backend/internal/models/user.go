@@ -11,7 +11,7 @@ import (
 // User maps to public.users (password_hash never serialized)
 type User struct {
 	ID           uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Email        string     `json:"email" gorm:"uniqueIndex;not null"`
+	Email        string     `json:"email" gorm:"uniqueIndex:users_email_key;not null"`
 	FullName     string     `json:"full_name"`
 	PasswordHash string     `json:"-" gorm:"column:password_hash"`
 	StationID    *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid"`
