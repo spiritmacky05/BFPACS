@@ -19,14 +19,14 @@ sudo -u postgres psql -c "ALTER ROLE bfp_admin CREATEDB;" 2>/dev/null || \
 
 # Step 2: Check if DB exists
 echo "[2/4] Checking if bfpacs database exists..."
-DB_EXISTS=$(PGPASSWORD='@Ultraman13' psql -U bfp_admin -h localhost -d postgres \
+DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -U bfp_admin -h localhost -d postgres \
     -tAc "SELECT 1 FROM pg_database WHERE datname='bfpacs';" 2>/dev/null)
 
 if [ "$DB_EXISTS" = "1" ]; then
     echo "       Database 'bfpacs' already exists. Skipping creation."
 else
     echo "       Creating database 'bfpacs'..."
-    PGPASSWORD='@Ultraman13' createdb -U bfp_admin -h localhost -O bfp_admin bfpacs
+    PGPASSWORD="$DB_PASSWORD" createdb -U bfp_admin -h localhost -O bfp_admin bfpacs
     echo "       Database created."
 fi
 
@@ -39,9 +39,9 @@ sudo -u postgres psql -d bfpacs -c "GRANT ALL ON SCHEMA public TO bfp_admin;" 2>
 
 # Step 4: Import backup
 echo "[4/4] Importing bfpacs_backup.sql..."
-PGPASSWORD='@Ultraman13' psql -U bfp_admin -h localhost -d bfpacs -f "$SQL_FILE" 2>&1 | \
+PGPASSWORD="$DB_PASSWORD" psql -U bfp_admin -h localhost -d bfpacs -f "$SQL_FILE" 2>&1 | \
     grep -v "^SET\|^SELECT\|^COPY\|^--\|already exists\|^$" || true
 
 echo ""
 echo "=== Setup Complete ==="
-echo "Verify with: PGPASSWORD='@Ultraman13' psql -U bfp_admin -h localhost -d bfpacs -c '\dt'"
+echo "Verify with: PGPASSWORD=\"\$DB_PASSWORD\" psql -U bfp_admin -h localhost -d bfpacs -c '\dt'"

@@ -37,8 +37,10 @@ type User struct {
 }
 
 type UpdateUserRequest struct {
+	FullName             *string `json:"full_name"`
 	Role                 *string `json:"role"`
 	Approved             *bool   `json:"approved"`
+	IsActive             *bool   `json:"is_active"`
 	UserType             *string `json:"user_type"`
 	SubRole              *string `json:"sub_role"`
 	PersonnelType        *string `json:"personnel_type"`

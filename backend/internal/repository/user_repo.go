@@ -63,11 +63,17 @@ func (r *UserRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, err
 func (r *UserRepo) UpdateUser(ctx context.Context, id uuid.UUID, req models.UpdateUserRequest) (*models.User, error) {
 	updates := map[string]interface{}{}
 
+	if req.FullName != nil {
+		updates["full_name"] = *req.FullName
+	}
 	if req.Role != nil {
 		updates["role"] = *req.Role
 	}
 	if req.Approved != nil {
 		updates["approved"] = *req.Approved
+	}
+	if req.IsActive != nil {
+		updates["is_active"] = *req.IsActive
 	}
 	if req.UserType != nil {
 		updates["user_type"] = *req.UserType

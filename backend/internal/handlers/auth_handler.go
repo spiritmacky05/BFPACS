@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -27,7 +28,8 @@ func NewAuthHandler(repo *repository.UserRepo, stationRepo *repository.StationRe
 func GenerateJWT(userID uuid.UUID, role string, stationID *uuid.UUID) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "bfpacs_super_secret_key_change_me_in_prod"
+		log.Println("⚠️  WARNING: JWT_SECRET not set, refusing to generate token")
+		return "", fmt.Errorf("JWT_SECRET environment variable must be set")
 	}
 
 	claims := jwt.MapClaims{

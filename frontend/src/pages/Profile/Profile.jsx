@@ -55,13 +55,19 @@ export default function Profile() {
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [stationName, setStationName] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    setError(null);
     usersApi.me().then(u => {
       setUser(u);
       setFormData(u || {});
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err) => {
+      console.error("Failed to load profile:", err);
+      setError("Failed to load profile data. Please refresh the page.");
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {

@@ -10,13 +10,24 @@ import (
 
 func SeedInitialUsers(db *gorm.DB) {
 	// Ensure existing users (created before the `approved` column) can still log in.
-	db.Model(&models.User{}).Where("approved IS NULL OR (role IN ? AND approved = false)",
-		[]string{"SuperAdmin", "superadmin", "Admin", "admin"},
+	// Also normalize any legacy PascalCase roles to lowercase.
+	db.Model(&models.User{}).Where("approved IS NULL").Update("approved", true)
+	db.Model(&models.User{}).Where("LOWER(role) IN ?",
+		[]string{"superadmin", "admin"},
 	).Update("approved", true)
 
+	// Normalize legacy PascalCase roles to lowercase
+	for _, mapping := range []struct{ Old, New string }{
+		{"SuperAdmin", "superadmin"},
+		{"Admin", "admin"},
+		{"Station Commander", "admin"},
+	} {
+		db.Model(&models.User{}).Where("role = ?", mapping.Old).Update("role", mapping.New)
+	}
+
 	users := []struct{ Email, Name, Role string }{
-		{"superadmin@bfp.gov.ph", "Super Admin", "SuperAdmin"},
-		{"admin@bfp.gov.ph", "Regional Admin", "Admin"},
+		{"superadmin@bfp.gov.ph", "Super Admin", "superadmin"},
+		{"admin@bfp.gov.ph", "Regional Admin", "admin"},
 		{"user@bfp.gov.ph", "Field Personnel", "user"},
 	}
 

@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -86,13 +87,15 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		req.Approved = nil
 	}
 
-	// Validate role if provided
+	// Validate and normalize role if provided (case-insensitive)
 	if req.Role != nil {
+		normalized := strings.ToLower(strings.TrimSpace(*req.Role))
 		validRoles := map[string]bool{"user": true, "admin": true, "superadmin": true}
-		if !validRoles[*req.Role] {
+		if !validRoles[normalized] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role, must be one of: user, admin, superadmin"})
 			return
 		}
+		req.Role = &normalized
 	}
 
 	user, err := h.userRepo.UpdateUser(c.Request.Context(), id, req)

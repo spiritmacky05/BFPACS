@@ -39,7 +39,7 @@ const labelClass = "text-xs text-gray-500 block mb-2";
 
 export default function UserEditModal({ user, onClose, onSave, saving }) {
   const [form, setForm] = useState({
-    role: user.role || "user",
+    role: (user.role || "user").toLowerCase(),
     user_type: user.user_type || "",
     sub_role: user.sub_role || "",
     approved: user.approved || false,
@@ -47,7 +47,7 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
     type_of_vehicle: user.type_of_vehicle || "",
     engine_number: user.engine_number || "",
     plate_number: user.plate_number || "",
-    fire_truck_capacity: user.fire_truck_capacity || "",
+    fire_truck_capacity: user.fire_truck_capacity ?? "",
     city_fire_marshal: user.city_fire_marshal || "",
     station_commander: user.station_commander || "",
     station_contact_number: user.station_contact_number || "",
@@ -82,22 +82,22 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
 
   const handleSave = () => {
     const payload = {
-      role: form.role,
+      role: form.role.toLowerCase(),
       approved: form.approved,
-      personnel_type: form.personnel_type,
-      type_of_vehicle: form.type_of_vehicle,
-      engine_number: form.engine_number,
-      plate_number: form.plate_number,
-      fire_truck_capacity: form.fire_truck_capacity ? Number(form.fire_truck_capacity) : null,
-      city_fire_marshal: form.city_fire_marshal,
-      station_commander: form.station_commander,
-      station_contact_number: form.station_contact_number,
+      personnel_type: form.personnel_type || null,
+      type_of_vehicle: form.type_of_vehicle || null,
+      engine_number: form.engine_number || null,
+      plate_number: form.plate_number || null,
+      fire_truck_capacity: form.fire_truck_capacity !== "" ? Number(form.fire_truck_capacity) : null,
+      city_fire_marshal: form.city_fire_marshal || null,
+      station_commander: form.station_commander || null,
+      station_contact_number: form.station_contact_number || null,
       acs_status: form.acs_status,
-      station_id: form.station_id || null,
+      station_id: form.station_id || "",
     };
     if (form.role === "user") {
-      payload.user_type = form.user_type;
-      payload.sub_role = form.sub_role;
+      payload.user_type = form.user_type || null;
+      payload.sub_role = form.sub_role || null;
     } else {
       payload.user_type = null;
       payload.sub_role = null;

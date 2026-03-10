@@ -72,12 +72,13 @@ export default function SuperAdmin() {
     setSaving(true);
     try {
       await usersApi.update(userId, payload);
+      loadUsers();
     } catch (err) {
       console.error("Failed to save user:", err);
+      alert(`Failed to save user: ${err.message || "Unknown error"}`);
     } finally {
       setSaving(false);
       setEditingUser(null);
-      loadUsers();
     }
   };
 

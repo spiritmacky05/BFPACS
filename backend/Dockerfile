@@ -13,13 +13,13 @@ COPY . .
 # Build the application (static binary, no CGO)
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api-server ./cmd/api/main.go
 
-# Final stage
-FROM alpine:latest
+# Final stage — pinned version prevents supply-chain drift
+FROM alpine:3.21
 
 WORKDIR /app
 
 # Add required packages
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata wget
 
 # Copy binary from builder
 COPY --from=builder /app/api-server .
