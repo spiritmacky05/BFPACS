@@ -16,7 +16,7 @@ import {
 import { createPageUrl }    from "@/utils";
 import { incidentsApi }     from "@/api/incidents/incidents";
 import { dispatchesApi }    from "@/api/dispatches/dispatches";
-import { fleetApi }         from "@/api/fleet/fleet";
+import { personnelApi }     from "@/api/personnel/personnel";
 import { useAuth }          from "@/context/AuthContext/AuthContext";
 import IncidentEditModal              from "../../components/incidents/IncidentEditModal/IncidentEditModal";
 import ConfirmationModal              from "../../components/common/ConfirmationModal/ConfirmationModal";
@@ -71,7 +71,7 @@ export default function IncidentDetail() {
   const TABS = [
     { id: 'overview',  label: 'Overview',           Icon: LayoutGrid,  ref: overviewRef },
     { id: 'personnel', label: 'Personnel',           Icon: Users,       ref: personnelRef },
-    { id: 'fleet',     label: 'Fleet & Equipment',   Icon: Activity,    ref: fleetRef },
+    { id: 'fleet',     label: 'Responders & Equipment', Icon: Activity,    ref: fleetRef },
     { id: 'history',   label: 'History',             Icon: FileText,    ref: historyRef },
   ];
 
@@ -99,15 +99,12 @@ export default function IncidentDetail() {
     try {
       await incidentsApi.updateStatus(incidentId, { incident_status: "Done" });
 
-      // Release dispatched fleet back to Serviceable
+      // Return all dispatched responders to On Duty
       const dispatches = await dispatchesApi.getByIncident(incidentId);
       await Promise.all(
-        (dispatches ?? []).map(d =>
-          Promise.all([
-            fleetApi.update(d.fleet_id, { status: "Serviceable" }),
-            fleetApi.logMovement(d.fleet_id, { status_code: "Incident Closed — Returned to Service" }),
-          ])
-        )
+        (dispatches ?? [])
+          .filter(d => d.personnel_id)
+          .map(d => personnelApi.updateDutyStatus(d.personnel_id, 'On Duty'))
       );
 
       setShowConfirm(false);

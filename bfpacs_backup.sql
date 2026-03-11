@@ -340,6 +340,7 @@ CREATE TABLE public.incident_dispatches (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     incident_id uuid,
     fleet_id uuid,
+    personnel_id uuid,
     dispatch_status character varying(50),
     check_in_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     check_out_time timestamp with time zone,

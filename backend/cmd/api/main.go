@@ -136,7 +136,7 @@ func main() {
 			d := protected.Group("/dispatches")
 			{
 				d.GET("", dispatchH.GetByIncident) // ?incident_id=
-				d.POST("", dispatchH.DispatchFleet)
+				d.POST("", dispatchH.DispatchResponder)
 				d.PATCH("/:id/status", dispatchH.UpdateStatus)
 			}
 

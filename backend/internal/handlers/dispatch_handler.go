@@ -18,17 +18,17 @@ func NewDispatchHandler(repo *repository.DispatchRepo) *DispatchHandler {
 	return &DispatchHandler{Repo: repo}
 }
 
-// DispatchFleet creates an En Route dispatch record
-func (h *DispatchHandler) DispatchFleet(c *gin.Context) {
-	var req models.DispatchFleetRequest
+// DispatchResponder creates an En Route dispatch record for a duty-personnel responder
+func (h *DispatchHandler) DispatchResponder(c *gin.Context) {
+	var req models.DispatchResponderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	d, err := h.Repo.DispatchFleet(c.Request.Context(), req)
+	d, err := h.Repo.DispatchResponder(c.Request.Context(), req)
 	if err != nil {
-		log.Printf("[DispatchHandler.DispatchFleet] %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to dispatch fleet"})
+		log.Printf("[DispatchHandler.DispatchResponder] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to dispatch responder"})
 		return
 	}
 	c.JSON(http.StatusCreated, d)
