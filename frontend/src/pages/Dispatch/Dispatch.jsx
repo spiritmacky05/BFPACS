@@ -30,12 +30,12 @@ export default function Dispatch() {
     setShowForm(false);
   };
 
-  if (loading) return <div className="text-center text-gray-500 py-16">Loading dispatch…</div>;
+  if (loading) return <div className="text-center text-gray-500 py-16">Loading dispatch...</div>;
 
   return (
     <div className="space-y-6">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-red-600/20 border border-red-600/30 rounded-lg flex items-center justify-center">
@@ -56,7 +56,7 @@ export default function Dispatch() {
         )}
       </div>
 
-      {/* ── Active incident selector ── */}
+      {/* Active incident selector */}
       <div className={card}>
         <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2">Active Incident</label>
         {!incidents.length ? (
@@ -69,14 +69,14 @@ export default function Dispatch() {
           >
             {incidents.map(i => (
               <option key={i.id} value={i.id}>
-                📍 {i.location_text} — {i.alarm_status}
+                {i.location_text} -- {i.alarm_status}
               </option>
             ))}
           </select>
         )}
       </div>
 
-      {/* ── Duty personnel grid ── */}
+      {/* Duty personnel grid */}
       <div className={card}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={sectionTitle}>
@@ -96,7 +96,7 @@ export default function Dispatch() {
         )}
       </div>
 
-      {/* ── Dispatch log ── */}
+      {/* Dispatch log */}
       <div className={card}>
         <div className="flex items-center justify-between mb-5">
           <h3 className={sectionTitle}>
@@ -139,7 +139,7 @@ export default function Dispatch() {
         )}
       </div>
 
-      {/* ── New Dispatch Modal ── */}
+      {/* New Dispatch Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-md">
@@ -161,10 +161,10 @@ export default function Dispatch() {
                   onChange={e => setSelectedInc(e.target.value)}
                   className="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outline-none"
                 >
-                  <option value="">Select incident…</option>
+                  <option value="">Select incident...</option>
                   {incidents.map(i => (
                     <option key={i.id} value={i.id}>
-                      {i.incident_type || 'Incident'} — {i.location_text}
+                      {i.incident_type || 'Incident'} -- {i.location_text}
                     </option>
                   ))}
                 </select>
@@ -212,8 +212,9 @@ export default function Dispatch() {
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="Dispatch notes…"
-                  className="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outlin     />
+                  placeholder="Dispatch notes..."
+                  className="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outline-none resize-none placeholder-gray-700"
+                />
               </div>
             </div>
 
@@ -229,7 +230,7 @@ export default function Dispatch() {
                 disabled={dispatching || !selectedInc || selectedResponders.length === 0}
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50"
               >
-                {dispatching ? 'Dispatching…' : `Dispatch${selectedResponders.length > 0 ? ` (${selectedResponders.length})` : ''}`}
+                {dispatching ? 'Dispatching...' : `Dispatch${selectedResponders.length > 0 ? ' (' + selectedResponders.length + ')' : ''}`}
               </button>
             </div>
           </div>
