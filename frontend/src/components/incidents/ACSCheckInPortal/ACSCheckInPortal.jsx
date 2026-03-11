@@ -51,7 +51,7 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
     setSaving(true);
     try {
       await checkinApi.manual({
-        personnel_id: selectedResponder.id,
+        user_id: selectedResponder.id,
         incident_id: incidentId,
       });
 
