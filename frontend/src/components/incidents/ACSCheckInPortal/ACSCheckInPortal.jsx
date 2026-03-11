@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { usersApi }      from "@/api/users/users";
+import { personnelApi }  from "@/api/personnel/personnel";
 import { checkinApi }    from "@/api/checkin/checkin";
 import { equipmentApi }  from "@/api/equipment/equipment";
 import { X, Search, Truck, Users, Package, CheckCircle, ChevronRight, Wifi } from "lucide-react";
@@ -17,6 +18,7 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
   const [search, setSearch] = useState("");
   const [allResponders, setAllResponders] = useState([]);
   const [allEquipment, setAllEquipment] = useState([]);
+  const [allPersonnel, setAllPersonnel] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -27,23 +29,20 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
     Promise.all([
       usersApi.list(),
       equipmentApi.list(),
-    ]).then(([users, equipment]) => {
+      personnelApi.list(),
+    ]).then(([users, equipment, personnel]) => {
       const responders = (users || []).filter(u => u.role === 'user' || u.user_type === 'responder');
       setAllResponders(responders);
       setAllEquipment(equipment || []);
+      setAllPersonnel(personnel || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
   const handleSelectResponder = (responder) => {
     setSelectedResponder(responder);
-
-    // Filter serviceable equipment for the same station
-    const stationEquipment = allEquipment.filter(eq =>
-      eq.status === "Serviceable" && eq.station_id === responder.station_id
-    );
-    setRelatedEquipment(stationEquipment);
-
+    // Show all serviceable equipment regardless of station
+    setRelatedEquipment(allEquipment.filter(eq => eq.status === "Serviceable"));
     setStep("confirm");
   };
 
@@ -204,11 +203,11 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
               <div>
                 <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
                   <Package className="w-3.5 h-3.5 text-orange-400" />
-                  Serviceable Station Equipment ({relatedEquipment.length})
+                  Serviceable Equipment ({relatedEquipment.length})
                 </div>
                 {relatedEquipment.length === 0 ? (
                   <div className="text-gray-600 text-xs py-3 text-center bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
-                    No serviceable equipment found for this station
+                    No serviceable equipment found
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-1.5">
@@ -224,6 +223,41 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
                   </div>
                 )}
               </div>
+
+              {/* On-Duty Personnel */}
+              {(() => {
+                const onDuty = allPersonnel.filter(p => p.duty_status === "On Duty");
+                return (
+                  <div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
+                      <Users className="w-3.5 h-3.5 text-blue-400" />
+                      On-Duty Personnel ({onDuty.length})
+                    </div>
+                    {onDuty.length === 0 ? (
+                      <div className="text-gray-600 text-xs py-3 text-center bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
+                        No personnel currently on duty
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {onDuty.map(p => (
+                          <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
+                            <div className="w-7 h-7 bg-blue-600/20 border border-blue-600/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Users className="w-3.5 h-3.5 text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white text-xs font-medium truncate">{p.full_name}</div>
+                              <div className="text-gray-500 text-xs">{p.rank}{p.designation ? ` · ${p.designation}` : ''}</div>
+                            </div>
+                            <span className="text-xs px-2 py-0.5 rounded border text-green-400 bg-green-600/10 border-green-600/30 flex-shrink-0">
+                              On Duty
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Footer */}
