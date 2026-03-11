@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dispatchesApi } from '@/api/dispatches/dispatches';
 import { incidentsApi  } from '@/api/incidents/incidents';
-import { fleetApi      } from '@/api/fleet/fleet';
+import { usersApi      } from '@/api/users/users';
 import { personnelApi  } from '@/api/personnel/personnel';
 import { RADIO_CODES } from './constants';
 
@@ -35,16 +35,16 @@ export const getHistory = (dispatchId, incidentId) =>
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useDispatchManager() {
-  const [incidents,     setIncidents]     = useState([]);
-  const [allFleets,     setAllFleets]     = useState([]);
-  const [personnel,     setPersonnel]     = useState([]);
-  const [dispatches,    setDispatches]    = useState([]);
-  const [selectedInc,   setSelectedInc]   = useState('');
-  const [selectedFleet, setSelectedFleet] = useState('');
-  const [notes,         setNotes]         = useState('');
-  const [dispatching,   setDispatching]   = useState(false);
-  const [loading,       setLoading]       = useState(true);
-  const [expanded,      setExpanded]      = useState({});
+  const [incidents,        setIncidents]        = useState([]);
+  const [allResponders,    setAllResponders]    = useState([]);
+  const [personnel,        setPersonnel]        = useState([]);
+  const [dispatches,       setDispatches]       = useState([]);
+  const [selectedInc,      setSelectedInc]      = useState('');
+  const [selectedResponder, setSelectedResponder] = useState('');
+  const [notes,            setNotes]            = useState('');
+  const [dispatching,      setDispatching]      = useState(false);
+  const [loading,          setLoading]          = useState(true);
+  const [expanded,         setExpanded]         = useState({});
 
   // ── Loaders ──────────────────────────────────────────────────────────────────
 
@@ -54,9 +54,10 @@ export function useDispatchManager() {
     setDispatches(data ?? []);
   }, []);
 
-  const loadFleets = useCallback(async () => {
-    const data = await fleetApi.list();
-    setAllFleets(data ?? []);
+  const loadResponders = useCallback(async () => {
+    const data = await usersApi.list();
+    const responders = (data ?? []).filter(u => u.role === 'user' || u.user_type === 'responder');
+    setAllResponders(responders);
   }, []);
 
   // Initial load
@@ -64,7 +65,7 @@ export function useDispatchManager() {
     const init = async () => {
       const [incData] = await Promise.all([
         incidentsApi.list(),
-        loadFleets(),
+        loadResponders(),
         personnelApi.list().then(d => setPersonnel(d ?? [])),
       ]);
 
@@ -79,7 +80,7 @@ export function useDispatchManager() {
       setLoading(false);
     };
     init();
-  }, [loadFleets, loadDispatches]);
+  }, [loadResponders, loadDispatches]);
 
   // Reload dispatches when selected incident changes
   useEffect(() => {
@@ -88,61 +89,51 @@ export function useDispatchManager() {
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  // Show all registered fleet vehicles in the dispatch selector
-  const availableFleets = allFleets;
+  // Responders available for dispatch — same users as Fleet page Responder Units
+  const availableResponders = allResponders;
 
-  const getFleetLabel = (fleetId) => {
-    const f = allFleets.find(x => x.id === fleetId);
-    if (!f) return 'Fleet Unit';
-    const name = f.user?.full_name || f.engine_code;
-    return f.vehicle_type ? `${name} — ${f.vehicle_type}` : name;
+  const getResponderLabel = (userId) => {
+    const u = allResponders.find(x => x.id === userId);
+    if (!u) return 'Responder Unit';
+    return u.type_of_vehicle ? `${u.full_name} — ${u.type_of_vehicle}` : u.full_name;
   };
 
   // ── Actions ───────────────────────────────────────────────────────────────────
 
   const handleDispatch = async () => {
-    if (!selectedInc || !selectedFleet) return;
+    if (!selectedInc || !selectedResponder) return;
     setDispatching(true);
 
     const payload = {
       incident_id: selectedInc,
-      fleet_id:    selectedFleet,
+      user_id:     selectedResponder,
     };
     if (notes.trim()) payload.situational_report = notes.trim();
 
     const created = await dispatchesApi.dispatch(payload);
 
-    // Mark the fleet as Dispatched
-    await fleetApi.update(selectedFleet, { status: 'Dispatched' });
-
     appendHistory(
       created?.id ?? 'new',
-      getFleetLabel(selectedFleet),
+      getResponderLabel(selectedResponder),
       null,
       RADIO_CODES.EN_ROUTE,
       selectedInc,
     );
 
-    setSelectedFleet('');
+    setSelectedResponder('');
     setNotes('');
     setDispatching(false);
-    await Promise.all([loadDispatches(selectedInc), loadFleets()]);
+    await loadDispatches(selectedInc);
   };
 
   const handleStatusUpdate = async (dispatch, newStatus) => {
     await dispatchesApi.updateStatus(dispatch.id, { dispatch_status: newStatus });
 
-    const label = dispatch.fleet
-      ? (dispatch.fleet.user?.full_name || dispatch.fleet.engine_code) + (dispatch.fleet.vehicle_type ? ` — ${dispatch.fleet.vehicle_type}` : '')
-      : getFleetLabel(dispatch.fleet_id);
+    const label = dispatch.responder
+      ? (dispatch.responder.full_name + (dispatch.responder.type_of_vehicle ? ` — ${dispatch.responder.type_of_vehicle}` : ''))
+      : getResponderLabel(dispatch.personnel_id);
 
     appendHistory(dispatch.id, label, dispatch.dispatch_status, newStatus, selectedInc);
-
-    // When fire is out the fleet unit is no longer committed to this incident
-    if ((newStatus === RADIO_CODES.FIRE_OUT || newStatus === RADIO_CODES.ENDING) && dispatch.fleet_id) {
-      await fleetApi.update(dispatch.fleet_id, { status: 'Serviceable' });
-      await loadFleets();
-    }
 
     await loadDispatches(selectedInc);
   };
@@ -151,10 +142,10 @@ export function useDispatchManager() {
   const refreshDispatches = ()   => loadDispatches(selectedInc);
 
   return {
-    incidents, allFleets, availableFleets, dispatches, personnel,
-    selectedInc,   setSelectedInc,
-    selectedFleet, setSelectedFleet,
-    notes,         setNotes,
+    incidents, allResponders, availableResponders, dispatches, personnel,
+    selectedInc,       setSelectedInc,
+    selectedResponder, setSelectedResponder,
+    notes,             setNotes,
     loading, dispatching, expanded,
     handleDispatch, handleStatusUpdate, toggleExpand, refreshDispatches,
   };

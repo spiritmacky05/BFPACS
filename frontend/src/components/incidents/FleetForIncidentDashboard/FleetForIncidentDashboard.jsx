@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { dispatchesApi } from "@/api/dispatches/dispatches";
-import { fleetApi }      from "@/api/fleet/fleet";
 import { checkinApi }    from "@/api/checkin/checkin";
 import { Truck }         from "lucide-react";
 
@@ -28,17 +27,7 @@ export default function FleetForIncidentDashboard({ incidentId }) {
 
         const dispatches = dispatchData ?? [];
 
-        // Attach fleet details — use preloaded data if available, else fetch
-        const enriched = await Promise.all(
-          dispatches.map(async d => {
-            if (d.fleet) return d;
-            if (!d.fleet_id) return d;
-            const fleet = await fleetApi.getById(d.fleet_id).catch(() => null);
-            return { ...d, fleet };
-          })
-        );
-
-        setDispatched(enriched);
+        setDispatched(dispatches);
         const unique = new Set((checkIns ?? []).map(c => c.personnel_id).filter(Boolean));
         setTotalCheckIns(unique.size);
       } catch (error) {
@@ -92,14 +81,14 @@ export default function FleetForIncidentDashboard({ incidentId }) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {dispatched.map(d => {
-          const f           = d.fleet;
+          const r           = d.responder;
           const dispStatus  = d.dispatch_status ?? 'En Route';
           const statusColor = dispatchStatusColors[dispStatus] ?? 'text-gray-400 bg-gray-600/10 border-gray-600/30';
-          const unitName    = f?.user?.full_name || f?.engine_code || '—';
+          const unitName    = r?.full_name || r?.email || '—';
           return (
             <div key={d.id} className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
               <div className="text-white text-xs font-semibold mb-1 truncate">{unitName}</div>
-              <div className="text-xs text-gray-500 mb-2">{f?.vehicle_type ?? '—'} {f?.plate_number ? `· ${f.plate_number}` : ''}</div>
+              <div className="text-xs text-gray-500 mb-2">{r?.type_of_vehicle ?? '—'} {r?.plate_number ? `· ${r.plate_number}` : ''}</div>
               <span className={`text-xs px-2 py-0.5 rounded border font-medium ${statusColor}`}>
                 {dispStatus}
               </span>

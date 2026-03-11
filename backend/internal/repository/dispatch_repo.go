@@ -21,15 +21,15 @@ func (r *DispatchRepo) DispatchResponder(ctx context.Context, req models.Dispatc
 	status := "En Route"
 	d := models.IncidentDispatch{
 		IncidentID:        &req.IncidentID,
-		FleetID:           &req.FleetID,
+		PersonnelID:       &req.UserID,
 		DispatchStatus:    &status,
 		SituationalReport: req.SituationalReport,
 	}
 	if err := r.db.WithContext(ctx).Create(&d).Error; err != nil {
 		return nil, err
 	}
-	// Reload with Fleet.User preloaded
-	if err := r.db.WithContext(ctx).Preload("Fleet.User").Where("id = ?", d.ID).First(&d).Error; err != nil {
+	// Reload with Responder (User) preloaded
+	if err := r.db.WithContext(ctx).Preload("Responder").Where("id = ?", d.ID).First(&d).Error; err != nil {
 		return &d, nil // return without preload rather than failing
 	}
 	return &d, nil
@@ -47,7 +47,7 @@ func (r *DispatchRepo) UpdateStatus(ctx context.Context, id uuid.UUID, req model
 
 func (r *DispatchRepo) GetByIncident(ctx context.Context, incidentID uuid.UUID) ([]models.IncidentDispatch, error) {
 	var list []models.IncidentDispatch
-	err := r.db.WithContext(ctx).Preload("Fleet.User").Where("incident_id = ?", incidentID).Order("check_in_time DESC").Find(&list).Error
+	err := r.db.WithContext(ctx).Preload("Responder").Where("incident_id = ?", incidentID).Order("check_in_time DESC").Find(&list).Error
 	return list, err
 }
 

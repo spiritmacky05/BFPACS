@@ -66,15 +66,14 @@ type IncidentDispatch struct {
 	CheckOutTime      *time.Time `json:"check_out_time,omitempty"`
 	SituationalReport *string    `json:"situational_report,omitempty"`
 
-	// Relations – populated via Preload
-	Fleet     *Fleet         `json:"fleet,omitempty" gorm:"foreignKey:FleetID"`
-	Personnel *DutyPersonnel `json:"personnel,omitempty" gorm:"foreignKey:PersonnelID"`
+	// Responder – the fleet/responder user dispatched, linked via PersonnelID → users.id
+	Responder *User `json:"responder,omitempty" gorm:"foreignKey:PersonnelID"`
 }
 
-// DispatchRequest dispatches a fleet vehicle to an incident with optional notes
+// DispatchRequest dispatches a responder unit (user) to an incident with optional notes
 type DispatchRequest struct {
 	IncidentID        uuid.UUID `json:"incident_id" binding:"required"`
-	FleetID           uuid.UUID `json:"fleet_id" binding:"required"`
+	UserID            uuid.UUID `json:"user_id" binding:"required"`
 	SituationalReport *string   `json:"situational_report,omitempty"`
 }
 

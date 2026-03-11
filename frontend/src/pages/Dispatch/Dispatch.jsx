@@ -20,10 +20,10 @@ export default function Dispatch() {
   const isAdmin  = role === 'admin' || role === 'superadmin';
 
   const {
-    incidents, availableFleets, dispatches, personnel,
-    selectedInc,   setSelectedInc,
-    selectedFleet, setSelectedFleet,
-    notes,         setNotes,
+    incidents, availableResponders, dispatches, personnel,
+    selectedInc,       setSelectedInc,
+    selectedResponder, setSelectedResponder,
+    notes,             setNotes,
     loading, dispatching, expanded,
     handleDispatch, handleStatusUpdate, toggleExpand, refreshDispatches,
   } = useDispatchManager();
@@ -93,13 +93,13 @@ export default function Dispatch() {
           </h3>
           <div className="space-y-3">
             <select
-              value={selectedFleet}
-              onChange={e => setSelectedFleet(e.target.value)}
+              value={selectedResponder}
+              onChange={e => setSelectedResponder(e.target.value)}
               className="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outline-none">
-              <option value="">— Select Serviceable Fleet —</option>
-              {availableFleets.map(f => (
-                <option key={f.id} value={f.id}>
-                  {f.user?.full_name || f.engine_code}{f.vehicle_type ? ` — ${f.vehicle_type}` : ''}
+              <option value="">— Select Responder Unit —</option>
+              {availableResponders.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name}{u.type_of_vehicle ? ` — ${u.type_of_vehicle}` : ''}
                 </option>
               ))}
             </select>
@@ -113,16 +113,16 @@ export default function Dispatch() {
             <div className="flex justify-end">
               <button
                 onClick={handleDispatch}
-                disabled={dispatching || !selectedFleet || !selectedInc}
+                disabled={dispatching || !selectedResponder || !selectedInc}
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-all">
                 <Send className="w-4 h-4" />
                 {dispatching ? 'Dispatching…' : 'Dispatch'}
               </button>
             </div>
           </div>
-          {!availableFleets.length && (
+          {!availableResponders.length && (
             <p className="text-gray-600 text-xs mt-3">
-              No serviceable fleet units available. All units are dispatched or inactive.
+              No responder units available.
             </p>
           )}
         </div>
@@ -155,14 +155,15 @@ export default function Dispatch() {
         ) : (
           <div className="space-y-4">
             {dispatches.map(d => {
-              const fleetLabel = d.fleet
-                ? (d.fleet.user?.full_name || d.fleet.engine_code) + (d.fleet.vehicle_type ? ` — ${d.fleet.vehicle_type}` : '')
-                : 'Fleet Unit';
               return (
                 <DispatchItem
                   key={d.id}
                   dispatch={d}
-                  fleetLabel={fleetLabel}
+                  fleetLabel={
+                    d.responder
+                      ? d.responder.full_name + (d.responder.type_of_vehicle ? ` — ${d.responder.type_of_vehicle}` : '')
+                      : 'Responder Unit'
+                  }
                   isAdmin={isAdmin}
                   selectedInc={selectedInc}
                   onStatusUpdate={handleStatusUpdate}
