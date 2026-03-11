@@ -52,10 +52,11 @@ type UpdateDutyStatusRequest struct {
 
 // UpdatePersonnelRequest is the request body for editing a personnel record
 type UpdatePersonnelRequest struct {
-	FullName           *string `json:"full_name"`
-	Rank               *string `json:"rank"`
-	Shift              *string `json:"shift"`
-	DutyStatus         *string `json:"duty_status"`
-	Certification      *string `json:"certification"`
-	IsStationCommander *bool   `json:"is_station_commander"`
+	StationID          *uuid.UUID `json:"station_id"`
+	FullName           *string    `json:"full_name"`
+	Rank               *string    `json:"rank"`
+	Shift              *string    `json:"shift"`
+	DutyStatus         *string    `json:"duty_status"`
+	Certification      *string    `json:"certification"`
+	IsStationCommander *bool      `json:"is_station_commander"`
 }

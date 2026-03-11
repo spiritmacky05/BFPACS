@@ -9,6 +9,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { UserCheck, UserX, Plus, X, Search, Pencil, Trash2, Shield } from 'lucide-react';
 import { personnelApi } from '@/api/personnel/personnel';
+import { stationsApi }  from '@/api/stations/stations';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
 import FilterSortPanel  from '@/pages/Dispatch/FilterSortPanel';
 
@@ -46,7 +47,7 @@ const TRAINING_SKILLS = [
 
 const EMPTY_FORM = {
   full_name: '', rank: 'FO1', shift: 'Shift A',
-  duty_status: 'On Duty', certification: '',
+  duty_status: 'On Duty', certification: '', station_id: '',
 };
 
 const parseCert = (cert) => cert ? cert.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -65,6 +66,7 @@ export default function DutyPersonnel() {
   const [confirm,   setConfirm]   = useState(null);
   const [stationFilters, setStationFilters] = useState({ station: '', city: '', district: '', region: '' });
   const [stationSort,    setStationSort]    = useState('');
+  const [stations,       setStations]       = useState([]);
 
   const { role } = useAuth();
   const isAdmin = role === 'superadmin' || role === 'admin';
@@ -76,7 +78,10 @@ export default function DutyPersonnel() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    stationsApi.list().then(d => setStations(d ?? [])).catch(() => {});
+  }, []);
 
   const toggleSkill = (skill) => {
     setSkills(prev => {
@@ -101,6 +106,7 @@ export default function DutyPersonnel() {
       shift: p.shift ?? 'Shift A',
       duty_status: p.duty_status,
       certification: p.certification ?? '',
+      station_id: p.station_id ?? '',
     });
     setSkills(parseCert(p.certification));
     setShowForm(true);
@@ -108,7 +114,11 @@ export default function DutyPersonnel() {
 
   const handleSave = async () => {
     setSaving(true);
-    const payload = { ...form, certification: joinCert(skills) };
+    const payload = {
+      ...form,
+      certification: joinCert(skills),
+      station_id: form.station_id || null,
+    };
     if (editId) {
       await personnelApi.update(editId, payload);
     } else {
@@ -349,6 +359,16 @@ export default function DutyPersonnel() {
                   placeholder="e.g. Juan dela Cruz"
                   className="w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-700 focus:outline-none focus:border-red-600/50" />
               </div>
+              {isAdmin && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Station</label>
+                  <select value={form.station_id} onChange={e => setForm({ ...form, station_id: e.target.value })}
+                    className="w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-red-600/50">
+                    <option value="">— No Station —</option>
+                    {stations.map(s => <option key={s.id} value={s.id}>{s.station_name}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Rank</label>

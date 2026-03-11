@@ -88,6 +88,9 @@ func (r *PersonnelRepo) Create(ctx context.Context, req models.CreatePersonnelRe
 
 func (r *PersonnelRepo) Update(ctx context.Context, id uuid.UUID, req models.UpdatePersonnelRequest) (*models.DutyPersonnel, error) {
 	updates := map[string]interface{}{}
+	if req.StationID != nil {
+		updates["station_id"] = *req.StationID
+	}
 	if req.FullName != nil {
 		updates["full_name"] = *req.FullName
 	}
