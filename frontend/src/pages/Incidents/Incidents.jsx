@@ -398,8 +398,21 @@ export default function Incidents() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-gray-400 text-xs uppercase tracking-wider">Coordinates (optional)</label>
                   <button type="button" disabled={geoLoading}
-                    onClick={() => {
+                    onClick={async () => {
                       if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
+                      if (!window.isSecureContext) { alert('Location access requires HTTPS. Please access the site via HTTPS or localhost.'); return; }
+
+                      // Check permission status first
+                      if (navigator.permissions) {
+                        try {
+                          const perm = await navigator.permissions.query({ name: 'geolocation' });
+                          if (perm.state === 'denied') {
+                            alert('Location access was previously denied.\n\nTo fix this:\n1. Click the lock/info icon in your browser address bar\n2. Find "Location" and set it to "Allow"\n3. Reload the page and try again');
+                            return;
+                          }
+                        } catch (_) { /* permissions API not fully supported, continue anyway */ }
+                      }
+
                       setGeoLoading(true);
                       navigator.geolocation.getCurrentPosition(
                         (pos) => {
@@ -408,10 +421,15 @@ export default function Incidents() {
                         },
                         (err) => {
                           console.error('Geolocation error:', err);
-                          alert('Unable to get your location. Please allow location access and try again.');
+                          const msgs = {
+                            1: 'Location permission was denied.\n\nClick the lock/info icon in your address bar → set Location to "Allow" → reload the page.',
+                            2: 'Could not determine your location. Make sure GPS/Location is enabled on your device and try again.',
+                            3: 'Location request timed out. Please check your connection and try again.',
+                          };
+                          alert(msgs[err.code] || 'Unable to get your location.');
                           setGeoLoading(false);
                         },
-                        { enableHighAccuracy: true, timeout: 10000 }
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                       );
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-600/40 text-red-400 hover:bg-red-600/10 text-xs font-medium transition-all disabled:opacity-50">
