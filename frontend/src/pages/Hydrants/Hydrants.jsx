@@ -7,9 +7,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2 } from 'lucide-react';
+import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2, Map as MapIcon } from 'lucide-react';
 import { hydrantsApi } from '@/api/hydrants/hydrants';
 import { useAuth }     from '@/context/AuthContext/AuthContext';
+import MapView from '@/components/common/MapView/MapView';
 
 const HYDRANT_STATUSES = ['Serviceable', 'Under Maintenance', 'Out of Service'];
 const HYDRANT_TYPES    = ['Dry Barrel', 'Wet Barrel', 'Stand Pipes'];
@@ -46,6 +47,7 @@ export default function Hydrants() {
   const [radius,       setRadius]       = useState(500);
   const [nearby,       setNearby]       = useState(null);
   const [confirm,      setConfirm]      = useState(null);
+  const [showMap,      setShowMap]      = useState(true);
 
   const { role } = useAuth();
   const canEdit = role === 'superadmin' || role === 'admin' || role === 'user';
@@ -189,6 +191,46 @@ export default function Hydrants() {
             Found {nearby.length} hydrant{nearby.length !== 1 ? 's' : ''} within {radius}m
           </div>
         )}
+      </div>
+
+      {/* Map Toggle + Map View */}
+      <div className="space-y-3">
+        <button
+          onClick={() => setShowMap(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+            showMap
+              ? 'bg-blue-600/20 border-blue-600/50 text-blue-400'
+              : 'bg-[#111] border-[#1f1f1f] text-gray-500 hover:border-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <MapIcon className="w-4 h-4" />
+          {showMap ? 'Hide Map' : 'Show Map'}
+        </button>
+
+        {showMap && (() => {
+          const mapMarkers = displayList
+            .filter(h => h.lat != null && h.lng != null)
+            .map(h => ({
+              type: 'hydrant',
+              lat: h.lat,
+              lng: h.lng,
+              label: h.address || h.address_text || 'Hydrant',
+              sub: `${h.hydrant_type || 'Hydrant'} • ${h.status}${h.psi ? ` • ${h.psi} PSI` : ''}`,
+              status: h.status,
+              distance: h.distance_meters,
+            }));
+
+          return mapMarkers.length > 0 ? (
+            <MapView markers={mapMarkers} height="380px" />
+          ) : (
+            <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl h-48 flex items-center justify-center">
+              <div className="text-center text-gray-600 text-sm">
+                <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                No hydrants with coordinates to display
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Cards Grid */}

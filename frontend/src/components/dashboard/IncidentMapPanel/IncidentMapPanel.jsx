@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { MapPin, Users, Truck, Shield } from "lucide-react";
+import MapView from "@/components/common/MapView/MapView";
+import { hydrantsApi } from "@/api/hydrants/hydrants";
 
 export default function IncidentMapPanel({ incident, trucks, checkins, personnel }) {
   const [unitCount, setUnitCount] = useState(0);
   const [personnelCount, setPersonnelCount] = useState(0);
+  const [nearbyHydrants, setNearbyHydrants] = useState([]);
   
   useEffect(() => {
     if (!incident) return;
@@ -15,6 +18,13 @@ export default function IncidentMapPanel({ incident, trucks, checkins, personnel
     // Count personnel checked in for this incident
     const checkedInPersonnel = checkins.filter(c => c.incident_id === incident.id && c.type !== "Check-Out").length;
     setPersonnelCount(checkedInPersonnel);
+
+    // Fetch nearby hydrants if we have coordinates
+    if (incident.lat && incident.lng) {
+      hydrantsApi.nearby(incident.lat, incident.lng, 2000)
+        .then(data => setNearbyHydrants(data ?? []))
+        .catch(() => setNearbyHydrants([]));
+    }
   }, [incident, trucks, checkins]);
 
   if (!incident) {
@@ -27,33 +37,54 @@ export default function IncidentMapPanel({ incident, trucks, checkins, personnel
 
   const groundCommanderInfo = personnel.find(p => p.full_name === incident.ground_commander);
 
+  // Build map markers: incident + nearby hydrants
+  const markers = [];
+  if (incident.lat && incident.lng) {
+    markers.push({
+      type: 'incident',
+      lat: incident.lat,
+      lng: incident.lng,
+      label: incident.location_text || 'Fire Location',
+      sub: `${incident.alarm_status || ''} — ${incident.incident_status}`,
+    });
+    nearbyHydrants.forEach(h => {
+      if (h.lat != null && h.lng != null) {
+        markers.push({
+          type: 'hydrant',
+          lat: h.lat,
+          lng: h.lng,
+          label: h.address_text || h.address || 'Hydrant',
+          sub: `${h.hydrant_type || 'Hydrant'} • ${h.status} ${h.psi ? `• ${h.psi} PSI` : ''}`,
+          status: h.status,
+          distance: h.distance_meters,
+        });
+      }
+    });
+  }
+
   return (
     <div className="space-y-4">
       {/* Map Container */}
-      <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl overflow-hidden">
-        <div className="w-full h-96 bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center relative">
-          {/* Simple map placeholder with incident location */}
-          <div className="text-center space-y-2">
-            <MapPin className="w-12 h-12 text-red-500 mx-auto" />
-            <div className="text-white font-semibold text-sm">{incident.location_text}</div>
-            <div className="text-gray-500 text-xs">
-              {incident.lat && incident.lng
-                ? `${incident.lat.toFixed(4)}, ${incident.lng.toFixed(4)}`
-                : "Location coordinates not available"}
+      {incident.lat && incident.lng ? (
+        <div>
+          <MapView markers={markers} height="400px" />
+          {nearbyHydrants.length > 0 && (
+            <div className="mt-2 text-xs text-blue-400">
+              🔵 {nearbyHydrants.length} hydrant{nearbyHydrants.length !== 1 ? 's' : ''} within 2km
             </div>
-            {incident.lat && incident.lng && (
-              <a
-                href={`https://maps.google.com/?q=${incident.lat},${incident.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-400 hover:text-red-300 text-xs mt-2 inline-block"
-              >
-                Open in Maps →
-              </a>
-            )}
+          )}
+        </div>
+      ) : (
+        <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl overflow-hidden">
+          <div className="w-full h-96 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <MapPin className="w-12 h-12 text-red-500 mx-auto" />
+              <div className="text-white font-semibold text-sm">{incident.location_text}</div>
+              <div className="text-gray-500 text-xs">Location coordinates not available</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Real-time Metrics */}
       <div className="grid grid-cols-3 gap-4">
