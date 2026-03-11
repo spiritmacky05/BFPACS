@@ -6,10 +6,15 @@
  * Migrated from bfpacs_update patterns onto existing REST API.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { UserCheck, UserX, Plus, X, Search, Pencil, Trash2, Shield } from 'lucide-react';
 import { personnelApi } from '@/api/personnel/personnel';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
+import FilterSortPanel  from '@/pages/Dispatch/FilterSortPanel';
+
+function uniq(items, fn) {
+  return [...new Set(items.map(fn).filter(Boolean))].sort();
+}
 
 const rankColors = {
   FO1: "text-gray-400", FO2: "text-gray-300", FO3: "text-gray-200",
@@ -58,6 +63,8 @@ export default function DutyPersonnel() {
   const [filter,    setFilter]    = useState('All');
   const [search,    setSearch]    = useState('');
   const [confirm,   setConfirm]   = useState(null);
+  const [stationFilters, setStationFilters] = useState({ station: '', city: '', district: '', region: '' });
+  const [stationSort,    setStationSort]    = useState('');
 
   const { role } = useAuth();
   const isAdmin = role === 'superadmin' || role === 'admin';
@@ -147,6 +154,21 @@ export default function DutyPersonnel() {
   const onDuty  = personnel.filter(p => p.duty_status === 'On Duty').length;
   const offDuty = personnel.filter(p => p.duty_status !== 'On Duty').length;
 
+  // Station filter options derived from loaded personnel
+  const stationOptions  = useMemo(() => uniq(personnel, p => p.station?.station_name), [personnel]);
+  const cityOptions     = useMemo(() => uniq(personnel, p => p.station?.city),         [personnel]);
+  const districtOptions = useMemo(() => uniq(personnel, p => p.station?.district),     [personnel]);
+  const regionOptions   = useMemo(() => uniq(personnel, p => p.station?.region),       [personnel]);
+
+  const handleStationFilter = (field, value) => {
+    if (field === 'all') {
+      setStationFilters({ station: '', city: '', district: '', region: '' });
+      setStationSort('');
+    } else {
+      setStationFilters(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
   const filtered = personnel
     .filter(p => filter === 'All' || p.duty_status === filter)
     .filter(p =>
@@ -154,7 +176,19 @@ export default function DutyPersonnel() {
       p.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       p.rank?.toLowerCase().includes(search.toLowerCase()) ||
       p.shift?.toLowerCase().includes(search.toLowerCase())
-    );
+    )
+    .filter(p => {
+      if (stationFilters.station  && p.station?.station_name !== stationFilters.station)  return false;
+      if (stationFilters.city     && p.station?.city         !== stationFilters.city)     return false;
+      if (stationFilters.district && p.station?.district     !== stationFilters.district) return false;
+      if (stationFilters.region   && p.station?.region       !== stationFilters.region)   return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (!stationSort) return 0;
+      const key = stationSort === 'station' ? 'station_name' : stationSort;
+      return (a.station?.[key] ?? '').localeCompare(b.station?.[key] ?? '');
+    });
 
   return (
     <div className="space-y-6">
@@ -193,7 +227,21 @@ export default function DutyPersonnel() {
         />
       </div>
 
-      {/* Filter */}
+      {/* Station / Location Filter — admin/superadmin only */}
+      {isAdmin && (
+        <FilterSortPanel
+          stationOptions={stationOptions}
+          cityOptions={cityOptions}
+          districtOptions={districtOptions}
+          regionOptions={regionOptions}
+          filters={stationFilters}
+          onFilterChange={handleStationFilter}
+          sortBy={stationSort}
+          onSortChange={setStationSort}
+        />
+      )}
+
+      {/* Duty-status Filter */}
       <div className="flex gap-2 flex-wrap">
         {['All', 'On Duty', 'Off Duty', 'On Leave'].map(f => (
           <button key={f} onClick={() => setFilter(f)}

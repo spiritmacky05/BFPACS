@@ -3,11 +3,15 @@
  * Logistical equipment tracker with borrow/return workflow.
  */
 
-import { useState, useEffect } from 'react';
-import { Package, Plus, X, ArrowLeft, ArrowRight, Edit2, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Package, Plus, X, ArrowLeft, ArrowRight, Edit2, Trash2, Search } from 'lucide-react';
 import { equipmentApi } from '@/api/equipment/equipment';
 import { usersApi }     from '@/api/users/users';
+import { stationsApi }  from '@/api/stations/stations';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
+import FilterSortPanel  from '@/pages/Dispatch/FilterSortPanel';
+
+function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort(); }
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
 const styles = {
@@ -76,11 +80,64 @@ export default function Equipment() {
   const [editItem, setEditItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
   const [users,    setUsers]    = useState([]);
+  const [stations, setStations] = useState([]);
+  const [search,   setSearch]   = useState('');
+  const [stationFilters, setStationFilters] = useState({ station: '', city: '', district: '', region: '' });
+  const [stationSort,    setStationSort]    = useState('');
 
   const { role, user } = useAuth();
   // All authenticated roles can add/edit/borrow equipment
   const isAdmin      = role === 'superadmin' || role === 'admin' || role === 'user';
   const isAdminRole  = role === 'superadmin' || role === 'admin';
+
+  // Build station lookup map
+  const stationMap = useMemo(() => {
+    const m = {};
+    stations.forEach(s => { m[s.id] = s; });
+    return m;
+  }, [stations]);
+
+  // Derive filter options from loaded stations
+  const stationOptions  = useMemo(() => uniq(stations.map(s => s.station_name)), [stations]);
+  const cityOptions     = useMemo(() => uniq(stations.map(s => s.city)),         [stations]);
+  const districtOptions = useMemo(() => uniq(stations.map(s => s.district)),     [stations]);
+  const regionOptions   = useMemo(() => uniq(stations.map(s => s.region)),       [stations]);
+
+  const handleStationFilter = (field, value) => {
+    if (field === 'all') {
+      setStationFilters({ station: '', city: '', district: '', region: '' });
+      setStationSort('');
+    } else {
+      setStationFilters(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // Apply search + station filters
+  const filtered = useMemo(() => {
+    return items
+      .filter(item => {
+        if (!search) return true;
+        const q = search.toLowerCase();
+        const name = (item.equipment_name || item.item_name || '').toLowerCase();
+        const borrower = (item.borrower_name || '').toLowerCase();
+        return name.includes(q) || borrower.includes(q);
+      })
+      .filter(item => {
+        const s = stationMap[item.station_id];
+        if (stationFilters.station  && s?.station_name !== stationFilters.station)  return false;
+        if (stationFilters.city     && s?.city         !== stationFilters.city)     return false;
+        if (stationFilters.district && s?.district     !== stationFilters.district) return false;
+        if (stationFilters.region   && s?.region       !== stationFilters.region)   return false;
+        return true;
+      })
+      .sort((a, b) => {
+        if (!stationSort) return 0;
+        const sa = stationMap[a.station_id];
+        const sb = stationMap[b.station_id];
+        const key = stationSort === 'station' ? 'station_name' : stationSort;
+        return (sa?.[key] ?? '').localeCompare(sb?.[key] ?? '');
+      });
+  }, [items, search, stationFilters, stationSort, stationMap]);
 
   const load = async () => {
     try {
@@ -103,7 +160,16 @@ export default function Equipment() {
     }
   };
 
-  useEffect(() => { load(); loadUsers(); }, []);
+  useEffect(() => { load(); loadUsers(); loadStations(); }, []);
+
+  const loadStations = async () => {
+    try {
+      const data = await stationsApi.list();
+      setStations(data ?? []);
+    } catch (err) {
+      console.error('Error loading stations:', err);
+    }
+  };
 
   const handleCreate = async () => {
     setSaving(true);
@@ -163,24 +229,52 @@ export default function Equipment() {
         )}
       </div>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by item name or borrower..."
+          className="w-full bg-[#111] border border-[#1f1f1f] rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-red-600/50"
+        />
+      </div>
+
+      {/* Station / Location Filter — admin/superadmin only */}
+      {isAdminRole && (
+        <FilterSortPanel
+          stationOptions={stationOptions}
+          cityOptions={cityOptions}
+          districtOptions={districtOptions}
+          regionOptions={regionOptions}
+          filters={stationFilters}
+          onFilterChange={handleStationFilter}
+          sortBy={stationSort}
+          onSortChange={setStationSort}
+        />
+      )}
+
       {loading ? (
         <div className={styles.table.loading}>Loading equipment...</div>
-      ) : !items.length ? (
-        <div className={styles.table.empty}>No equipment registered</div>
+      ) : !filtered.length ? (
+        <div className={styles.table.empty}>No equipment found</div>
       ) : (
         <div className={styles.table.wrapper}>
           <table className={styles.table.table}>
             <thead>
               <tr className={styles.table.theadTr}>
-                {['Item', 'Quantity', 'Status', 'Borrower', isAdmin ? 'Actions' : ''].filter(Boolean).map(h => (
+                {['Item', ...(isAdminRole ? ['Station'] : []), 'Quantity', 'Status', 'Borrower', isAdmin ? 'Actions' : ''].filter(Boolean).map(h => (
                   <th key={h} className={styles.table.th}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {items.map(item => (
+              {filtered.map(item => (
                 <tr key={item.id} className={styles.table.tbodyTr}>
                   <td className={styles.table.tdName}>{item.equipment_name || item.item_name}</td>
+                  {isAdminRole && (
+                    <td className={styles.table.tdText}>{stationMap[item.station_id]?.station_name || <span className="text-gray-600">—</span>}</td>
+                  )}
                   <td className={styles.table.tdText}>{item.quantity}</td>
                   <td className={styles.table.tdBadge}>
                     <span className={`${styles.table.badgeBase} ${
