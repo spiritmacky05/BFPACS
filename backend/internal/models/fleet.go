@@ -23,6 +23,8 @@ type Fleet struct {
 	CurrentAssignmentStatus *string    `json:"current_assignment_status,omitempty"`
 	CreatedAt               time.Time  `json:"created_at"`
 	UpdatedAt               time.Time  `json:"updated_at"`
+	// Relation – populated via Preload("User")
+	User *User `json:"user,omitempty" gorm:"foreignKey:UserID"`
 }
 
 // CreateFleetRequest is the request body for creating a fleet

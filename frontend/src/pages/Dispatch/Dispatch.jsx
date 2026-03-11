@@ -99,7 +99,7 @@ export default function Dispatch() {
               <option value="">— Select Serviceable Fleet —</option>
               {availableFleets.map(f => (
                 <option key={f.id} value={f.id}>
-                  {f.engine_code} — {f.vehicle_type}{f.ft_capacity ? ` (${f.ft_capacity})` : ''}
+                  {f.user?.full_name || f.engine_code}{f.vehicle_type ? ` — ${f.vehicle_type}` : ''}
                 </option>
               ))}
             </select>
@@ -156,7 +156,7 @@ export default function Dispatch() {
           <div className="space-y-4">
             {dispatches.map(d => {
               const fleetLabel = d.fleet
-                ? `${d.fleet.engine_code} — ${d.fleet.vehicle_type}`
+                ? (d.fleet.user?.full_name || d.fleet.engine_code) + (d.fleet.vehicle_type ? ` — ${d.fleet.vehicle_type}` : '')
                 : 'Fleet Unit';
               return (
                 <DispatchItem

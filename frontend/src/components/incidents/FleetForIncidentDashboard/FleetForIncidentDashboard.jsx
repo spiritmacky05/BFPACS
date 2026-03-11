@@ -4,14 +4,6 @@ import { fleetApi }      from "@/api/fleet/fleet";
 import { checkinApi }    from "@/api/checkin/checkin";
 import { Truck }         from "lucide-react";
 
-const truckTypeColors = {
-  Pumper:  "text-blue-400   bg-blue-600/10   border-blue-600/30",
-  Ladder:  "text-yellow-400 bg-yellow-600/10 border-yellow-600/30",
-  Tanker:  "text-purple-400 bg-purple-600/10 border-purple-600/30",
-  Rescue:  "text-green-400  bg-green-600/10  border-green-600/30",
-  Command: "text-red-400    bg-red-600/10    border-red-600/30",
-};
-
 const dispatchStatusColors = {
   'En Route':               'text-yellow-400 bg-yellow-600/10 border-yellow-600/30',
   '10-23 Arrived at Scene': 'text-blue-400   bg-blue-600/10   border-blue-600/30',
@@ -103,18 +95,11 @@ export default function FleetForIncidentDashboard({ incidentId }) {
           const f           = d.fleet;
           const dispStatus  = d.dispatch_status ?? 'En Route';
           const statusColor = dispatchStatusColors[dispStatus] ?? 'text-gray-400 bg-gray-600/10 border-gray-600/30';
-          const typeColor   = f ? (truckTypeColors[f.vehicle_type] ?? truckTypeColors.Pumper) : 'text-gray-400 bg-gray-600/10 border-gray-600/30';
+          const unitName    = f?.user?.full_name || f?.engine_code || '—';
           return (
             <div key={d.id} className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
-              <div className="text-xs font-mono text-gray-500 mb-1">{f?.engine_code ?? '—'}</div>
-              {f && (
-                <div className="mb-2">
-                  <span className={`text-xs px-2 py-0.5 rounded border font-semibold ${typeColor}`}>
-                    {f.vehicle_type}
-                  </span>
-                </div>
-              )}
-              <div className="text-xs text-gray-400 mb-2">{f?.plate_number ?? '—'}</div>
+              <div className="text-white text-xs font-semibold mb-1 truncate">{unitName}</div>
+              <div className="text-xs text-gray-500 mb-2">{f?.vehicle_type ?? '—'} {f?.plate_number ? `· ${f.plate_number}` : ''}</div>
               <span className={`text-xs px-2 py-0.5 rounded border font-medium ${statusColor}`}>
                 {dispStatus}
               </span>

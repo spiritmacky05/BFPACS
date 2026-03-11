@@ -19,7 +19,7 @@ func NewFleetRepo(db *gorm.DB) *FleetRepo {
 
 func (r *FleetRepo) GetAll(ctx context.Context) ([]models.Fleet, error) {
 	var list []models.Fleet
-	err := r.db.WithContext(ctx).Order("engine_code").Find(&list).Error
+	err := r.db.WithContext(ctx).Preload("User").Order("engine_code").Find(&list).Error
 	return list, err
 }
 
@@ -31,7 +31,7 @@ func (r *FleetRepo) GetByStation(ctx context.Context, stationID uuid.UUID) ([]mo
 
 func (r *FleetRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Fleet, error) {
 	var f models.Fleet
-	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&f).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Where("id = ?", id).First(&f).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

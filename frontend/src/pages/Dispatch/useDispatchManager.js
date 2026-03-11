@@ -93,7 +93,9 @@ export function useDispatchManager() {
 
   const getFleetLabel = (fleetId) => {
     const f = allFleets.find(x => x.id === fleetId);
-    return f ? `${f.engine_code} — ${f.vehicle_type}` : 'Fleet Unit';
+    if (!f) return 'Fleet Unit';
+    const name = f.user?.full_name || f.engine_code;
+    return f.vehicle_type ? `${name} — ${f.vehicle_type}` : name;
   };
 
   // ── Actions ───────────────────────────────────────────────────────────────────
@@ -131,7 +133,7 @@ export function useDispatchManager() {
     await dispatchesApi.updateStatus(dispatch.id, { dispatch_status: newStatus });
 
     const label = dispatch.fleet
-      ? `${dispatch.fleet.engine_code} — ${dispatch.fleet.vehicle_type}`
+      ? (dispatch.fleet.user?.full_name || dispatch.fleet.engine_code) + (dispatch.fleet.vehicle_type ? ` — ${dispatch.fleet.vehicle_type}` : '')
       : getFleetLabel(dispatch.fleet_id);
 
     appendHistory(dispatch.id, label, dispatch.dispatch_status, newStatus, selectedInc);
