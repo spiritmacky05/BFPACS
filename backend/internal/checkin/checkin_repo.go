@@ -72,6 +72,18 @@ func (r *CheckInRepo) CheckOut(ctx context.Context, logID uuid.UUID) error {
 	return r.db.WithContext(ctx).Model(&models.PersonnelIncidentLog{}).Where("id = ?", logID).Update("check_out_time", &now).Error
 }
 
+// GetUserByID looks up a responder user by UUID from the users table
+func (r *CheckInRepo) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	var u models.User
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &u, nil
+}
+
 // GetPersonnelByNFCTag performs an indexed lookup on nfc_tag_id
 func (r *CheckInRepo) GetPersonnelByNFCTag(ctx context.Context, tagID string) (*models.DutyPersonnel, error) {
 	var p models.DutyPersonnel

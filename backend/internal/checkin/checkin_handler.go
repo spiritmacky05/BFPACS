@@ -152,7 +152,7 @@ func (h *Handler) CheckOut(c *gin.Context) {
 }
 
 // ManualCheckIn handles POST /api/v1/checkin/manual
-// Allows admins/superadmins to deploy a personnel member directly to an active incident.
+// Allows admins/superadmins to deploy a responder user directly to an active incident.
 func (h *Handler) ManualCheckIn(c *gin.Context) {
 	var req models.ManualCheckInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -162,25 +162,25 @@ func (h *Handler) ManualCheckIn(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Step 1: Verify personnel exists
-	personnel, err := h.Repo.GetPersonnelByID(ctx, req.PersonnelID)
+	// Step 1: Verify responder user exists
+	user, err := h.Repo.GetUserByID(ctx, req.UserID)
 	if err != nil {
-		log.Printf("[CheckIn.ManualCheckIn] GetPersonnelByID: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to look up personnel"})
+		log.Printf("[CheckIn.ManualCheckIn] GetUserByID: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to look up responder"})
 		return
 	}
-	if personnel == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "personnel not found"})
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "responder not found"})
 		return
 	}
 
 	// Step 2: Atomically check and create check-in (prevents TOCTOU race)
-	checkinLog, err := h.Repo.CheckInAtomic(ctx, personnel.ID, req.IncidentID, "Manual")
+	checkinLog, err := h.Repo.CheckInAtomic(ctx, user.ID, req.IncidentID, "Manual")
 	if err != nil {
 		if errors.Is(err, ErrAlreadyCheckedIn) {
 			c.JSON(http.StatusConflict, gin.H{
-				"error":     "Personnel is already deployed to this incident",
-				"personnel": personnel,
+				"error": "Responder is already deployed to this incident",
+				"user":  user,
 			})
 			return
 		}
@@ -189,9 +189,9 @@ func (h *Handler) ManualCheckIn(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, models.CheckInResponse{
-		Log:       *checkinLog,
-		Personnel: *personnel,
-		Message:   "Personnel successfully deployed to incident",
+	c.JSON(http.StatusCreated, gin.H{
+		"log":     checkinLog,
+		"user":    user,
+		"message": "Responder successfully deployed to incident",
 	})
 }

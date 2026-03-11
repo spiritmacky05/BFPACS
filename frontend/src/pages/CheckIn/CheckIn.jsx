@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { checkinApi }   from '@/api/checkin/checkin';
 import { incidentsApi } from '@/api/incidents/incidents';
-import { personnelApi } from '@/api/personnel/personnel';
+import { usersApi }     from '@/api/users/users';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
 import { ApiError }     from '@/api/client/client';
 import CheckInDashboard from '../../components/checkin/CheckInDashboard/CheckInDashboard';
@@ -35,7 +35,7 @@ export default function CheckIn() {
   const [incidents,        setIncidents]        = useState([]);
   const [selectedIncident, setSelectedIncident] = useState('');
   const [logs,             setLogs]             = useState([]);
-  const [personnel,        setPersonnel]        = useState([]);
+  const [responders,       setResponders]       = useState([]);
   const [loadingLogs,      setLoadingLogs]      = useState(false);
 
   // NFC / PIN scanner
@@ -47,9 +47,9 @@ export default function CheckIn() {
   const nfcRef = useRef(null);
 
   // Manual check-in modal
-  const [showManual,   setShowManual]   = useState(false);
-  const [manualPersonnelId, setManualPersonnelId] = useState('');
-  const [saving,       setSaving]       = useState(false);
+  const [showManual,      setShowManual]      = useState(false);
+  const [manualResponderId, setManualResponderId] = useState('');
+  const [saving,          setSaving]          = useState(false);
 
   const { role } = useAuth();
   const isAdmin  = role === 'admin' || role === 'superadmin';
@@ -61,7 +61,10 @@ export default function CheckIn() {
       setIncidents(active);
       if (active.length > 0) setSelectedIncident(active[0].id);
     });
-    personnelApi.list().then(data => setPersonnel(data ?? []));
+    usersApi.list().then(data => {
+      const fleet = (data ?? []).filter(u => u.role === 'user' || u.user_type === 'responder');
+      setResponders(fleet);
+    });
   }, []);
 
   // Auto-focus NFC field when mode switches
@@ -125,12 +128,12 @@ export default function CheckIn() {
 
   // ── Manual check-in ────────────────────────────────────────────────────────
   const handleManual = async () => {
-    if (!manualPersonnelId || !selectedIncident) return;
+    if (!manualResponderId || !selectedIncident) return;
     setSaving(true);
     try {
-      await checkinApi.manual({ personnel_id: manualPersonnelId, incident_id: selectedIncident });
+      await checkinApi.manual({ user_id: manualResponderId, incident_id: selectedIncident });
       setShowManual(false);
-      setManualPersonnelId('');
+      setManualResponderId('');
       loadLogs();
     } catch (err) {
       alert(err.message || 'Check-in failed');
@@ -151,7 +154,7 @@ export default function CheckIn() {
   const checkedIn   = todayLogs.filter(l => !l.check_out_time).length;
   const checkedOut  = todayLogs.filter(l => l.check_out_time).length;
 
-  const getPersonnelName = id => personnel.find(p => p.id === id)?.full_name || '—';
+  const getResponderName = id => responders.find(u => u.id === id)?.full_name || '—';
 
   if (!isAdmin) {
     return (
@@ -319,7 +322,7 @@ export default function CheckIn() {
               <tbody className="divide-y divide-[#151515]">
                 {logs.map(log => (
                   <tr key={log.id} className="hover:bg-white/2 transition-all">
-                    <td className="px-4 py-3 text-white font-medium text-xs">{getPersonnelName(log.personnel_id)}</td>
+                    <td className="px-4 py-3 text-white font-medium text-xs">{getResponderName(log.personnel_id)}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded border ${TYPE_COLORS[log.entry_type] ?? TYPE_COLORS.Manual}`}>
                         {log.entry_type || 'Manual'}
@@ -366,13 +369,15 @@ export default function CheckIn() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1">Personnel</label>
-                <select value={manualPersonnelId}
-                  onChange={e => setManualPersonnelId(e.target.value)}
+                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1">Responder Unit</label>
+                <select value={manualResponderId}
+                  onChange={e => setManualResponderId(e.target.value)}
                   className={INPUT_CLS}>
-                  <option value="">Select personnel...</option>
-                  {personnel.filter(p => p.duty_status === 'On Duty').map(p => (
-                    <option key={p.id} value={p.id}>{p.full_name} — {p.rank}</option>
+                  <option value="">Select responder unit...</option>
+                  {responders.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name}{u.type_of_vehicle ? ` — ${u.type_of_vehicle}` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -388,7 +393,7 @@ export default function CheckIn() {
                 className="px-4 py-2 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white text-sm">
                 Cancel
               </button>
-              <button onClick={handleManual} disabled={saving || !manualPersonnelId}
+              <button onClick={handleManual} disabled={saving || !manualResponderId}
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50">
                 {saving ? 'Checking in...' : 'Confirm Check-In'}
               </button>

@@ -29,10 +29,10 @@ type PINCheckInRequest struct {
 	IncidentID uuid.UUID `json:"incident_id" binding:"required"`
 }
 
-// ManualCheckInRequest is the body for an admin/UI-initiated check-in by personnel UUID
+// ManualCheckInRequest is the body for an admin/UI-initiated check-in by responder user UUID
 type ManualCheckInRequest struct {
-	PersonnelID uuid.UUID `json:"personnel_id" binding:"required"`
-	IncidentID  uuid.UUID `json:"incident_id" binding:"required"`
+	UserID     uuid.UUID `json:"user_id" binding:"required"`
+	IncidentID uuid.UUID `json:"incident_id" binding:"required"`
 }
 
 // CheckInResponse is the response returned after a successful check-in
