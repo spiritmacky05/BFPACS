@@ -12,12 +12,11 @@ import { usersApi }    from "@/api/users/users";
 import { Users, Truck, Clock } from "lucide-react";
 
 export default function PersonnelBreakdownDashboard({ incidentId }) {
-  const [checkins,      setCheckins]      = useState([]);
-  const [nameMap,       setNameMap]       = useState({});
-  const [typeMap,       setTypeMap]       = useState({}); // id → 'responder' | 'personnel'
-  const [certMap,       setCertMap]       = useState({}); // personnel id → certification string
-  const [allPersonnel,  setAllPersonnel]  = useState([]);
-  const [loading,       setLoading]       = useState(true);
+  const [checkins,  setCheckins]  = useState([]);
+  const [nameMap,   setNameMap]   = useState({});
+  const [typeMap,   setTypeMap]   = useState({}); // id → 'responder' | 'personnel'
+  const [certMap,   setCertMap]   = useState({}); // personnel id → certification string
+  const [loading,   setLoading]   = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
@@ -27,7 +26,6 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
         usersApi.list(),
       ]);
 
-      // Build a unified name map from both sources
       const names  = {};
       const types  = {};
       const certs  = {};
@@ -44,7 +42,6 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
       setNameMap(names);
       setTypeMap(types);
       setCertMap(certs);
-      setAllPersonnel(personnel || []);
       setCheckins(logs || []);
     } catch (error) {
       console.error("Error fetching personnel breakdown:", error);
@@ -58,7 +55,7 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
     fetchData();
   }, [incidentId, fetchData]);
 
-  // Deduplicate by personnel_id, keep latest
+  // Deduplicate by personnel_id, keep latest entry
   const seen    = new Set();
   const active  = [];
   const checked = [];
@@ -69,9 +66,6 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
     else checked.push(log);
   });
 
-  // On-duty personnel list + certification type breakdown
-  const onDuty = allPersonnel.filter(p => p.duty_status === 'On Duty');
-  const CERT_TYPES = ['BFP', 'PNP', 'Fire Brigade', 'Fire Volunteer', 'DRRMO'];
   const CERT_COLORS = {
     'BFP':            'text-blue-400   bg-blue-600/15   border-blue-600/40',
     'PNP':            'text-green-400  bg-green-600/15  border-green-600/40',
@@ -79,12 +73,6 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
     'Fire Volunteer': 'text-purple-400 bg-purple-600/15 border-purple-600/40',
     'DRRMO':          'text-orange-400 bg-orange-600/15 border-orange-600/40',
   };
-  const certCounts = Object.fromEntries(CERT_TYPES.map(t => [t, 0]));
-  onDuty.forEach(p => {
-    const c = p.certification || 'BFP';
-    if (c in certCounts) certCounts[c]++;
-    else certCounts['BFP']++;
-  });
 
   if (loading) {
     return (
@@ -126,7 +114,7 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
         <Users className="w-3.5 h-3.5" /> Personnel Asset
       </div>
 
-      {/* Summary counts */}
+      {/* Summary counts — incident-scoped only */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3 text-center">
           <div className="text-2xl font-bold text-white">{active.length + checked.length}</div>
@@ -142,47 +130,7 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
         </div>
       </div>
 
-      {/* Certification type breakdown */}
-      <div className="mb-5">
-        <div className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">Personnel by Type (On Duty)</div>
-        <div className="grid grid-cols-5 gap-2">
-          {CERT_TYPES.map(type => (
-            <div key={type} className={`rounded-lg border p-2.5 text-center ${CERT_COLORS[type]}`}>
-              <div className="text-xl font-bold">{certCounts[type]}</div>
-              <div className="text-xs mt-0.5 opacity-75 leading-tight">{type}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Duty personnel on scene */}
-      {onDuty.length > 0 && (
-        <div className="mb-5">
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">
-            Duty Personnel on Scene ({onDuty.length})
-          </div>
-          <div className="space-y-1.5">
-            {onDuty.map(p => {
-              const cert      = p.certification || 'BFP';
-              const certColor = CERT_COLORS[cert] || CERT_COLORS['BFP'];
-              return (
-                <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
-                  <div className="w-7 h-7 bg-blue-600/20 border border-blue-600/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Users className="w-3.5 h-3.5 text-blue-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-xs font-medium truncate">{p.full_name}</div>
-                    <div className="text-gray-500 text-xs">{p.rank}{p.designation ? ` · ${p.designation}` : ''}</div>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded border flex-shrink-0 ${certColor}`}>{cert}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Active on-scene */}
+      {/* Currently on-scene */}
       {active.length > 0 && (
         <div className="mb-4">
           <div className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-semibold">Currently On-Scene</div>

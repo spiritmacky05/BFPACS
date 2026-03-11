@@ -25,8 +25,6 @@ import StatusHistoryPanel             from "../../components/incidents/StatusHis
 import PersonnelBreakdownDashboard    from "../../components/incidents/PersonnelBreakdownDashboard/PersonnelBreakdownDashboard";
 import FleetForIncidentDashboard      from "../../components/incidents/FleetForIncidentDashboard/FleetForIncidentDashboard";
 import ACSCheckInPortal               from "../../components/incidents/ACSCheckInPortal/ACSCheckInPortal";
-import CheckedInPersonnelList         from "../../components/incidents/CheckedInPersonnelList/CheckedInPersonnelList";
-import CheckedInEquipmentList         from "../../components/incidents/CheckedInEquipmentList/CheckedInEquipmentList";
 
 const statusColors = {
   Active:     "text-red-400 bg-red-600/10 border-red-600/30",
@@ -384,12 +382,6 @@ export default function IncidentDetail() {
       <div ref={fleetRef} className="scroll-mt-16">
         <FleetForIncidentDashboard incidentId={incidentId} />
       </div>
-
-      {/* Checked-In Personnel */}
-      <CheckedInPersonnelList key={`personnel-${checkInVersion}`} incidentId={incidentId} />
-
-      {/* Checked-In Equipment */}
-      <CheckedInEquipmentList key={`equipment-${checkInVersion}`} incidentId={incidentId} />
 
       {/* Printable content (hidden visually, used for print) */}
       <div ref={printRef} style={{ display: "none" }} dangerouslySetInnerHTML={{ __html: printableContent }} />
