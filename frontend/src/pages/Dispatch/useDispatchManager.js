@@ -88,9 +88,8 @@ export function useDispatchManager() {
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  const availableFleets = allFleets.filter(
-    f => f.status === 'Serviceable' || f.status === 'serviceable'
-  );
+  // Show all registered fleet vehicles in the dispatch selector
+  const availableFleets = allFleets;
 
   const getFleetLabel = (fleetId) => {
     const f = allFleets.find(x => x.id === fleetId);
