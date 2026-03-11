@@ -20,8 +20,8 @@ func NewHydrantHandler(repo *repository.HydrantRepo) *HydrantHandler {
 }
 
 func (h *HydrantHandler) GetAll(c *gin.Context) {
-	// Superadmin sees all hydrants; normal users see only their station's hydrants
-	if isSuperAdmin(c) {
+	// Admin and superadmin see all hydrants
+	if isAdminOrSuperAdmin(c) {
 		data, err := h.Repo.GetAll(c.Request.Context())
 		if err != nil {
 			log.Printf("[HydrantHandler.GetAll] %v", err)
@@ -32,12 +32,13 @@ func (h *HydrantHandler) GetAll(c *gin.Context) {
 		return
 	}
 
+	// Regular users see their station's hydrants + global (admin-added) hydrants
 	stationID := getStationID(c)
 	if stationID == nil {
 		c.JSON(http.StatusOK, []models.Hydrant{})
 		return
 	}
-	data, err := h.Repo.GetByStation(c.Request.Context(), *stationID)
+	data, err := h.Repo.GetByStationOrGlobal(c.Request.Context(), *stationID)
 	if err != nil {
 		log.Printf("[HydrantHandler.GetAll] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve hydrants"})

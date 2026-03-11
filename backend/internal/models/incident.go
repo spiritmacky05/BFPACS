@@ -36,6 +36,7 @@ type CreateIncidentRequest struct {
 	LocationText               string     `json:"location_text" binding:"required"`
 	Lat                        *float64   `json:"lat"`
 	Lng                        *float64   `json:"lng"`
+	DateTimeReported           *time.Time `json:"date_time_reported"`
 	OccupancyType              *string    `json:"occupancy_type"`
 	InvolvedType               *string    `json:"involved_type"`
 	AlarmStatus                string     `json:"alarm_status"`

@@ -239,7 +239,12 @@ export default function Hydrants() {
                     <Droplets className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold text-lg">{h.hydrant_type || 'Hydrant'}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-white font-semibold text-lg">{h.hydrant_type || 'Hydrant'}</h3>
+                      {!h.station_id && (
+                        <span className="text-xs px-1.5 py-0.5 rounded border border-blue-600/30 bg-blue-600/10 text-blue-400 font-normal">Added by Admin</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 text-gray-400 text-sm mt-0.5">
                       <MapPin className="w-3.5 h-3.5 text-red-400" />
                       {h.address || h.address_text || 'No address'}
@@ -345,6 +350,9 @@ export default function Hydrants() {
                         <Droplets className="w-4 h-4 text-blue-400" />
                       </div>
                       <span className="text-white font-medium text-sm">{h.hydrant_type || '—'}</span>
+                      {!h.station_id && (
+                        <span className="text-xs px-1.5 py-0.5 rounded border border-blue-600/30 bg-blue-600/10 text-blue-400 font-normal">Admin</span>
+                      )}
                     </div>
                     <span className={`text-xs font-medium px-2 py-1 rounded-full border ${STATUS_COLORS[h.status] ?? STATUS_COLORS['Serviceable']}`}>
                       {h.status}

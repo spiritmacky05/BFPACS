@@ -49,6 +49,7 @@ const EMPTY_FORM = {
   involved_type:   '',
   lat:             '',
   lng:             '',
+  date_time_reported: '',
 };
 
 const INPUT_CLS = "w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm focus:border-red-600 outline-none";
@@ -85,6 +86,7 @@ export default function Incidents() {
       ...form,
       lat: form.lat ? parseFloat(form.lat) : undefined,
       lng: form.lng ? parseFloat(form.lng) : undefined,
+      date_time_reported: form.date_time_reported ? new Date(form.date_time_reported).toISOString() : undefined,
     });
     setSaving(false);
     setShowForm(false);
@@ -371,6 +373,14 @@ export default function Incidents() {
                     <option key={a} value={a}>{a}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1">
+                  Date & Time Reported <span className="text-gray-600 text-xs normal-case">(defaults to now)</span>
+                </label>
+                <input type="datetime-local" value={form.date_time_reported}
+                  onChange={e => setForm(f => ({ ...f, date_time_reported: e.target.value }))}
+                  className={INPUT_CLS} />
               </div>
               <div>
                 <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1">

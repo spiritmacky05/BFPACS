@@ -1,5 +1,7 @@
-import { AlertTriangle, MapPin, Clock } from "lucide-react";
+import { AlertTriangle, MapPin, Clock, Map as MapIcon } from "lucide-react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const alarmColors = {
   "1st Alarm": "text-yellow-400 border-yellow-600/40 bg-yellow-600/10",
@@ -9,6 +11,15 @@ const alarmColors = {
 };
 
 export default function ActiveIncidentsList({ incidents, selectedIncident, onSelect }) {
+  const navigate = useNavigate();
+
+  const handleClick = (inc) => {
+    // Select for map preview
+    onSelect(inc);
+    // Navigate to full incident detail
+    navigate(createPageUrl(`IncidentDetail?id=${inc.id}`));
+  };
+
   if (!incidents?.length) {
     return (
       <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6">
@@ -32,7 +43,7 @@ export default function ActiveIncidentsList({ incidents, selectedIncident, onSel
         {incidents.map(inc => (
           <button
             key={inc.id}
-            onClick={() => onSelect(inc)}
+            onClick={() => handleClick(inc)}
             className={`w-full text-left border rounded-lg p-3 transition-all ${
               selectedIncident?.id === inc.id
                 ? "border-red-600/60 bg-red-600/10"
@@ -49,12 +60,20 @@ export default function ActiveIncidentsList({ incidents, selectedIncident, onSel
               <MapPin className="w-3 h-3" />
               <span>{inc.location_text}</span>
             </div>
-            {inc.date_time_reported && (
-              <div className="flex items-center gap-1 text-gray-600 text-xs mt-1">
-                <Clock className="w-3 h-3" />
-                <span>{format(new Date(inc.date_time_reported), "MMM d, h:mm a")}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3 mt-1">
+              {inc.date_time_reported && (
+                <div className="flex items-center gap-1 text-gray-600 text-xs">
+                  <Clock className="w-3 h-3" />
+                  <span>{format(new Date(inc.date_time_reported), "MMM d, h:mm a")}</span>
+                </div>
+              )}
+              {inc.lat && inc.lng && (
+                <div className="flex items-center gap-1 text-blue-400 text-xs">
+                  <MapIcon className="w-3 h-3" />
+                  <span>View Map</span>
+                </div>
+              )}
+            </div>
           </button>
         ))}
       </div>

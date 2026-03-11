@@ -29,6 +29,14 @@ func (r *HydrantRepo) GetByStation(ctx context.Context, stationID uuid.UUID) ([]
 	return list, err
 }
 
+// GetByStationOrGlobal returns hydrants belonging to the given station
+// OR hydrants with no station (created by admin, visible to all).
+func (r *HydrantRepo) GetByStationOrGlobal(ctx context.Context, stationID uuid.UUID) ([]models.Hydrant, error) {
+	var list []models.Hydrant
+	err := r.db.WithContext(ctx).Where("station_id = ? OR station_id IS NULL", stationID).Order("created_at DESC").Find(&list).Error
+	return list, err
+}
+
 func (r *HydrantRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Hydrant, error) {
 	var h models.Hydrant
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&h).Error; err != nil {

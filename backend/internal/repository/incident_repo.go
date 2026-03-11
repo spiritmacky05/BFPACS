@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sassinzz13/bfp-backend/internal/models"
@@ -44,11 +45,18 @@ func (r *IncidentRepo) Create(ctx context.Context, req models.CreateIncidentRequ
 		responseType = "Fire Incident"
 	}
 
+	// Use the provided date/time or default to now
+	reportedAt := time.Now()
+	if req.DateTimeReported != nil {
+		reportedAt = *req.DateTimeReported
+	}
+
 	i := models.FireIncident{
 		ReportedBy:                 req.ReportedBy,
 		LocationText:               req.LocationText,
 		Lat:                        req.Lat,
 		Lng:                        req.Lng,
+		DateTimeReported:           reportedAt,
 		OccupancyType:              req.OccupancyType,
 		InvolvedType:               req.InvolvedType,
 		AlarmStatus:                alarmStatus,
