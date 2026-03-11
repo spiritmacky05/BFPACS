@@ -20,31 +20,31 @@ func NewEquipmentHandler(repo *repository.EquipmentRepo) *EquipmentHandler {
 }
 
 func (h *EquipmentHandler) GetAll(c *gin.Context) {
-	// If station_id query param provided, filter by station (superadmin use)
-	if stationIDStr := c.Query("station_id"); stationIDStr != "" {
-		stationID, err := uuid.Parse(stationIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid station_id"})
-			return
-		}
-		list, err := h.Repo.GetByStation(c.Request.Context(), stationID)
+	// Superadmin and admin see all equipment
+	if isAdminOrSuperAdmin(c) {
+		data, err := h.Repo.GetAll(c.Request.Context())
 		if err != nil {
 			log.Printf("[EquipmentHandler.GetAll] %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 			return
 		}
-		c.JSON(http.StatusOK, list)
+		c.JSON(http.StatusOK, data)
 		return
 	}
 
-	// All authenticated users see all equipment
-	data, err := h.Repo.GetAll(c.Request.Context())
+	// Regular users only see their station's equipment
+	stationID := getStationID(c)
+	if stationID == nil {
+		c.JSON(http.StatusOK, []models.LogisticalEquipment{})
+		return
+	}
+	list, err := h.Repo.GetByStation(c.Request.Context(), *stationID)
 	if err != nil {
 		log.Printf("[EquipmentHandler.GetAll] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})
 		return
 	}
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, list)
 }
 
 func (h *EquipmentHandler) Create(c *gin.Context) {

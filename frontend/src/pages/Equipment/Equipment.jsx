@@ -67,7 +67,7 @@ const styles = {
   }
 };
 
-const EMPTY_FORM = { equipment_name: '', quantity: 1, condition: 'Good' };
+const EMPTY_FORM = { equipment_name: '', quantity: 1, condition: 'Good', station_id: '' };
 
 export default function Equipment() {
   const [items,    setItems]    = useState([]);
@@ -141,7 +141,8 @@ export default function Equipment() {
 
   const load = async () => {
     try {
-      const equipData = await equipmentApi.list();
+      // Regular users only fetch their station's equipment
+      const equipData = await equipmentApi.list(!isAdminRole ? (user?.station_id ?? undefined) : undefined);
       setItems(equipData ?? []);
     } catch (err) {
       console.error('Error loading equipment data:', err);
@@ -173,7 +174,9 @@ export default function Equipment() {
 
   const handleCreate = async () => {
     setSaving(true);
-    await equipmentApi.create(form);
+    const payload = { ...form };
+    if (!payload.station_id) delete payload.station_id;
+    await equipmentApi.create(payload);
     setSaving(false);
     setShowForm(false);
     setForm(EMPTY_FORM);
@@ -294,11 +297,13 @@ export default function Equipment() {
                             className={styles.table.actionBtnBorrowed}>
                             <ArrowRight className={styles.table.actionIcon} /> Borrow
                           </button>
-                        ) : (
+                        ) : (isAdminRole || item.borrower_name === user?.full_name) ? (
                           <button onClick={() => handleReturn(item.id)}
                             className={styles.table.actionBtnAvailable}>
                             <ArrowLeft className={styles.table.actionIcon} /> Return
                           </button>
+                        ) : (
+                          <span className="text-xs text-gray-600 px-2 py-1">Borrowed</span>
                         )}
                         <button onClick={() => setEditItem({ ...item })}
                           className="flex items-center justify-center px-2 py-1 border border-gray-600/40 text-gray-400 rounded hover:bg-gray-600/20 transition-all ml-1" title="Edit">
@@ -385,6 +390,16 @@ export default function Equipment() {
                   onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) }))}
                   className={styles.modal.input} />
               </div>
+              {isAdminRole && (
+                <div>
+                  <label className={styles.modal.labelSpaced}>Station</label>
+                  <select value={form.station_id} onChange={e => setForm(f => ({ ...f, station_id: e.target.value }))}
+                    className={styles.modal.input}>
+                    <option value="">— No Station —</option>
+                    {stations.map(s => <option key={s.id} value={s.id}>{s.station_name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className={styles.modal.footer}>
               <button onClick={() => setShowForm(false)}
