@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import {
   AlertTriangle, ArrowLeft, Printer, Pencil, MapPin,
   Shield, Users, FileText, Activity, Lock, Wifi, LayoutGrid, Navigation,
+  Flame, CheckCircle2,
 } from "lucide-react";
 import { createPageUrl }    from "@/utils";
 import { incidentsApi }     from "@/api/incidents/incidents";
@@ -51,8 +52,8 @@ export default function IncidentDetail() {
   const [incident,    setIncident]    = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [editing,     setEditing]     = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showACSPortal, setShowACSPortal] = useState(false);
+  const [pendingAction, setPendingAction]   = useState(null); // { title, message, confirmText, isDangerous, onConfirm }
+  const [showACSPortal, setShowACSPortal]   = useState(false);
   const [checkInVersion, setCheckInVersion] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const printRef = useRef();
@@ -93,27 +94,50 @@ export default function IncidentDetail() {
 
   useEffect(() => { load(); }, [incidentId]);
 
-  // ── Close incident ────────────────────────────────────────────────────────
-  const handleClose = async () => {
+  // ── Status helpers ────────────────────────────────────────────────────────
+  const quickUpdateStatus = async (newStatus) => {
     if (!incident) return;
     try {
-      await incidentsApi.updateStatus(incidentId, { incident_status: "Done" });
-
-      // Return all dispatched fleet units to Serviceable
-      const dispatches = await dispatchesApi.getByIncident(incidentId);
-      await Promise.all(
-        (dispatches ?? [])
-          .filter(d => d.fleet_id)
-          .map(d => fleetApi.update(d.fleet_id, { status: 'Serviceable' }))
-      );
-
-      setShowConfirm(false);
+      await incidentsApi.updateStatus(incidentId, { incident_status: newStatus });
+      if (newStatus === "Done") {
+        const dispatches = await dispatchesApi.getByIncident(incidentId);
+        await Promise.all(
+          (dispatches ?? [])
+            .filter(d => d.fleet_id)
+            .map(d => fleetApi.update(d.fleet_id, { status: 'Serviceable' }))
+        );
+      }
+      setPendingAction(null);
       load();
-    } catch (error) {
-      console.error("Error closing incident:", error);
-      setShowConfirm(false);
+    } catch (err) {
+      console.error("Error updating incident status:", err);
+      setPendingAction(null);
     }
   };
+
+  const confirmFireOut = () => setPendingAction({
+    title:       "Mark as Fire Out",
+    message:     "This will set the incident status to Fire Out and automatically check out all ACS personnel. Continue?",
+    confirmText: "Fire Out",
+    isDangerous: false,
+    onConfirm:   () => quickUpdateStatus("Fire Out"),
+  });
+
+  const confirmControlled = () => setPendingAction({
+    title:       "Mark as Controlled",
+    message:     "This will update the incident status to Controlled. Continue?",
+    confirmText: "Mark Controlled",
+    isDangerous: false,
+    onConfirm:   () => quickUpdateStatus("Controlled"),
+  });
+
+  const confirmClose = () => setPendingAction({
+    title:       "Close Incident",
+    message:     "Are you sure you want to close this incident? This will move it to the archive.",
+    confirmText: "Close Incident",
+    isDangerous: true,
+    onConfirm:   () => quickUpdateStatus("Done"),
+  });
 
   // ── Print / Export ────────────────────────────────────────────────────────
   const handlePrint = () => {
@@ -227,8 +251,20 @@ export default function IncidentDetail() {
               <Pencil className="w-4 h-4" /> Edit
             </button>
           )}
+          {isAdmin && incident.incident_status === "Active" && (
+            <button onClick={confirmControlled}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-yellow-600/40 text-yellow-400 hover:bg-yellow-600/10 text-sm transition-all">
+              <CheckCircle2 className="w-4 h-4" /> Mark Controlled
+            </button>
+          )}
+          {isAdmin && (incident.incident_status === "Active" || incident.incident_status === "Controlled") && (
+            <button onClick={confirmFireOut}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-600/40 text-blue-400 hover:bg-blue-600/10 text-sm transition-all">
+              <Flame className="w-4 h-4" /> Fire Out
+            </button>
+          )}
           {isAdmin && incident.incident_status !== "Done" && (
-            <button onClick={() => setShowConfirm(true)}
+            <button onClick={confirmClose}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600/40 text-gray-400 hover:text-white hover:border-gray-400 text-sm transition-all">
               <Lock className="w-4 h-4" /> Close Incident
             </button>
@@ -404,14 +440,14 @@ export default function IncidentDetail() {
       )}
 
       {/* Confirmation Modal */}
-      {showConfirm && (
+      {pendingAction && (
         <ConfirmationModal
-          title="Close Incident"
-          message="Are you sure you want to close this incident? This will move it to the archive."
-          confirmText="Close Incident"
-          isDangerous={true}
-          onConfirm={handleClose}
-          onCancel={() => setShowConfirm(false)}
+          title={pendingAction.title}
+          message={pendingAction.message}
+          confirmText={pendingAction.confirmText}
+          isDangerous={pendingAction.isDangerous}
+          onConfirm={pendingAction.onConfirm}
+          onCancel={() => setPendingAction(null)}
         />
       )}
 
