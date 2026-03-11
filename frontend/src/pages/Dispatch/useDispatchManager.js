@@ -3,6 +3,8 @@ import { dispatchesApi } from '@/api/dispatches/dispatches';
 import { incidentsApi  } from '@/api/incidents/incidents';
 import { usersApi      } from '@/api/users/users';
 import { personnelApi  } from '@/api/personnel/personnel';
+import { equipmentApi  } from '@/api/equipment/equipment';
+import { stationsApi   } from '@/api/stations/stations';
 import { DISPATCH_STATUSES } from './constants';
 
 // ─── localStorage history helpers ────────────────────────────────────────────
@@ -33,6 +35,8 @@ export function useDispatchManager() {
   const [incidents,          setIncidents]          = useState([]);
   const [allResponders,      setAllResponders]      = useState([]);
   const [personnel,          setPersonnel]          = useState([]);
+  const [equipment,          setEquipment]          = useState([]);
+  const [stations,           setStations]           = useState([]);
   const [dispatches,         setDispatches]         = useState([]);
   const [selectedInc,        setSelectedInc]        = useState('');
   const [selectedResponders, setSelectedResponders] = useState([]);
@@ -62,6 +66,8 @@ export function useDispatchManager() {
         incidentsApi.list(),
         loadResponders(),
         personnelApi.list().then(d => setPersonnel(d ?? [])),
+        equipmentApi.list().then(d => setEquipment(d ?? [])),
+        stationsApi.list().then(d => setStations(d ?? [])),
       ]);
       const active = (incData ?? []).filter(i => i.incident_status === 'Active');
       setIncidents(active);
@@ -101,7 +107,6 @@ export function useDispatchManager() {
     if (!selectedInc || !selectedResponders.length) return;
     setDispatching(true);
 
-    // Dispatch each selected responder individually (one API call per unit)
     await Promise.all(
       selectedResponders.map(async (userId) => {
         const payload = { incident_id: selectedInc, user_id: userId };
@@ -133,7 +138,6 @@ export function useDispatchManager() {
 
     appendHistory(dispatch.id, label, dispatch.dispatch_status, newStatus, selectedInc);
 
-    // On completion, reset the responder's ACS status to Serviceable
     if (newStatus === DISPATCH_STATUSES.COMPLETED && dispatch.personnel_id) {
       await usersApi.update(dispatch.personnel_id, { acs_status: 'Serviceable' });
       await loadResponders();
@@ -146,7 +150,7 @@ export function useDispatchManager() {
   const refreshDispatches = ()   => loadDispatches(selectedInc);
 
   return {
-    incidents, allResponders, availableResponders, dispatches, personnel,
+    incidents, allResponders, availableResponders, dispatches, personnel, equipment, stations,
     selectedInc,        setSelectedInc,
     selectedResponders, toggleResponder,
     notes,              setNotes,
