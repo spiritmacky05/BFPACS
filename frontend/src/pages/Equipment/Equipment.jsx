@@ -272,7 +272,14 @@ export default function Equipment() {
             <tbody>
               {filtered.map(item => (
                 <tr key={item.id} className={styles.table.tbodyTr}>
-                  <td className={styles.table.tdName}>{item.equipment_name || item.item_name}</td>
+                  <td className={styles.table.tdName}>
+                    <div className="flex items-center gap-2">
+                      {item.equipment_name || item.item_name}
+                      {!item.station_id && (
+                        <span className="text-xs px-1.5 py-0.5 rounded border border-blue-600/30 bg-blue-600/10 text-blue-400 font-normal">Admin</span>
+                      )}
+                    </div>
+                  </td>
                   {isAdminRole && (
                     <td className={styles.table.tdText}>{stationMap[item.station_id]?.station_name || <span className="text-gray-600">—</span>}</td>
                   )}
