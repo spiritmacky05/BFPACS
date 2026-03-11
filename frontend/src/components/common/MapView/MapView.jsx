@@ -34,6 +34,7 @@ const ICONS = {
   hydrantWarn: svgIcon('#eab308', 26),  // yellow — Under Maintenance
   hydrantBad:  svgIcon('#6b7280', 26),  // gray  — Out of Service
   user:        svgIcon('#22c55e', 30),  // green  — Your location
+  station:     svgIcon('#f97316', 30),  // orange — Fire station
 };
 
 function hydrantIcon(status) {
@@ -45,13 +46,13 @@ function hydrantIcon(status) {
 // ── Helper: auto-fit bounds ─────────────────────────────────────────────────
 function FitBounds({ markers }) {
   const map = useMap();
-  const fitted = useRef(false);
+  const prevCount = useRef(0);
   useEffect(() => {
     const pts = markers.filter(m => m.lat != null && m.lng != null);
-    if (!pts.length || fitted.current) return;
+    if (!pts.length || pts.length === prevCount.current) return;
     const bounds = L.latLngBounds(pts.map(m => [m.lat, m.lng]));
     map.fitBounds(bounds.pad(0.15), { maxZoom: 16 });
-    fitted.current = true;
+    prevCount.current = pts.length;
   }, [markers, map]);
   return null;
 }
@@ -99,6 +100,7 @@ export default function MapView({ markers = [], height = '400px', center, zoom =
         {validMarkers.map((m, i) => {
           const icon =
             m.type === 'incident' ? ICONS.incident
+            : m.type === 'station' ? ICONS.station
             : m.type === 'user' ? ICONS.user
             : hydrantIcon(m.status);
           return (

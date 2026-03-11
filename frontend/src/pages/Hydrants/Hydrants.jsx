@@ -7,10 +7,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2, Map as MapIcon } from 'lucide-react';
+import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2, Map as MapIcon, Navigation } from 'lucide-react';
 import { hydrantsApi } from '@/api/hydrants/hydrants';
 import { useAuth }     from '@/context/AuthContext/AuthContext';
 import MapView from '@/components/common/MapView/MapView';
+import { useMyStation } from '@/hooks/useMyStation/useMyStation';
 
 const HYDRANT_STATUSES = ['Serviceable', 'Under Maintenance', 'Out of Service'];
 const HYDRANT_TYPES    = ['Dry Barrel', 'Wet Barrel', 'Stand Pipes'];
@@ -52,6 +53,7 @@ export default function Hydrants() {
   const { role } = useAuth();
   const canEdit = role === 'superadmin' || role === 'admin' || role === 'user';
   const isAdmin = role === 'superadmin' || role === 'admin';
+  const myStation = useMyStation();
 
   const load = async () => {
     const data = await hydrantsApi.list();
@@ -220,6 +222,17 @@ export default function Hydrants() {
               distance: h.distance_meters,
             }));
 
+          // Add station marker
+          if (myStation?.lat != null && myStation?.lng != null) {
+            mapMarkers.push({
+              type: 'station',
+              lat: myStation.lat,
+              lng: myStation.lng,
+              label: myStation.station_name || 'Your Station',
+              sub: myStation.address_text || myStation.city || '',
+            });
+          }
+
           return mapMarkers.length > 0 ? (
             <MapView markers={mapMarkers} height="380px" />
           ) : (
@@ -285,6 +298,33 @@ export default function Hydrants() {
 
               {h.distance_meters != null && (
                 <div className="text-blue-400 text-xs">{Math.round(h.distance_meters)}m away</div>
+              )}
+
+              {/* Navigate buttons */}
+              {h.lat != null && h.lng != null && (
+                <div className="flex gap-2 flex-wrap">
+                  {(() => {
+                    const origin = myStation?.lat != null && myStation?.lng != null
+                      ? `${myStation.lat},${myStation.lng}` : '';
+                    const dest = `${h.lat},${h.lng}`;
+                    const googleUrl = origin
+                      ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
+                      : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+                    const wazeUrl = `https://waze.com/ul?ll=${dest}&navigate=yes`;
+                    return (
+                      <>
+                        <a href={googleUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 transition-all">
+                          <Navigation className="w-3 h-3" /> Google Maps
+                        </a>
+                        <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-purple-600/20 border border-purple-600/30 text-purple-400 hover:bg-purple-600/30 transition-all">
+                          <Navigation className="w-3 h-3" /> Waze
+                        </a>
+                      </>
+                    );
+                  })()}
+                </div>
               )}
 
               {canEdit && (

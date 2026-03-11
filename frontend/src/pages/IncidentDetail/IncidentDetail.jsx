@@ -11,13 +11,14 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import {
   AlertTriangle, ArrowLeft, Printer, Pencil, MapPin,
-  Shield, Users, FileText, Activity, Lock, Wifi, LayoutGrid,
+  Shield, Users, FileText, Activity, Lock, Wifi, LayoutGrid, Navigation,
 } from "lucide-react";
 import { createPageUrl }    from "@/utils";
 import { incidentsApi }     from "@/api/incidents/incidents";
 import { dispatchesApi }    from "@/api/dispatches/dispatches";
 import { fleetApi }         from "@/api/fleet/fleet";
 import { useAuth }          from "@/context/AuthContext/AuthContext";
+import { useMyStation }     from "@/hooks/useMyStation/useMyStation";
 import IncidentEditModal              from "../../components/incidents/IncidentEditModal/IncidentEditModal";
 import ConfirmationModal              from "../../components/common/ConfirmationModal/ConfirmationModal";
 import StatusHistoryPanel             from "../../components/incidents/StatusHistoryPanel/StatusHistoryPanel";
@@ -77,6 +78,7 @@ export default function IncidentDetail() {
 
   const { role } = useAuth();
   const isAdmin  = role === "admin" || role === "superadmin";
+  const myStation = useMyStation();
 
   // ── Data fetching ─────────────────────────────────────────────────────────
   const load = async () => {
@@ -317,6 +319,31 @@ export default function IncidentDetail() {
             <InfoRow label="Type of Occupancy" value={incident.occupancy_type} />
             {incident.lat && incident.lng && (
               <InfoRow label="Coordinates" value={`${incident.lat}, ${incident.lng}`} valueClass="text-gray-400 font-mono text-xs" />
+            )}
+            {incident.lat && incident.lng && (
+              <div className="flex gap-2 pt-3 flex-wrap">
+                {(() => {
+                  const origin = myStation?.lat != null && myStation?.lng != null
+                    ? `${myStation.lat},${myStation.lng}` : '';
+                  const dest = `${incident.lat},${incident.lng}`;
+                  const googleUrl = origin
+                    ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
+                    : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+                  const wazeUrl = `https://waze.com/ul?ll=${dest}&navigate=yes`;
+                  return (
+                    <>
+                      <a href={googleUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+                        <Navigation className="w-3.5 h-3.5" /> Google Maps
+                      </a>
+                      <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+                        <Navigation className="w-3.5 h-3.5" /> Waze
+                      </a>
+                    </>
+                  );
+                })()}
+              </div>
             )}
           </div>
         </div>

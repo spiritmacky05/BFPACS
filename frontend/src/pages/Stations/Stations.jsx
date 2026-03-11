@@ -5,10 +5,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, X, Edit2, Trash2, MapPin, Phone, RefreshCw } from 'lucide-react';
+import { Building2, Plus, X, Edit2, Trash2, MapPin, Phone, RefreshCw, Map as MapIcon, Navigation } from 'lucide-react';
 import { stationsApi } from '@/api/stations/stations';
 import { useAuth } from '@/context/AuthContext/AuthContext';
 import { Navigate } from 'react-router-dom';
+import MapView from '@/components/common/MapView/MapView';
 
 const EMPTY_FORM = {
   station_name: '',
@@ -18,6 +19,8 @@ const EMPTY_FORM = {
   address_text: '',
   contact_number: '',
   team_leader_contact: '',
+  lat: '',
+  lng: '',
 };
 
 const Field = ({ label, field, form, setForm, placeholder, required }) => (
@@ -80,6 +83,8 @@ export default function Stations() {
       address_text:         s.address_text         ?? '',
       contact_number:       s.contact_number       ?? '',
       team_leader_contact:  s.team_leader_contact  ?? '',
+      lat:                  s.lat                  ?? '',
+      lng:                  s.lng                  ?? '',
     });
     setFormError('');
     setShowForm(true);
@@ -97,6 +102,8 @@ export default function Stations() {
       ['contact_number', 'team_leader_contact', 'address_text'].forEach(k => {
         if (!payload[k]) payload[k] = null;
       });
+      payload.lat = payload.lat !== '' ? parseFloat(payload.lat) : null;
+      payload.lng = payload.lng !== '' ? parseFloat(payload.lng) : null;
       if (editItem) {
         await stationsApi.update(editItem.id, payload);
       } else {
@@ -134,6 +141,8 @@ export default function Stations() {
     { label: 'Address',      field: 'address_text',        placeholder: '123 Main St',             required: false },
     { label: 'Contact No.',  field: 'contact_number',      placeholder: '+63 2 1234 5678',         required: false },
     { label: 'Team Leader Contact', field: 'team_leader_contact', placeholder: '+63 9XX XXX XXXX', required: false },
+    { label: 'Latitude',  field: 'lat',  placeholder: 'e.g. 14.5995',  required: false },
+    { label: 'Longitude', field: 'lng',  placeholder: 'e.g. 120.9842', required: false },
   ];
 
   return (
@@ -156,6 +165,27 @@ export default function Stations() {
           </button>
         </div>
       </div>
+
+      {/* Station Map */}
+      {!loading && stations.length > 0 && (() => {
+        const mapMarkers = stations
+          .filter(s => s.lat != null && s.lng != null)
+          .map(s => ({
+            type: 'station',
+            lat: s.lat,
+            lng: s.lng,
+            label: s.station_name,
+            sub: [s.address_text, s.city, s.district].filter(Boolean).join(', '),
+          }));
+        return mapMarkers.length > 0 ? (
+          <div>
+            <h3 className="text-white font-medium text-sm flex items-center gap-2 mb-3">
+              <MapIcon className="w-4 h-4 text-orange-400" /> Station Locations
+            </h3>
+            <MapView markers={mapMarkers} height="350px" />
+          </div>
+        ) : null;
+      })()}
 
       {/* Table */}
       {loading ? (

@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { MapPin, Users, Truck, Shield } from "lucide-react";
+import { MapPin, Users, Truck, Shield, Navigation } from "lucide-react";
 import MapView from "@/components/common/MapView/MapView";
 import { hydrantsApi } from "@/api/hydrants/hydrants";
+import { useMyStation } from "@/hooks/useMyStation/useMyStation";
 
 export default function IncidentMapPanel({ incident, trucks, checkins, personnel }) {
   const [unitCount, setUnitCount] = useState(0);
   const [personnelCount, setPersonnelCount] = useState(0);
   const [nearbyHydrants, setNearbyHydrants] = useState([]);
+  const myStation = useMyStation();
   
   useEffect(() => {
     if (!incident) return;
@@ -60,6 +62,16 @@ export default function IncidentMapPanel({ incident, trucks, checkins, personnel
         });
       }
     });
+    // Add user's station marker
+    if (myStation?.lat != null && myStation?.lng != null) {
+      markers.push({
+        type: 'station',
+        lat: myStation.lat,
+        lng: myStation.lng,
+        label: myStation.station_name || 'Your Station',
+        sub: myStation.address_text || myStation.city || '',
+      });
+    }
   }
 
   return (
@@ -68,11 +80,35 @@ export default function IncidentMapPanel({ incident, trucks, checkins, personnel
       {incident.lat && incident.lng ? (
         <div>
           <MapView markers={markers} height="400px" />
-          {nearbyHydrants.length > 0 && (
-            <div className="mt-2 text-xs text-blue-400">
-              🔵 {nearbyHydrants.length} hydrant{nearbyHydrants.length !== 1 ? 's' : ''} within 2km
-            </div>
-          )}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {/* Navigate buttons */}
+            {(() => {
+              const origin = myStation?.lat != null && myStation?.lng != null
+                ? `${myStation.lat},${myStation.lng}` : '';
+              const dest = `${incident.lat},${incident.lng}`;
+              const googleUrl = origin
+                ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
+                : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+              const wazeUrl = `https://waze.com/ul?ll=${dest}&navigate=yes`;
+              return (
+                <>
+                  <a href={googleUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                    <Navigation className="w-4 h-4" /> Navigate (Google Maps)
+                  </a>
+                  <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                    <Navigation className="w-4 h-4" /> Navigate (Waze)
+                  </a>
+                </>
+              );
+            })()}
+            {nearbyHydrants.length > 0 && (
+              <span className="text-xs text-blue-400">
+                🔵 {nearbyHydrants.length} hydrant{nearbyHydrants.length !== 1 ? 's' : ''} within 2km
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl overflow-hidden">
