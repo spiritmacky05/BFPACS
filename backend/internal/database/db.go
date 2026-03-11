@@ -27,9 +27,25 @@ func NewConnectionPool() *gorm.DB {
 		Logger: logger.Default.LogMode(logLevel),
 	}
 
-	db, err := gorm.Open(postgres.Open(connStr), config)
+	// Retry connection up to 30 times (≈30s) – the DB may still be
+	// running init SQL even after pg_isready passes.
+	var db *gorm.DB
+	var err error
+	for i := 1; i <= 30; i++ {
+		db, err = gorm.Open(postgres.Open(connStr), config)
+		if err == nil {
+			// Verify the underlying connection is truly usable
+			if sqlDB, pingErr := db.DB(); pingErr == nil {
+				if pingErr = sqlDB.Ping(); pingErr == nil {
+					break
+				}
+			}
+		}
+		log.Printf("⏳ DB connection attempt %d/30 failed, retrying in 1s: %v", i, err)
+		time.Sleep(time.Second)
+	}
 	if err != nil {
-		log.Fatalf("Unable to connect to database using GORM: %v", err)
+		log.Fatalf("Unable to connect to database after 30 retries: %v", err)
 	}
 
 	// AutoMigrate all models
