@@ -102,7 +102,7 @@ export default function Incidents() {
         (dispatches ?? []).map(d =>
           Promise.all([
             fleetApi.update(d.fleet_id, { status: 'Serviceable' }),
-            fleetApi.logMovement(d.fleet_id, { status_code: 'Fire Out — Returned to Service' }),
+            fleetApi.logMovement(d.fleet_id, { status_code: 'Fire Out' }),
           ])
         )
       );
