@@ -8,7 +8,7 @@
  *   personnel — a DutyPersonnel object from the API
  */
 
-import { Award } from 'lucide-react';
+import { Award, Building2 } from 'lucide-react';
 import PersonnelLink from '@/components/PersonnelLink/PersonnelLink';
 
 const DUTY_STYLES = {
@@ -46,12 +46,19 @@ export default function PersonnelCard({ personnel: p }) {
         </span>
       </div>
 
-      {/* Shift + optional certification */}
+      {/* Shift + station + optional certification */}
       <div className="flex flex-col gap-1 pt-1 border-t border-[#1f1f1f]">
         <div className="flex items-center gap-1.5 text-xs">
           <span className="text-gray-600">Shift:</span>
           <span className="text-gray-300">{p.shift ?? '—'}</span>
         </div>
+        {p.station && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <Building2 className="w-3 h-3 text-gray-500 flex-shrink-0" />
+            <span className="text-gray-400 truncate">{p.station.station_name}</span>
+            {p.station.city && <span className="text-gray-600 truncate">· {p.station.city}</span>}
+          </div>
+        )}
         {p.certification && p.certification !== 'None' && (
           <div className="flex items-center gap-1.5 text-xs">
             <Award className="w-3 h-3 text-blue-400 flex-shrink-0" />
