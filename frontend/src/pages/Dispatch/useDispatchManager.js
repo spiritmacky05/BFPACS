@@ -112,6 +112,9 @@ export function useDispatchManager() {
 
     const created = await dispatchesApi.dispatch(payload);
 
+    // Mark the responder unit as ACS Activated
+    await usersApi.update(selectedResponder, { acs_status: 'ACS Activated' });
+
     appendHistory(
       created?.id ?? 'new',
       getResponderLabel(selectedResponder),
@@ -134,6 +137,12 @@ export function useDispatchManager() {
       : getResponderLabel(dispatch.personnel_id);
 
     appendHistory(dispatch.id, label, dispatch.dispatch_status, newStatus, selectedInc);
+
+    // When fire is out, reset the responder unit's ACS status to Serviceable
+    if ((newStatus === RADIO_CODES.FIRE_OUT || newStatus === RADIO_CODES.ENDING) && dispatch.personnel_id) {
+      await usersApi.update(dispatch.personnel_id, { acs_status: 'Serviceable' });
+      await loadResponders();
+    }
 
     await loadDispatches(selectedInc);
   };
