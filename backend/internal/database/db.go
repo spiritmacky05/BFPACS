@@ -69,6 +69,10 @@ func NewConnectionPool() *gorm.DB {
 		log.Printf("⚠️  AutoMigrate warning (non-fatal, existing schema used): %v", err)
 	}
 
+	// Drop FK constraint so personnel_incident_logs.personnel_id can hold
+	// either duty_personnel IDs (NFC/PIN) or users IDs (responder check-ins).
+	db.Exec("ALTER TABLE personnel_incident_logs DROP CONSTRAINT IF EXISTS personnel_incident_logs_personnel_id_fkey")
+
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatalf("Failed to get generic db object: %v", err)

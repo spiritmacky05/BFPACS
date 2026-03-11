@@ -75,6 +75,8 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
     u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const onDutyPersonnel = allPersonnel.filter(p => p.duty_status === "On Duty");
+
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
       <div className="bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-2xl max-h-[88vh] flex flex-col">
@@ -225,39 +227,34 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
               </div>
 
               {/* On-Duty Personnel */}
-              {(() => {
-                const onDuty = allPersonnel.filter(p => p.duty_status === "On Duty");
-                return (
-                  <div>
-                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
-                      <Users className="w-3.5 h-3.5 text-blue-400" />
-                      On-Duty Personnel ({onDuty.length})
-                    </div>
-                    {onDuty.length === 0 ? (
-                      <div className="text-gray-600 text-xs py-3 text-center bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
-                        No personnel currently on duty
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {onDuty.map(p => (
-                          <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
-                            <div className="w-7 h-7 bg-blue-600/20 border border-blue-600/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Users className="w-3.5 h-3.5 text-blue-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-white text-xs font-medium truncate">{p.full_name}</div>
-                              <div className="text-gray-500 text-xs">{p.rank}{p.designation ? ` · ${p.designation}` : ''}</div>
-                            </div>
-                            <span className="text-xs px-2 py-0.5 rounded border text-green-400 bg-green-600/10 border-green-600/30 flex-shrink-0">
-                              On Duty
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              <div>
+                <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
+                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  On-Duty Personnel ({onDutyPersonnel.length})
+                </div>
+                {onDutyPersonnel.length === 0 ? (
+                  <div className="text-gray-600 text-xs py-3 text-center bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
+                    No personnel currently on duty
                   </div>
-                );
-              })()}
+                ) : (
+                  <div className="space-y-1.5">
+                    {onDutyPersonnel.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
+                        <div className="w-7 h-7 bg-blue-600/20 border border-blue-600/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Users className="w-3.5 h-3.5 text-blue-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white text-xs font-medium truncate">{p.full_name}</div>
+                          <div className="text-gray-500 text-xs">{p.rank}{p.designation ? ` · ${p.designation}` : ''}</div>
+                        </div>
+                        <span className="text-xs px-2 py-0.5 rounded border text-green-400 bg-green-600/10 border-green-600/30 flex-shrink-0">
+                          On Duty
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
