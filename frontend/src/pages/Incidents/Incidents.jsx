@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Plus, Clock, X, Pencil, Trash2, Grid, List } from 'lucide-react';
+import { AlertTriangle, Plus, Clock, X, Pencil, Trash2, Grid, List, LocateFixed } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -64,6 +64,7 @@ export default function Incidents() {
   const [editingIncident,setEditingIncident]= useState(null);
   const [confirmAction,  setConfirmAction]  = useState(null);
   const [viewMode,       setViewMode]       = useState('card');
+  const [geoLoading,     setGeoLoading]     = useState(false);
   const navigate = useNavigate();
 
   const { role }       = useAuth();
@@ -393,20 +394,44 @@ export default function Incidents() {
                   {OCCUPANCY_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1">Latitude (optional)</label>
-                  <input type="number" step="any" value={form.lat}
-                    onChange={e => setForm(f => ({ ...f, lat: e.target.value }))}
-                    placeholder="14.5995"
-                    className={INPUT_CLS} />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider">Coordinates (optional)</label>
+                  <button type="button" disabled={geoLoading}
+                    onClick={() => {
+                      if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
+                      setGeoLoading(true);
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          setForm(f => ({ ...f, lat: pos.coords.latitude.toFixed(6), lng: pos.coords.longitude.toFixed(6) }));
+                          setGeoLoading(false);
+                        },
+                        (err) => {
+                          console.error('Geolocation error:', err);
+                          alert('Unable to get your location. Please allow location access and try again.');
+                          setGeoLoading(false);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
+                      );
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-600/40 text-red-400 hover:bg-red-600/10 text-xs font-medium transition-all disabled:opacity-50">
+                    <LocateFixed className={`w-3.5 h-3.5 ${geoLoading ? 'animate-pulse' : ''}`} />
+                    {geoLoading ? 'Getting Location...' : 'Use My Location'}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1">Longitude (optional)</label>
-                  <input type="number" step="any" value={form.lng}
-                    onChange={e => setForm(f => ({ ...f, lng: e.target.value }))}
-                    placeholder="120.9842"
-                    className={INPUT_CLS} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input type="number" step="any" value={form.lat}
+                      onChange={e => setForm(f => ({ ...f, lat: e.target.value }))}
+                      placeholder="Latitude (14.5995)"
+                      className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <input type="number" step="any" value={form.lng}
+                      onChange={e => setForm(f => ({ ...f, lng: e.target.value }))}
+                      placeholder="Longitude (120.9842)"
+                      className={INPUT_CLS} />
+                  </div>
                 </div>
               </div>
             </div>
