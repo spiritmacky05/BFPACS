@@ -27,6 +27,9 @@ type DutyPersonnel struct {
 	Station *Station `json:"station,omitempty" gorm:"foreignKey:StationID"`
 }
 
+// TableName overrides GORM's default pluralization (duty_personnels → duty_personnel)
+func (DutyPersonnel) TableName() string { return "duty_personnel" }
+
 // CreatePersonnelRequest is the request body for creating a new personnel record
 type CreatePersonnelRequest struct {
 	StationID          *uuid.UUID `json:"station_id"`
