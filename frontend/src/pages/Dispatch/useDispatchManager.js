@@ -3,7 +3,7 @@ import { dispatchesApi } from '@/api/dispatches/dispatches';
 import { incidentsApi  } from '@/api/incidents/incidents';
 import { usersApi      } from '@/api/users/users';
 import { personnelApi  } from '@/api/personnel/personnel';
-import { RADIO_CODES } from './constants';
+import { DISPATCH_STATUSES } from './constants';
 
 // ─── localStorage history helpers ────────────────────────────────────────────
 
@@ -16,16 +16,11 @@ const readAllHistory = () => {
 
 const toHistoryKey = (dispatchId, incidentId) => `${incidentId}::${dispatchId}`;
 
-const appendHistory = (dispatchId, fleetLabel, fromStatus, toStatus, incidentId) => {
+const appendHistory = (dispatchId, label, fromStatus, toStatus, incidentId) => {
   const all = readAllHistory();
   const key = toHistoryKey(dispatchId, incidentId);
   if (!all[key]) all[key] = [];
-  all[key].push({
-    status: toStatus,
-    prev:   fromStatus,
-    label:  fleetLabel,
-    ts:     new Date().toISOString(),
-  });
+  all[key].push({ status: toStatus, prev: fromStatus, label, ts: new Date().toISOString() });
   localStorage.setItem(HISTORY_KEY, JSON.stringify(all));
 };
 
@@ -35,18 +30,18 @@ export const getHistory = (dispatchId, incidentId) =>
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useDispatchManager() {
-  const [incidents,        setIncidents]        = useState([]);
-  const [allResponders,    setAllResponders]    = useState([]);
-  const [personnel,        setPersonnel]        = useState([]);
-  const [dispatches,       setDispatches]       = useState([]);
-  const [selectedInc,      setSelectedInc]      = useState('');
-  const [selectedResponder, setSelectedResponder] = useState('');
-  const [notes,            setNotes]            = useState('');
-  const [dispatching,      setDispatching]      = useState(false);
-  const [loading,          setLoading]          = useState(true);
-  const [expanded,         setExpanded]         = useState({});
+  const [incidents,          setIncidents]          = useState([]);
+  const [allResponders,      setAllResponders]      = useState([]);
+  const [personnel,          setPersonnel]          = useState([]);
+  const [dispatches,         setDispatches]         = useState([]);
+  const [selectedInc,        setSelectedInc]        = useState('');
+  const [selectedResponders, setSelectedResponders] = useState([]);
+  const [notes,              setNotes]              = useState('');
+  const [dispatching,        setDispatching]        = useState(false);
+  const [loading,            setLoading]            = useState(true);
+  const [expanded,           setExpanded]           = useState({});
 
-  // ── Loaders ──────────────────────────────────────────────────────────────────
+  // ── Loaders ──────────────────────────────────────────────────────────────
 
   const loadDispatches = useCallback(async (incidentId) => {
     if (!incidentId) return;
@@ -68,10 +63,8 @@ export function useDispatchManager() {
         loadResponders(),
         personnelApi.list().then(d => setPersonnel(d ?? [])),
       ]);
-
-      const active  = (incData ?? []).filter(i => i.incident_status === 'Active');
+      const active = (incData ?? []).filter(i => i.incident_status === 'Active');
       setIncidents(active);
-
       const firstId = active[0]?.id ?? '';
       if (firstId) {
         setSelectedInc(firstId);
@@ -87,10 +80,14 @@ export function useDispatchManager() {
     if (selectedInc) loadDispatches(selectedInc);
   }, [selectedInc, loadDispatches]);
 
-  // ── Derived ──────────────────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
 
-  // Responders available for dispatch — same users as Fleet page Responder Units
   const availableResponders = allResponders;
+
+  const toggleResponder = (id) =>
+    setSelectedResponders(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
 
   const getResponderLabel = (userId) => {
     const u = allResponders.find(x => x.id === userId);
@@ -98,35 +95,33 @@ export function useDispatchManager() {
     return u.type_of_vehicle ? `${u.full_name} — ${u.type_of_vehicle}` : u.full_name;
   };
 
-  // ── Actions ───────────────────────────────────────────────────────────────────
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   const handleDispatch = async () => {
-    if (!selectedInc || !selectedResponder) return;
+    if (!selectedInc || !selectedResponders.length) return;
     setDispatching(true);
 
-    const payload = {
-      incident_id: selectedInc,
-      user_id:     selectedResponder,
-    };
-    if (notes.trim()) payload.situational_report = notes.trim();
-
-    const created = await dispatchesApi.dispatch(payload);
-
-    // Mark the responder unit as ACS Activated
-    await usersApi.update(selectedResponder, { acs_status: 'ACS Activated' });
-
-    appendHistory(
-      created?.id ?? 'new',
-      getResponderLabel(selectedResponder),
-      null,
-      RADIO_CODES.EN_ROUTE,
-      selectedInc,
+    // Dispatch each selected responder individually (one API call per unit)
+    await Promise.all(
+      selectedResponders.map(async (userId) => {
+        const payload = { incident_id: selectedInc, user_id: userId };
+        if (notes.trim()) payload.situational_report = notes.trim();
+        const created = await dispatchesApi.dispatch(payload);
+        await usersApi.update(userId, { acs_status: 'ACS Activated' });
+        appendHistory(
+          created?.id ?? 'new',
+          getResponderLabel(userId),
+          null,
+          DISPATCH_STATUSES.DISPATCHED,
+          selectedInc,
+        );
+      })
     );
 
-    setSelectedResponder('');
+    setSelectedResponders([]);
     setNotes('');
     setDispatching(false);
-    await loadDispatches(selectedInc);
+    await Promise.all([loadDispatches(selectedInc), loadResponders()]);
   };
 
   const handleStatusUpdate = async (dispatch, newStatus) => {
@@ -138,8 +133,8 @@ export function useDispatchManager() {
 
     appendHistory(dispatch.id, label, dispatch.dispatch_status, newStatus, selectedInc);
 
-    // When fire is out, reset the responder unit's ACS status to Serviceable
-    if ((newStatus === RADIO_CODES.FIRE_OUT || newStatus === RADIO_CODES.ENDING) && dispatch.personnel_id) {
+    // On completion, reset the responder's ACS status to Serviceable
+    if (newStatus === DISPATCH_STATUSES.COMPLETED && dispatch.personnel_id) {
       await usersApi.update(dispatch.personnel_id, { acs_status: 'Serviceable' });
       await loadResponders();
     }
@@ -152,12 +147,10 @@ export function useDispatchManager() {
 
   return {
     incidents, allResponders, availableResponders, dispatches, personnel,
-    selectedInc,       setSelectedInc,
-    selectedResponder, setSelectedResponder,
-    notes,             setNotes,
+    selectedInc,        setSelectedInc,
+    selectedResponders, toggleResponder,
+    notes,              setNotes,
     loading, dispatching, expanded,
     handleDispatch, handleStatusUpdate, toggleExpand, refreshDispatches,
   };
 }
-
-

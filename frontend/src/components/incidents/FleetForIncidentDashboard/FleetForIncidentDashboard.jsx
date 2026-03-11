@@ -4,10 +4,15 @@ import { checkinApi }    from "@/api/checkin/checkin";
 import { Truck }         from "lucide-react";
 
 const dispatchStatusColors = {
-  'En Route':               'text-yellow-400 bg-yellow-600/10 border-yellow-600/30',
+  'Dispatched': 'text-red-400    bg-red-600/10    border-red-600/30',
+  'En Route':   'text-orange-400 bg-orange-600/10 border-orange-600/30',
+  'On Scene':   'text-yellow-400 bg-yellow-600/10 border-yellow-600/30',
+  'Returning':  'text-blue-400   bg-blue-600/10   border-blue-600/30',
+  'Completed':  'text-green-400  bg-green-600/10  border-green-600/30',
+  // legacy
+  'Fire Out':               'text-red-400    bg-red-600/10    border-red-600/30',
   '10-23 Arrived at Scene': 'text-blue-400   bg-blue-600/10   border-blue-600/30',
   'Controlled':             'text-orange-400 bg-orange-600/10 border-orange-600/30',
-  'Fire Out':               'text-red-400    bg-red-600/10    border-red-600/30',
 };
 
 export default function FleetForIncidentDashboard({ incidentId }) {

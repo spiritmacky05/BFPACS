@@ -1,36 +1,33 @@
-/**
- * constants.js — BFP Radio Code constants for the Dispatch feature.
- *
- * Why RADIO_CODES instead of raw string literals?
- *
- *   ✅  RADIO_CODES.EN_ROUTE     → always '10-70 En Route'
- *   ❌  '10-70 En Route'         → a single char typo silently wrong-colors
- *                                   the badge AND writes a bad value to the DB
- *
- * Object.freeze() prevents accidental mutation at runtime.
- * JSDoc annotations provide IDE autocompletion in plain JS files.
- */
-
-/** @type {Readonly<Record<string, string>>} */
-export const RADIO_CODES = Object.freeze({
-  EN_ROUTE:   '10-70 En Route',
-  ARRIVED:    '10-23 Arrived at Scene',
-  BEGINNING:  '10-41 Beginning Tour',
-  ENDING:     '10-42 Ending Tour',
-  CONTROLLED: 'Controlled',
-  FIRE_OUT:   'Fire Out',
+// Dispatch status constants — matches bfpacs_update flow
+export const DISPATCH_STATUSES = Object.freeze({
+  DISPATCHED: 'Dispatched',
+  EN_ROUTE:   'En Route',
+  ON_SCENE:   'On Scene',
+  RETURNING:  'Returning',
+  COMPLETED:  'Completed',
 });
 
-export const BFP_STATUS_CODES = [
-  { code: '10-70', label: RADIO_CODES.EN_ROUTE,    color: 'text-yellow-400 border-yellow-600/30 bg-yellow-600/10'  },
-  { code: '10-23', label: RADIO_CODES.ARRIVED,     color: 'text-blue-400   border-blue-600/30   bg-blue-600/10'    },
-  { code: '10-41', label: RADIO_CODES.BEGINNING,   color: 'text-green-400  border-green-600/30  bg-green-600/10'   },
-  { code: '10-42', label: RADIO_CODES.ENDING,      color: 'text-gray-400   border-gray-600/30   bg-gray-600/10'    },
-  { code: 'ctrl',  label: RADIO_CODES.CONTROLLED,  color: 'text-orange-400 border-orange-600/30 bg-orange-600/10'  },
-  { code: 'out',   label: RADIO_CODES.FIRE_OUT,    color: 'text-red-400    border-red-600/30    bg-red-600/10'      },
-];
+export const STATUS_COLORS = {
+  'Dispatched': 'text-red-400    bg-red-600/10    border-red-600/30',
+  'En Route':   'text-orange-400 bg-orange-600/10 border-orange-600/30',
+  'On Scene':   'text-yellow-400 bg-yellow-600/10 border-yellow-600/30',
+  'Returning':  'text-blue-400   bg-blue-600/10   border-blue-600/30',
+  'Completed':  'text-green-400  bg-green-600/10  border-green-600/30',
+};
 
-/** Returns the Tailwind colour classes for a given status label string. */
+// Linear flow: current status → next button to show
+export const DISPATCH_STATUS_FLOW = {
+  'Dispatched': { value: 'En Route',  label: 'En Route',       color: 'text-orange-400 border-orange-600/40 hover:bg-orange-600/10' },
+  'En Route':   { value: 'On Scene',  label: 'On Scene',       color: 'text-yellow-400 border-yellow-600/40 hover:bg-yellow-600/10' },
+  'On Scene':   { value: 'Returning', label: 'Returning',      color: 'text-blue-400   border-blue-600/40   hover:bg-blue-600/10'   },
+  'Returning':  { value: 'Completed', label: 'Mark Completed', color: 'text-green-400  border-green-600/40  hover:bg-green-600/10'  },
+};
+
 export const statusColor = (label) =>
-  BFP_STATUS_CODES.find(s => s.label === label)?.color
-  ?? 'text-gray-400 border-gray-600/30 bg-gray-600/10';
+  STATUS_COLORS[label] ?? 'text-gray-400 border-gray-600/30 bg-gray-600/10';
+
+// Keep for backwards compat with fire-out logic
+export const RADIO_CODES = Object.freeze({
+  FIRE_OUT: 'Fire Out',
+  ENDING:   'Completed',
+});
