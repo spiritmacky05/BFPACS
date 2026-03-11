@@ -79,6 +79,13 @@ func (h *IncidentHandler) UpdateStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update incident"})
 		return
 	}
+	// When fire is declared out, check out all personnel still checked in via ACS portal
+	if req.IncidentStatus != nil && *req.IncidentStatus == "Fire Out" {
+		if err := h.Repo.CheckOutAllPersonnel(c.Request.Context(), id); err != nil {
+			log.Printf("[IncidentHandler.UpdateStatus] CheckOutAllPersonnel: %v", err)
+			// Non-fatal — incident status was already updated
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "incident updated"})
 }
 

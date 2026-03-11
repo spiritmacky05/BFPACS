@@ -99,6 +99,15 @@ func (r *IncidentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, req model
 	return r.db.WithContext(ctx).Model(&models.FireIncident{}).Where("id = ?", id).Updates(updates).Error
 }
 
+// CheckOutAllPersonnel sets check_out_time = NOW() for every open check-in log
+// (check_out_time IS NULL) linked to the given incident. Called on "Fire Out".
+func (r *IncidentRepo) CheckOutAllPersonnel(ctx context.Context, id uuid.UUID) error {
+	now := time.Now()
+	return r.db.WithContext(ctx).
+		Exec(`UPDATE personnel_incident_logs SET check_out_time = ? WHERE incident_id = ? AND check_out_time IS NULL`, now, id).
+		Error
+}
+
 func (r *IncidentRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&models.FireIncident{}).Error
 }
