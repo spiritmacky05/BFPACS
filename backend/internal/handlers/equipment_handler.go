@@ -32,13 +32,13 @@ func (h *EquipmentHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	// Regular users only see their station's equipment
+	// Regular users only see their station's equipment + global (no station) equipment
 	stationID := getStationID(c)
 	if stationID == nil {
 		c.JSON(http.StatusOK, []models.LogisticalEquipment{})
 		return
 	}
-	list, err := h.Repo.GetByStation(c.Request.Context(), *stationID)
+	list, err := h.Repo.GetByStationOrGlobal(c.Request.Context(), *stationID)
 	if err != nil {
 		log.Printf("[EquipmentHandler.GetAll] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve equipment"})

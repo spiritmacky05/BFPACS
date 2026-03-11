@@ -67,7 +67,7 @@ const styles = {
   }
 };
 
-const EMPTY_FORM = { equipment_name: '', quantity: 1, condition: 'Good', station_id: '' };
+const EMPTY_FORM = { equipment_name: '', quantity: 1, condition: 'Good' };
 
 export default function Equipment() {
   const [items,    setItems]    = useState([]);
@@ -174,9 +174,7 @@ export default function Equipment() {
 
   const handleCreate = async () => {
     setSaving(true);
-    const payload = { ...form };
-    if (!payload.station_id) delete payload.station_id;
-    await equipmentApi.create(payload);
+    await equipmentApi.create(form);
     setSaving(false);
     setShowForm(false);
     setForm(EMPTY_FORM);
@@ -390,16 +388,6 @@ export default function Equipment() {
                   onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) }))}
                   className={styles.modal.input} />
               </div>
-              {isAdminRole && (
-                <div>
-                  <label className={styles.modal.labelSpaced}>Station</label>
-                  <select value={form.station_id} onChange={e => setForm(f => ({ ...f, station_id: e.target.value }))}
-                    className={styles.modal.input}>
-                    <option value="">— No Station —</option>
-                    {stations.map(s => <option key={s.id} value={s.id}>{s.station_name}</option>)}
-                  </select>
-                </div>
-              )}
             </div>
             <div className={styles.modal.footer}>
               <button onClick={() => setShowForm(false)}

@@ -39,6 +39,14 @@ func (r *EquipmentRepo) GetByStation(ctx context.Context, stationID uuid.UUID) (
 	return list, err
 }
 
+// GetByStationOrGlobal returns equipment belonging to the given station
+// OR equipment with no station (created by admin, visible to all).
+func (r *EquipmentRepo) GetByStationOrGlobal(ctx context.Context, stationID uuid.UUID) ([]models.LogisticalEquipment, error) {
+	var list []models.LogisticalEquipment
+	err := r.db.WithContext(ctx).Where("station_id = ? OR station_id IS NULL", stationID).Order("equipment_name").Find(&list).Error
+	return list, err
+}
+
 func (r *EquipmentRepo) Create(ctx context.Context, req models.CreateEquipmentRequest) (*models.LogisticalEquipment, error) {
 	status := req.Status
 	if status == "" {
