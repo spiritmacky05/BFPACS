@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, X, Edit2, Trash2, MapPin, Phone, RefreshCw, Map as MapIcon, Navigation } from 'lucide-react';
+import { Building2, Plus, X, Edit2, Trash2, MapPin, Phone, RefreshCw, Map as MapIcon, Navigation, ArrowLeft, Globe } from 'lucide-react';
 import { stationsApi } from '@/api/stations/stations';
 import { useAuth } from '@/context/AuthContext/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -45,14 +45,15 @@ export default function Stations() {
     return <Navigate to="/" replace />;
   }
 
-  const [stations,  setStations]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [showForm,  setShowForm]  = useState(false);
-  const [editItem,  setEditItem]  = useState(null); // station being edited
-  const [deleteItem, setDeleteItem] = useState(null);
-  const [form,      setForm]      = useState(EMPTY_FORM);
-  const [saving,    setSaving]    = useState(false);
-  const [formError, setFormError] = useState('');
+  const [stations,        setStations]        = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [showForm,        setShowForm]        = useState(false);
+  const [editItem,        setEditItem]        = useState(null); // station being edited
+  const [deleteItem,      setDeleteItem]      = useState(null);
+  const [form,            setForm]            = useState(EMPTY_FORM);
+  const [saving,          setSaving]          = useState(false);
+  const [formError,       setFormError]       = useState('');
+  const [selectedStation, setSelectedStation] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -166,81 +167,160 @@ export default function Stations() {
         </div>
       </div>
 
-      {/* Station Map */}
-      {!loading && stations.length > 0 && (() => {
-        const mapMarkers = stations
-          .filter(s => s.lat != null && s.lng != null)
-          .map(s => ({
+      {/* Station Detail View */}
+      {selectedStation ? (() => {
+        const s = selectedStation;
+        const mapMarkers = [];
+        if (s.lat != null && s.lng != null) {
+          mapMarkers.push({
             type: 'station',
             lat: s.lat,
             lng: s.lng,
             label: s.station_name,
             sub: [s.address_text, s.city, s.district].filter(Boolean).join(', '),
-          }));
-        return mapMarkers.length > 0 ? (
-          <div>
-            <h3 className="text-white font-medium text-sm flex items-center gap-2 mb-3">
-              <MapIcon className="w-4 h-4 text-orange-400" /> Station Locations
-            </h3>
-            <MapView markers={mapMarkers} height="350px" />
-          </div>
-        ) : null;
-      })()}
+          });
+        }
+        return (
+          <div className="space-y-4">
+            <button onClick={() => setSelectedStation(null)}
+              className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Back to Stations
+            </button>
 
-      {/* Table */}
-      {loading ? (
-        <div className="text-center text-gray-500 py-16">Loading stations...</div>
-      ) : !stations.length ? (
-        <div className="text-center text-gray-600 py-16">No stations yet. Create one to get started.</div>
-      ) : (
-        <div className="border border-[#1f1f1f] rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#1f1f1f] bg-[#0a0a0a]">
-                {['Station Name', 'Location', 'Contact', 'Team Leader Contact', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {stations.map(s => (
-                <tr key={s.id} className="border-b border-[#1f1f1f] hover:bg-[#0a0a0a]">
-                  <td className="px-4 py-3">
-                    <div className="text-white font-medium text-sm">{s.station_name}</div>
-                    {s.address_text && (
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
-                        <MapPin className="w-3 h-3" />{s.address_text}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-sm">
-                    {[s.city, s.district, s.region].filter(Boolean).join(', ')}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-sm">
-                    {s.contact_number ? (
-                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{s.contact_number}</span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-sm">
-                    {s.team_leader_contact ?? '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button onClick={() => openEdit(s)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-600/40 text-gray-400 hover:bg-gray-600/20 transition-all">
-                        <Edit2 className="w-3 h-3" /> Edit
-                      </button>
-                      <button onClick={() => setDeleteItem(s)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-600/40 text-red-400 hover:bg-red-600/10 transition-all">
-                        <Trash2 className="w-3 h-3" /> Delete
-                      </button>
+            <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-orange-400" /> {s.station_name}
+                  </h3>
+                  {s.address_text && (
+                    <div className="flex items-center gap-1.5 text-gray-400 text-sm mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-red-400" /> {s.address_text}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => openEdit(s)}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-600/40 text-gray-400 hover:bg-gray-600/20 transition-all">
+                    <Edit2 className="w-3 h-3" /> Edit
+                  </button>
+                  <button onClick={() => setDeleteItem(s)}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-600/40 text-red-400 hover:bg-red-600/10 transition-all">
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                </div>
+              </div>
+
+              {/* Details grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: 'City',          value: s.city },
+                  { label: 'District',       value: s.district },
+                  { label: 'Region',         value: s.region },
+                  { label: 'Contact No.',    value: s.contact_number, icon: Phone },
+                  { label: 'Team Leader',    value: s.team_leader_contact },
+                  { label: 'Coordinates',    value: s.lat != null && s.lng != null ? `${s.lat}, ${s.lng}` : null, icon: Globe },
+                ].filter(r => r.value).map(r => (
+                  <div key={r.label} className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
+                    <div className="text-gray-600 text-xs uppercase tracking-wider">{r.label}</div>
+                    <div className="text-white text-sm mt-1 flex items-center gap-1.5">
+                      {r.icon && <r.icon className="w-3.5 h-3.5 text-gray-500" />}
+                      {r.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigate buttons */}
+              {s.lat != null && s.lng != null && (
+                <div className="flex gap-3 flex-wrap">
+                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=driving`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                    <Navigation className="w-4 h-4" /> Navigate (Google Maps)
+                  </a>
+                  <a href={`https://waze.com/ul?ll=${s.lat},${s.lng}&navigate=yes`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                    <Navigation className="w-4 h-4" /> Navigate (Waze)
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Map */}
+            {mapMarkers.length > 0 ? (
+              <MapView markers={mapMarkers} height="380px" zoom={15} />
+            ) : (
+              <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl h-48 flex items-center justify-center">
+                <div className="text-center text-gray-600 text-sm">
+                  <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  No coordinates set for this station
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })() : (
+        <>
+          {/* Table */}
+          {loading ? (
+            <div className="text-center text-gray-500 py-16">Loading stations...</div>
+          ) : !stations.length ? (
+            <div className="text-center text-gray-600 py-16">No stations yet. Create one to get started.</div>
+          ) : (
+            <div className="border border-[#1f1f1f] rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#1f1f1f] bg-[#0a0a0a]">
+                    {['Station Name', 'Location', 'Contact', 'Team Leader Contact', 'Actions'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stations.map(s => (
+                    <tr key={s.id}
+                      onClick={() => setSelectedStation(s)}
+                      className="border-b border-[#1f1f1f] hover:bg-[#0a0a0a] cursor-pointer transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="text-white font-medium text-sm">{s.station_name}</div>
+                        {s.address_text && (
+                          <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
+                            <MapPin className="w-3 h-3" />{s.address_text}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-sm">
+                        {[s.city, s.district, s.region].filter(Boolean).join(', ')}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-sm">
+                        {s.contact_number ? (
+                          <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{s.contact_number}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-sm">
+                        {s.team_leader_contact ?? '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button onClick={(e) => { e.stopPropagation(); openEdit(s); }}
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-600/40 text-gray-400 hover:bg-gray-600/20 transition-all">
+                            <Edit2 className="w-3 h-3" /> Edit
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setDeleteItem(s); }}
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-600/40 text-red-400 hover:bg-red-600/10 transition-all">
+                            <Trash2 className="w-3 h-3" /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create / Edit Modal */}

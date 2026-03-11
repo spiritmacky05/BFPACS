@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2, Map as MapIcon, Navigation } from 'lucide-react';
+import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2, Map as MapIcon, Navigation, ArrowLeft } from 'lucide-react';
 import { hydrantsApi } from '@/api/hydrants/hydrants';
 import { useAuth }     from '@/context/AuthContext/AuthContext';
 import MapView from '@/components/common/MapView/MapView';
@@ -47,8 +47,8 @@ export default function Hydrants() {
   const [searchLng,    setSearchLng]    = useState('');
   const [radius,       setRadius]       = useState(500);
   const [nearby,       setNearby]       = useState(null);
-  const [confirm,      setConfirm]      = useState(null);
-  const [showMap,      setShowMap]      = useState(true);
+  const [confirm,         setConfirm]         = useState(null);
+  const [selectedHydrant, setSelectedHydrant] = useState(null);
 
   const { role } = useAuth();
   const canEdit = role === 'superadmin' || role === 'admin' || role === 'user';
@@ -195,161 +195,205 @@ export default function Hydrants() {
         )}
       </div>
 
-      {/* Map Toggle + Map View */}
-      <div className="space-y-3">
-        <button
-          onClick={() => setShowMap(v => !v)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-            showMap
-              ? 'bg-blue-600/20 border-blue-600/50 text-blue-400'
-              : 'bg-[#111] border-[#1f1f1f] text-gray-500 hover:border-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <MapIcon className="w-4 h-4" />
-          {showMap ? 'Hide Map' : 'Show Map'}
-        </button>
+      {/* Hydrant Detail View */}
+      {selectedHydrant ? (() => {
+        const h = selectedHydrant;
+        const mapMarkers = [];
+        if (h.lat != null && h.lng != null) {
+          mapMarkers.push({
+            type: 'hydrant',
+            lat: h.lat,
+            lng: h.lng,
+            label: h.address || h.address_text || 'Hydrant',
+            sub: `${h.hydrant_type || 'Hydrant'} • ${h.status}${h.psi ? ` • ${h.psi} PSI` : ''}`,
+            status: h.status,
+          });
+        }
+        if (myStation?.lat != null && myStation?.lng != null) {
+          mapMarkers.push({
+            type: 'station',
+            lat: myStation.lat,
+            lng: myStation.lng,
+            label: myStation.station_name || 'Your Station',
+            sub: myStation.address_text || myStation.city || '',
+          });
+        }
+        const origin = myStation?.lat != null && myStation?.lng != null ? `${myStation.lat},${myStation.lng}` : '';
+        const dest = h.lat != null && h.lng != null ? `${h.lat},${h.lng}` : '';
+        const googleUrl = dest ? (origin
+          ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
+          : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`) : '';
+        const wazeUrl = dest ? `https://waze.com/ul?ll=${dest}&navigate=yes` : '';
 
-        {showMap && (() => {
-          const mapMarkers = displayList
-            .filter(h => h.lat != null && h.lng != null)
-            .map(h => ({
-              type: 'hydrant',
-              lat: h.lat,
-              lng: h.lng,
-              label: h.address || h.address_text || 'Hydrant',
-              sub: `${h.hydrant_type || 'Hydrant'} • ${h.status}${h.psi ? ` • ${h.psi} PSI` : ''}`,
-              status: h.status,
-              distance: h.distance_meters,
-            }));
+        return (
+          <div className="space-y-4">
+            <button onClick={() => setSelectedHydrant(null)}
+              className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Back to Hydrants
+            </button>
 
-          // Add station marker
-          if (myStation?.lat != null && myStation?.lng != null) {
-            mapMarkers.push({
-              type: 'station',
-              lat: myStation.lat,
-              lng: myStation.lng,
-              label: myStation.station_name || 'Your Station',
-              sub: myStation.address_text || myStation.city || '',
-            });
-          }
-
-          return mapMarkers.length > 0 ? (
-            <MapView markers={mapMarkers} height="380px" />
-          ) : (
-            <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl h-48 flex items-center justify-center">
-              <div className="text-center text-gray-600 text-sm">
-                <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                No hydrants with coordinates to display
-              </div>
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* Cards Grid */}
-      {loading ? (
-        <div className="text-center text-gray-500 py-16">Loading hydrants...</div>
-      ) : !displayList.length ? (
-        <div className="text-center text-gray-600 py-16">
-          <Droplets className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>No hydrants found</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {displayList.map(h => (
-            <div key={h.id} className="bg-[#111] border border-[#1f1f1f] rounded-xl p-4 hover:border-blue-600/30 transition-all space-y-3">
+            <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6 space-y-4">
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-900/30 border border-blue-900/40 rounded-lg flex items-center justify-center">
-                    <Droplets className="w-4 h-4 text-blue-400" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-900/30 border border-blue-900/40 rounded-lg flex items-center justify-center">
+                    <Droplets className="w-5 h-5 text-blue-400" />
                   </div>
-                  <span className="text-white font-medium text-sm">{h.hydrant_type || '—'}</span>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">{h.hydrant_type || 'Hydrant'}</h3>
+                    <div className="flex items-center gap-1.5 text-gray-400 text-sm mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-red-400" />
+                      {h.address || h.address_text || 'No address'}
+                    </div>
+                  </div>
                 </div>
-                <span className={`text-xs font-medium px-2 py-1 rounded-full border ${STATUS_COLORS[h.status] ?? STATUS_COLORS['Serviceable']}`}>
+                <span className={`text-xs font-medium px-3 py-1.5 rounded-full border ${STATUS_COLORS[h.status] ?? STATUS_COLORS['Serviceable']}`}>
                   {h.status}
                 </span>
               </div>
 
-              <div className="flex items-start gap-2 text-xs text-gray-400">
-                <MapPin className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
-                <span>{h.address || h.address_text || 'No address'}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              {/* Details grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {h.psi != null && (
-                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-2">
-                    <div className="text-gray-600">Pressure</div>
-                    <div className="text-blue-400 font-medium">{h.psi} PSI</div>
+                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
+                    <div className="text-gray-600 text-xs uppercase tracking-wider">Pressure</div>
+                    <div className="text-blue-400 font-semibold text-lg mt-1">{h.psi} PSI</div>
                   </div>
                 )}
                 {h.last_inspection_date && (
-                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-2">
-                    <div className="text-gray-600">Last Inspection</div>
-                    <div className="text-gray-300 font-medium">{h.last_inspection_date}</div>
+                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
+                    <div className="text-gray-600 text-xs uppercase tracking-wider">Last Inspection</div>
+                    <div className="text-gray-300 font-medium text-sm mt-1">{h.last_inspection_date}</div>
                   </div>
                 )}
                 {h.lat != null && h.lng != null && (
-                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-2 col-span-2">
-                    <div className="text-gray-600">Coordinates</div>
-                    <div className="text-gray-300 font-mono text-xs">{h.lat}, {h.lng}</div>
+                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
+                    <div className="text-gray-600 text-xs uppercase tracking-wider">Coordinates</div>
+                    <div className="text-gray-300 font-mono text-xs mt-1">{h.lat}, {h.lng}</div>
+                  </div>
+                )}
+                {h.distance_meters != null && (
+                  <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-3">
+                    <div className="text-gray-600 text-xs uppercase tracking-wider">Distance</div>
+                    <div className="text-blue-400 font-semibold text-lg mt-1">{Math.round(h.distance_meters)}m</div>
                   </div>
                 )}
               </div>
 
-              {h.distance_meters != null && (
-                <div className="text-blue-400 text-xs">{Math.round(h.distance_meters)}m away</div>
-              )}
-
               {/* Navigate buttons */}
-              {h.lat != null && h.lng != null && (
-                <div className="flex gap-2 flex-wrap">
-                  {(() => {
-                    const origin = myStation?.lat != null && myStation?.lng != null
-                      ? `${myStation.lat},${myStation.lng}` : '';
-                    const dest = `${h.lat},${h.lng}`;
-                    const googleUrl = origin
-                      ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
-                      : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
-                    const wazeUrl = `https://waze.com/ul?ll=${dest}&navigate=yes`;
-                    return (
-                      <>
-                        <a href={googleUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 transition-all">
-                          <Navigation className="w-3 h-3" /> Google Maps
-                        </a>
-                        <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-purple-600/20 border border-purple-600/30 text-purple-400 hover:bg-purple-600/30 transition-all">
-                          <Navigation className="w-3 h-3" /> Waze
-                        </a>
-                      </>
-                    );
-                  })()}
+              {dest && (
+                <div className="flex gap-3 flex-wrap">
+                  <a href={googleUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                    <Navigation className="w-4 h-4" /> Navigate (Google Maps)
+                  </a>
+                  <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                    <Navigation className="w-4 h-4" /> Navigate (Waze)
+                  </a>
                 </div>
               )}
 
+              {/* Edit actions */}
               {canEdit && (
-                <div className="space-y-2">
-                  <select value={h.status} onChange={e => updateStatus(h.id, e.target.value)}
-                    className="w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-3 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-red-600/50">
-                    {HYDRANT_STATUSES.map(s => <option key={s}>{s}</option>)}
-                  </select>
-                  <div className="flex gap-2">
-                    <button onClick={() => openEdit(h)}
-                      className="flex-1 flex items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:border-blue-600/50 hover:text-blue-400 transition-all">
-                      <Pencil className="w-3 h-3" /> Edit
+                <div className="flex gap-2 pt-2 border-t border-[#1f1f1f]">
+                  <button onClick={() => { openEdit(h); setSelectedHydrant(null); }}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:border-blue-600/50 hover:text-blue-400 transition-all">
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                  {isAdmin && (
+                    <button onClick={() => { handleDelete(h); setSelectedHydrant(null); }}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:border-red-600/50 hover:text-red-400 transition-all">
+                      <Trash2 className="w-3 h-3" /> Delete
                     </button>
-                    {isAdmin && (
-                      <button onClick={() => handleDelete(h)}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:border-red-600/50 hover:text-red-400 transition-all">
-                        <Trash2 className="w-3 h-3" /> Delete
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               )}
             </div>
-          ))}
-        </div>
+
+            {/* Map */}
+            {mapMarkers.length > 0 ? (
+              <MapView markers={mapMarkers} height="380px" zoom={15} />
+            ) : (
+              <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl h-48 flex items-center justify-center">
+                <div className="text-center text-gray-600 text-sm">
+                  <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  No coordinates set for this hydrant
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })() : (
+        <>
+          {/* Cards Grid */}
+          {loading ? (
+            <div className="text-center text-gray-500 py-16">Loading hydrants...</div>
+          ) : !displayList.length ? (
+            <div className="text-center text-gray-600 py-16">
+              <Droplets className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p>No hydrants found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {displayList.map(h => (
+                <div key={h.id}
+                  onClick={() => setSelectedHydrant(h)}
+                  className="bg-[#111] border border-[#1f1f1f] rounded-xl p-4 hover:border-blue-600/30 cursor-pointer transition-all space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-900/30 border border-blue-900/40 rounded-lg flex items-center justify-center">
+                        <Droplets className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <span className="text-white font-medium text-sm">{h.hydrant_type || '—'}</span>
+                    </div>
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full border ${STATUS_COLORS[h.status] ?? STATUS_COLORS['Serviceable']}`}>
+                      {h.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-xs text-gray-400">
+                    <MapPin className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+                    <span>{h.address || h.address_text || 'No address'}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {h.psi != null && (
+                      <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-2">
+                        <div className="text-gray-600">Pressure</div>
+                        <div className="text-blue-400 font-medium">{h.psi} PSI</div>
+                      </div>
+                    )}
+                    {h.lat != null && h.lng != null && (
+                      <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-lg p-2">
+                        <div className="text-gray-600">Coordinates</div>
+                        <div className="text-gray-300 font-mono text-xs">{h.lat.toFixed(4)}, {h.lng.toFixed(4)}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {h.distance_meters != null && (
+                    <div className="text-blue-400 text-xs">{Math.round(h.distance_meters)}m away</div>
+                  )}
+
+                  {canEdit && (
+                    <div className="flex gap-2">
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(h); }}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:border-blue-600/50 hover:text-blue-400 transition-all">
+                        <Pencil className="w-3 h-3" /> Edit
+                      </button>
+                      {isAdmin && (
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(h); }}
+                          className="flex-1 flex items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:border-red-600/50 hover:text-red-400 transition-all">
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Add / Edit Modal */}
