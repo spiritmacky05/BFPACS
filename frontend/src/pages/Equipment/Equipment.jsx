@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Package, Plus, X, ArrowLeft, ArrowRight, Edit2, Trash2 } from 'lucide-react';
 import { equipmentApi } from '@/api/equipment/equipment';
+import { usersApi }     from '@/api/users/users';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
@@ -74,10 +75,12 @@ export default function Equipment() {
   const [borrowerName, setBorrowerName] = useState('');
   const [editItem, setEditItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [users,    setUsers]    = useState([]);
 
   const { role, user } = useAuth();
   // All authenticated roles can add/edit/borrow equipment
-  const isAdmin = role === 'superadmin' || role === 'admin' || role === 'user';
+  const isAdmin      = role === 'superadmin' || role === 'admin' || role === 'user';
+  const isAdminRole  = role === 'superadmin' || role === 'admin';
 
   const load = async () => {
     try {
@@ -90,7 +93,17 @@ export default function Equipment() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadUsers = async () => {
+    if (!isAdminRole) return;
+    try {
+      const data = await usersApi.list();
+      setUsers((data ?? []).filter(u => u.approved));
+    } catch (err) {
+      console.error('Error loading users:', err);
+    }
+  };
+
+  useEffect(() => { load(); loadUsers(); }, []);
 
   const handleCreate = async () => {
     setSaving(true);
@@ -183,7 +196,7 @@ export default function Equipment() {
                     <td className={styles.table.tdAction}>
                       <div className={styles.table.actionFlex}>
                         {!item.borrower_name ? (
-                          <button onClick={() => { setBorrowItem(item); setBorrowerName(user?.full_name ?? ''); }}
+                          <button onClick={() => { setBorrowItem(item); setBorrowerName(isAdminRole ? '' : (user?.full_name ?? '')); }}
                             className={styles.table.actionBtnBorrowed}>
                             <ArrowRight className={styles.table.actionIcon} /> Borrow
                           </button>
@@ -223,11 +236,25 @@ export default function Equipment() {
             </div>
             <div className={styles.modal.body}>
               <label className={styles.modal.label}>Borrower Name</label>
-              <input
-                value={borrowerName}
-                readOnly
-                className={`${styles.modal.input} opacity-70 cursor-not-allowed`}
-              />
+              {isAdminRole ? (
+                <select
+                  value={borrowerName}
+                  onChange={e => setBorrowerName(e.target.value)}
+                  className={styles.modal.input}>
+                  <option value="">— Select a user —</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.full_name ?? u.email}>
+                      {u.full_name ?? u.email}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={borrowerName}
+                  readOnly
+                  className={`${styles.modal.input} opacity-70 cursor-not-allowed`}
+                />
+              )}
             </div>
             <div className={styles.modal.footer}>
               <button onClick={() => setBorrowItem(null)}

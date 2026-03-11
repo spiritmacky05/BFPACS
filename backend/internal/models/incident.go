@@ -59,21 +59,27 @@ type UpdateIncidentStatusRequest struct {
 type IncidentDispatch struct {
 	ID                uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	IncidentID        *uuid.UUID `json:"incident_id,omitempty" gorm:"type:uuid;index"`
-	PersonnelID       *uuid.UUID `json:"personnel_id,omitempty" gorm:"type:uuid;index"`
+	FleetID           *uuid.UUID `json:"fleet_id,omitempty" gorm:"type:uuid;index"`
+	PersonnelID       *uuid.UUID `json:"personnel_id,omitempty" gorm:"type:uuid"`
 	DispatchStatus    *string    `json:"dispatch_status,omitempty"`
 	CheckInTime       time.Time  `json:"check_in_time" gorm:"autoCreateTime"`
 	CheckOutTime      *time.Time `json:"check_out_time,omitempty"`
 	SituationalReport *string    `json:"situational_report,omitempty"`
 
-	// Relation – populated via Preload("Personnel")
+	// Relations – populated via Preload
+	Fleet     *Fleet         `json:"fleet,omitempty" gorm:"foreignKey:FleetID"`
 	Personnel *DutyPersonnel `json:"personnel,omitempty" gorm:"foreignKey:PersonnelID"`
 }
 
-// DispatchResponderRequest dispatches a duty-personnel responder to an incident
-type DispatchResponderRequest struct {
-	IncidentID  uuid.UUID `json:"incident_id" binding:"required"`
-	PersonnelID uuid.UUID `json:"personnel_id" binding:"required"`
+// DispatchRequest dispatches a fleet vehicle to an incident with optional notes
+type DispatchRequest struct {
+	IncidentID        uuid.UUID `json:"incident_id" binding:"required"`
+	FleetID           uuid.UUID `json:"fleet_id" binding:"required"`
+	SituationalReport *string   `json:"situational_report,omitempty"`
 }
+
+// DispatchResponderRequest kept for backward compat — aliased to DispatchRequest
+type DispatchResponderRequest = DispatchRequest
 
 // UpdateDispatchStatusRequest updates the BFP radio code status of a dispatch
 type UpdateDispatchStatusRequest struct {

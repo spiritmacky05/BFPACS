@@ -47,10 +47,18 @@ func (h *DispatchHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	// Validate dispatch status against BFP radio codes
+	// Validate dispatch status against BFP radio codes used by the frontend
 	validStatuses := map[string]bool{
-		"En Route": true, "10-23 Arrived at Scene": true, "Operational": true,
-		"Fire Out": true, "Returning": true, "Available": true, "Cancelled": true,
+		"10-70 En Route":          true,
+		"10-23 Arrived at Scene":  true,
+		"10-41 Beginning Tour":    true,
+		"10-42 Ending Tour":       true,
+		"Controlled":              true,
+		"Fire Out":                true,
+		"En Route":                true, // legacy value
+		"Returning":               true,
+		"Available":               true,
+		"Cancelled":               true,
 	}
 	if !validStatuses[req.DispatchStatus] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dispatch_status"})

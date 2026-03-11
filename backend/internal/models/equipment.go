@@ -7,6 +7,8 @@ import (
 )
 
 // LogisticalEquipment maps to public.logistical_equipment
+func (LogisticalEquipment) TableName() string { return "logistical_equipment" }
+
 type LogisticalEquipment struct {
 	ID            uuid.UUID  `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	StationID     *uuid.UUID `json:"station_id,omitempty" gorm:"type:uuid;index"`
