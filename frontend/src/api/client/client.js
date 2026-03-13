@@ -1,74 +1,53 @@
 /**
- * api/client.js
+ * api/client/client.js
  *
- * The single HTTP client for all BFPACS backend calls.
- * All requests go to VITE_API_URL (defaults to http://localhost:8080).
+ * Compatibility wrapper around the shared HTTP client.
  *
- * Usage:
- *   import api from '@/api/client';
- *   const incidents = await api.get('/incidents');
- *   const created   = await api.post('/incidents', body);
- *   await api.patch('/incidents/:id/status', body);
+ * Why this file still exists:
+ * - Many existing API modules still import `@/api/client/client`.
+ * - We keep a stable import path while removing duplicate fetch logic.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
+import { ApiClientError, httpClient } from '@/shared/lib/httpClient';
 
-class ApiError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-    this.name = "ApiError";
+/**
+ * Backward-compatible error class name.
+ *
+ * Existing code checks `instanceof ApiError`, so we keep this export.
+ */
+export class ApiError extends ApiClientError {
+  constructor({ message, status, code, details }) {
+    super({ message, status, code, details });
+    this.name = 'ApiError';
   }
 }
 
-async function request(method, path, body) {
-  const url = `${BASE_URL}${path}`;
-  const token = localStorage.getItem('bfp_token');
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const options = {
-    method,
-    headers,
-  };
-  if (body !== undefined) {
-    options.body = JSON.stringify(body);
-  }
-
-  const res = await fetch(url, options);
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      localStorage.removeItem('bfp_user');
-      localStorage.removeItem('bfp_token');
-      window.location.href = '/login';
+/**
+ * Wrap shared client errors into `ApiError` for legacy consumers.
+ */
+async function withLegacyErrorShape(requestPromise) {
+  try {
+    return await requestPromise;
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      throw new ApiError({
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        details: error.details,
+      });
     }
 
-    let message = `HTTP ${res.status}`;
-    try {
-      const json = await res.json();
-      message = json.error ?? message;
-    } catch {
-      /* ignore parse errors */
-    }
-    throw new ApiError(res.status, message);
+    throw error;
   }
-
-  // 204 No Content
-  if (res.status === 204) return null;
-
-  return res.json();
 }
 
 const api = {
-  get: (path) => request("GET", path),
-  post: (path, body) => request("POST", path, body),
-  patch: (path, body) => request("PATCH", path, body),
-  put: (path, body) => request("PUT", path, body),
-  delete: (path) => request("DELETE", path),
+  get: (path) => withLegacyErrorShape(httpClient.get(path)),
+  post: (path, body) => withLegacyErrorShape(httpClient.post(path, body)),
+  patch: (path, body) => withLegacyErrorShape(httpClient.patch(path, body)),
+  put: (path, body) => withLegacyErrorShape(httpClient.put(path, body)),
+  delete: (path) => withLegacyErrorShape(httpClient.delete(path)),
 };
 
 export default api;
-export { ApiError };

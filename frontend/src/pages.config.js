@@ -49,8 +49,8 @@
  */
 import CheckIn from './pages/CheckIn/CheckIn';
 import Dashboard from './features/dashboard/pages/DashboardPage';
-import Dispatch from './pages/Dispatch/Dispatch';
-import DutyPersonnel from './pages/DutyPersonnel/DutyPersonnel';
+import Dispatch from './features/dispatch/pages/DispatchPage';
+import DutyPersonnel from './features/dutyPersonnel/pages/DutyPersonnelPage';
 import Equipment from './pages/Equipment/Equipment';
 import Fleet from './pages/Fleet/Fleet';
 import Hydrants from './pages/Hydrants/Hydrants';

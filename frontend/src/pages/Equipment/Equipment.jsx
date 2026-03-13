@@ -9,7 +9,7 @@ import { equipmentApi } from '@/api/equipment/equipment';
 import { usersApi }     from '@/api/users/users';
 import { stationsApi }  from '@/api/stations/stations';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
-import FilterSortPanel  from '@/pages/Dispatch/FilterSortPanel';
+import FilterSortPanel  from '@/features/dispatch/components/DispatchFilterSortPanel';
 
 function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort(); }
 

@@ -11,7 +11,7 @@ import { UserCheck, UserX, Plus, X, Search, Pencil, Trash2, Shield } from 'lucid
 import { personnelApi } from '@/api/personnel/personnel';
 import { stationsApi }  from '@/api/stations/stations';
 import { useAuth }      from '@/context/AuthContext/AuthContext';
-import FilterSortPanel  from '@/pages/Dispatch/FilterSortPanel';
+import FilterSortPanel  from '@/features/dispatch/components/DispatchFilterSortPanel';
 
 function uniq(items, fn) {
   return [...new Set(items.map(fn).filter(Boolean))].sort();
