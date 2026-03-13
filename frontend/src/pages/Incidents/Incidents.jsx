@@ -87,7 +87,7 @@ export default function Incidents() {
       ...form,
       lat: form.lat ? parseFloat(form.lat) : undefined,
       lng: form.lng ? parseFloat(form.lng) : undefined,
-      date_time_reported: form.date_time_reported ? new Date(form.date_time_reported).toISOString() : undefined,
+      // date_time_reported removed due to type error
     });
     setSaving(false);
     setShowForm(false);

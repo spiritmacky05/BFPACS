@@ -55,7 +55,7 @@ import Equipment from './pages/Equipment/Equipment';
 import Fleet from './pages/Fleet/Fleet';
 import Hydrants from './pages/Hydrants/Hydrants';
 import IncidentDetail from './pages/IncidentDetail/IncidentDetail';
-import Incidents from './pages/Incidents/Incidents';
+import Incidents from './features/incidents/pages/IncidentsPage';
 import Personnel from './pages/Personnel/Personnel';
 import PersonnelProfile from './pages/PersonnelProfile/PersonnelProfile';
 import Profile from './pages/Profile/Profile';

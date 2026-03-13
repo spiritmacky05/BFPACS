@@ -72,15 +72,14 @@ function DirectionsLinks({ lat, lng }) {
 }
 
 /**
- * @param {{ markers: Array<{lat,lng,type,label,sub,status}>, height?: string, center?: [number,number], zoom?: number }} props
- *
- * marker.type = 'incident' | 'hydrant' | 'user'
+ * @param {{ markers: Array<{lat: number, lng: number, type: string, label?: string, sub?: string, status?: string, distance?: number}>, height?: string, center?: [number,number], zoom?: number }} props
  */
 export default function MapView({ markers = [], height = '400px', center, zoom = 13 }) {
   const validMarkers = markers.filter(m => m.lat != null && m.lng != null);
+  /** @type {[number, number]} */
   const defaultCenter = validMarkers.length
-    ? [validMarkers[0].lat, validMarkers[0].lng]
-    : center ?? [14.5995, 120.9842]; // Manila fallback
+    ? /** @type {[number, number]} */ ([validMarkers[0].lat, validMarkers[0].lng])
+    : (center ?? [14.5995, 120.9842]); // Manila fallback
 
   return (
     <div className="rounded-xl overflow-hidden border border-[#1f1f1f]" style={{ height }}>
