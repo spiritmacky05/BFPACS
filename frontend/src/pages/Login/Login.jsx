@@ -25,7 +25,7 @@ const Login = () => {
       } else {
         setError(result.error);
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);

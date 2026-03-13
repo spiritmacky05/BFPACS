@@ -58,7 +58,7 @@ function FitBounds({ markers }) {
 }
 
 // ── Directions links ────────────────────────────────────────────────────────
-function DirectionsLinks({ lat, lng, label }) {
+function DirectionsLinks({ lat, lng }) {
   const gUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   const wUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
   return (
@@ -110,7 +110,7 @@ export default function MapView({ markers = [], height = '400px', center, zoom =
                   <div className="font-semibold text-sm" style={{ color: '#111' }}>{m.label || 'Location'}</div>
                   {m.sub && <div style={{ color: '#555' }}>{m.sub}</div>}
                   {m.distance != null && <div style={{ color: '#3b82f6' }}>{Math.round(m.distance)}m away</div>}
-                  <DirectionsLinks lat={m.lat} lng={m.lng} label={m.label} />
+                  <DirectionsLinks lat={m.lat} lng={m.lng} />
                 </div>
               </Popup>
             </Marker>

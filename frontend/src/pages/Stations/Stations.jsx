@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, X, Edit2, Trash2, MapPin, Phone, RefreshCw, Map as MapIcon, Navigation, ArrowLeft, Globe } from 'lucide-react';
+import { Building2, Plus, X, Edit2, Trash2, MapPin, Phone, RefreshCw, Navigation, ArrowLeft, Globe } from 'lucide-react';
 import { stationsApi } from '@/api/stations/stations';
 import { useAuth } from '@/context/AuthContext/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -39,11 +39,7 @@ const Field = ({ label, field, form, setForm, placeholder, required }) => (
 
 export default function Stations() {
   const { role } = useAuth();
-
-  // Guard: superadmin only
-  if (role?.toLowerCase() !== 'superadmin') {
-    return <Navigate to="/" replace />;
-  }
+  const isSuperAdmin = role?.toLowerCase() === 'superadmin';
 
   const [stations,        setStations]        = useState([]);
   const [loading,         setLoading]         = useState(true);
@@ -145,6 +141,11 @@ export default function Stations() {
     { label: 'Latitude',  field: 'lat',  placeholder: 'e.g. 14.5995',  required: false },
     { label: 'Longitude', field: 'lng',  placeholder: 'e.g. 120.9842', required: false },
   ];
+
+  // Guard: superadmin only
+  if (!isSuperAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="space-y-6">

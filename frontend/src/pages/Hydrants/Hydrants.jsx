@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Droplets, Plus, X, Search, MapPin, Gauge, Pencil, Trash2, Map as MapIcon, Navigation, ArrowLeft } from 'lucide-react';
+import { Droplets, Plus, X, Search, MapPin, Pencil, Trash2, Navigation, ArrowLeft } from 'lucide-react';
 import { hydrantsApi } from '@/api/hydrants/hydrants';
 import { useAuth }     from '@/context/AuthContext/AuthContext';
 import MapView from '@/components/common/MapView/MapView';
@@ -107,11 +107,6 @@ export default function Hydrants() {
         setConfirm(null);
       },
     });
-  };
-
-  const updateStatus = async (id, status) => {
-    await hydrantsApi.update(id, { status });
-    load();
   };
 
   const handleNearbySearch = async () => {

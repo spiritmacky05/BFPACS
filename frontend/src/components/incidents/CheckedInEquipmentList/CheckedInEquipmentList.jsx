@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { dispatchesApi } from "@/api/dispatches/dispatches";
 import { equipmentApi } from "@/api/equipment/equipment";
 import { Package, Search } from "lucide-react";
 

@@ -1,6 +1,6 @@
 import { Truck, Users, Edit2 } from "lucide-react";
 
-export default function FleetUnitCard({ unit, canEdit, isOwnUnit, statusColors, statusLabels, onStatusChange, onEdit }) {
+export default function FleetUnitCard({ unit, canEdit, isOwnUnit, statusColors, statusLabels, onEdit }) {
   const acsStatus = unit.acs_status || "Serviceable";
 
   return (

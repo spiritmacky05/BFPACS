@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import {
   AlertTriangle, ArrowLeft, Printer, Pencil, MapPin,
@@ -46,7 +46,6 @@ function InfoRow({ label, value, valueClass = "text-white" }) {
 
 export default function IncidentDetail() {
   const [params]   = useSearchParams();
-  const navigate   = useNavigate();
   const incidentId = params.get("id");
 
   const [incident,    setIncident]    = useState(null);

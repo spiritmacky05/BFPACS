@@ -410,7 +410,7 @@ export default function Incidents() {
                             alert('Location access was previously denied.\n\nTo fix this:\n1. Click the lock/info icon in your browser address bar\n2. Find "Location" and set it to "Allow"\n3. Reload the page and try again');
                             return;
                           }
-                        } catch (_) { /* permissions API not fully supported, continue anyway */ }
+                        } catch { /* permissions API not fully supported, continue anyway */ }
                       }
 
                       setGeoLoading(true);

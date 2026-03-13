@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { X, Save, CheckCircle, Clock } from "lucide-react";
-import { usersApi } from "@/api/users/users";
 import { stationsApi } from "@/api/stations/stations";
 import { personnelApi } from "@/api/personnel/personnel";
 import { ACS_STATUSES } from "@/components/common/acsStatus";
@@ -56,7 +55,6 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
   });
   const [stations, setStations] = useState([]);
   const [personnel, setPersonnel] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,8 +71,6 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
         setPersonnel(linked || null);
       } catch (err) {
         console.warn("Failed to load supporting data:", err);
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
