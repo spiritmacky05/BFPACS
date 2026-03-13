@@ -48,13 +48,13 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import CheckIn from './pages/CheckIn/CheckIn';
-import Dashboard from './pages/Dashboard/Dashboard';
+import Dashboard from './features/dashboard/pages/DashboardPage';
 import Dispatch from './pages/Dispatch/Dispatch';
 import DutyPersonnel from './pages/DutyPersonnel/DutyPersonnel';
 import Equipment from './pages/Equipment/Equipment';
 import Fleet from './pages/Fleet/Fleet';
 import Hydrants from './pages/Hydrants/Hydrants';
-import IncidentDetail from './pages/IncidentDetail/IncidentDetail';
+import IncidentDetail from './features/incidentDetail/pages/IncidentDetailPage';
 import Incidents from './features/incidents/pages/IncidentsPage';
 import Personnel from './pages/Personnel/Personnel';
 import PersonnelProfile from './pages/PersonnelProfile/PersonnelProfile';
