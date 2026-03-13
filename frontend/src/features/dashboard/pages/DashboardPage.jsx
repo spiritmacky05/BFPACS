@@ -12,10 +12,10 @@
 import { useEffect, useState } from 'react';
 import { Flame } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext/AuthContext';
-import ActiveIncidentsList from '@/components/dashboard/ActiveIncidentsList/ActiveIncidentsList';
-import FleetStatusGrid from '@/components/dashboard/FleetStatusGrid/FleetStatusGrid';
-import AnalyticsCharts from '@/components/dashboard/AnalyticsCharts/AnalyticsCharts';
-import IncidentMapPanel from '@/components/dashboard/IncidentMapPanel/IncidentMapPanel';
+import ActiveIncidentsList from '../components/ActiveIncidentsList';
+import FleetStatusGrid from '../components/FleetStatusGrid';
+import AnalyticsCharts from '../components/AnalyticsCharts';
+import IncidentMapPanel from '../components/IncidentMapPanel';
 import useDashboard from '../hooks/useDashboard';
 import DashboardHeader from '../components/DashboardHeader';
 import DashboardStatsGrid from '../components/DashboardStatsGrid';
