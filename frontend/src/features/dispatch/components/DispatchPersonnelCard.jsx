@@ -5,7 +5,7 @@
  */
 
 import { Award, Building2 } from 'lucide-react';
-import PersonnelLink from '@/features/shared/components/PersonnelLink/PersonnelLink';
+import { PersonnelLink } from '@/features/personnel';
 
 const DUTY_STATUS_CLASS = {
   'On Duty': 'text-green-400 bg-green-600/10 border-green-600/30',

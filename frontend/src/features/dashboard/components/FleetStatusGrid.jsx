@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Truck, MapPin, X, AlertTriangle, Check } from "lucide-react";
-import { fleetApi } from "@/api/fleet/fleet";
+import { fleetApi } from "@/api/api-services";
 
 const statusColors = {
   Available: "text-green-400 bg-green-600/10 border-green-600/30",
