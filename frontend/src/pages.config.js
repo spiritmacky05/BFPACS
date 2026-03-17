@@ -47,20 +47,18 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import CheckIn from './pages/CheckIn/CheckIn';
+import { CheckInPage as CheckIn } from './features/checkin';
 import Dashboard from './features/dashboard/pages/DashboardPage';
 import Dispatch from './features/dispatch/pages/DispatchPage';
-import DutyPersonnel from './features/dutyPersonnel/pages/DutyPersonnelPage';
-import Equipment from './pages/Equipment/Equipment';
-import Fleet from './pages/Fleet/Fleet';
-import Hydrants from './pages/Hydrants/Hydrants';
+import { PersonnelPage as Personnel, PersonnelProfilePage as PersonnelProfile, ProfilePage as Profile } from './features/personnel';
+import { EquipmentPage as Equipment } from './features/equipment';
+import { FleetPage as Fleet } from './features/fleet';
+import { HydrantsPage as Hydrants } from './features/hydrants';
+import { StationsPage as Stations } from './features/stations';
+import { SuperAdminPage as SuperAdmin } from './features/superadmin';
+import { LoginPage as Login, RegisterPage as Register } from './features/auth';
 import IncidentDetail from './features/incidentDetail/pages/IncidentDetailPage';
 import Incidents from './features/incidents/pages/IncidentsPage';
-import Personnel from './pages/Personnel/Personnel';
-import PersonnelProfile from './pages/PersonnelProfile/PersonnelProfile';
-import Profile from './pages/Profile/Profile';
-import SuperAdmin from './pages/SuperAdmin/SuperAdmin';
-import Stations from './pages/Stations/Stations';
 import __Layout from './Layout.jsx';
 
 
@@ -68,15 +66,16 @@ export const PAGES = {
     "CheckIn": CheckIn,
     "Dashboard": Dashboard,
     "Dispatch": Dispatch,
-    "DutyPersonnel": DutyPersonnel,
+    "Personnel": Personnel,
+    "PersonnelProfile": PersonnelProfile,
+    "Profile": Profile,
     "Equipment": Equipment,
     "Fleet": Fleet,
     "Hydrants": Hydrants,
     "IncidentDetail": IncidentDetail,
     "Incidents": Incidents,
-    "Personnel": Personnel,
-    "PersonnelProfile": PersonnelProfile,
-    "Profile": Profile,
+    "Login": Login,
+    "Register": Register,
     "SuperAdmin": SuperAdmin,
     "Stations": Stations,
 }

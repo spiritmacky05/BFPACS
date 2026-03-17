@@ -13,8 +13,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext/AuthContext';
-import { useMyStation } from '@/hooks/useMyStation/useMyStation';
+import { useAuth } from '@/features/auth';
+import { useMyStation } from '@/features/stations';
 import { incidentDetailApi } from '../api/incidentDetail.api';
 import {
   applyIncidentDetailStatusWorkflow,

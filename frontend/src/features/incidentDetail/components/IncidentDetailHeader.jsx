@@ -9,7 +9,7 @@
 
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '@/utils/navigation';
 import IncidentActions from './IncidentActions';
 
 const styles = {

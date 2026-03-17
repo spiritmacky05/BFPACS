@@ -8,7 +8,7 @@
  * - Keep hooks/components free from raw HTTP strings.
  */
 
-import { httpClient } from '@/shared/lib/httpClient';
+import { httpClient } from '@/shared/httpClient';
 
 export const dispatchApi = {
   /**

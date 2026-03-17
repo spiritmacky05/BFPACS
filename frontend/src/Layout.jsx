@@ -8,13 +8,13 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '@/utils/navigation';
 import {
   Truck, AlertTriangle, ClipboardList, Menu, Shield,
   UserCheck, Package, Droplets, User, ShieldCheck,
   FolderOpen, ChevronDown, ChevronRight, Activity, LayoutDashboard, Building2,
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext/AuthContext';
+import { useAuth } from '@/features/auth';
 
 // ─── Tailwind Styles ──────────────────────────────────────────────────────────
 const styles = {

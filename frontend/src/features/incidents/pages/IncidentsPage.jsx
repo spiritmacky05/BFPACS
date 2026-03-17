@@ -10,10 +10,10 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { useAuth } from '@/context/AuthContext/AuthContext';
-import ConfirmationModal from '@/components/common/ConfirmationModal/ConfirmationModal';
-import IncidentEditModal from '@/components/incidents/IncidentEditModal/IncidentEditModal';
+import { createPageUrl } from '@/utils/navigation';
+import { useAuth } from '@/features/auth';
+import ConfirmationModal from '@/features/shared/components/ConfirmationModal';
+import IncidentEditModal from '../components/IncidentEditModal';
 import useIncidentsPage from '../hooks/useIncidentsPage';
 import IncidentsToolbar from '../components/IncidentsToolbar';
 import IncidentsList from '../components/IncidentsList';

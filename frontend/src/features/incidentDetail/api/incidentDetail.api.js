@@ -8,7 +8,7 @@
  * - Keep hooks/components free from raw HTTP paths.
  */
 
-import { httpClient } from '@/shared/lib/httpClient';
+import { httpClient } from '@/shared/httpClient';
 
 /**
  * API contract for incident-detail workflows.

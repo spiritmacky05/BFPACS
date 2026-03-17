@@ -8,7 +8,7 @@
  * - We group those calls here for readability.
  */
 
-import { httpClient } from '@/shared/lib/httpClient';
+import { httpClient } from '@/shared/httpClient';
 
 export const dispatchAssetsApi = {
   listResponders: () => httpClient.get('/admin/users'),

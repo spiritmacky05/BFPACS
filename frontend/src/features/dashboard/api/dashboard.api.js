@@ -8,9 +8,7 @@
  * - Makes it easy to test data loading in one place.
  */
 
-import { incidentsApi } from '@/api/incidents/incidents';
-import { fleetApi } from '@/api/fleet/fleet';
-import { personnelApi } from '@/api/personnel/personnel';
+import { incidentsApi, fleetApi, personnelApi } from '@/api/api-services';
 
 const dashboardApi = {
   async loadSnapshot() {

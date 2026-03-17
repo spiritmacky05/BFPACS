@@ -9,7 +9,7 @@
  */
 
 import { ClipboardList, Package, UserCheck } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext/AuthContext';
+import { useAuth } from '@/features/auth';
 import useDispatchPage from '../hooks/useDispatchPage';
 import DispatchToolbar from '../components/DispatchToolbar';
 import DispatchFilterSortPanel from '../components/DispatchFilterSortPanel';

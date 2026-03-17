@@ -8,7 +8,7 @@
  * - This keeps those endpoints grouped in one place.
  */
 
-import { httpClient } from '@/shared/lib/httpClient';
+import { httpClient } from '@/shared/httpClient';
 
 export const incidentDetailAssetsApi = {
   /**

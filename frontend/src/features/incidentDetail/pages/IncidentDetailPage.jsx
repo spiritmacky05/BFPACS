@@ -21,13 +21,13 @@ import {
   FileText,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import ConfirmationModal from '@/components/common/ConfirmationModal/ConfirmationModal';
-import IncidentEditModal from '@/components/incidents/IncidentEditModal/IncidentEditModal';
-import StatusHistoryPanel from '@/components/incidents/StatusHistoryPanel/StatusHistoryPanel';
-import PersonnelBreakdownDashboard from '@/components/incidents/PersonnelBreakdownDashboard/PersonnelBreakdownDashboard';
-import FleetForIncidentDashboard from '@/components/incidents/FleetForIncidentDashboard/FleetForIncidentDashboard';
-import ACSCheckInPortal from '@/components/incidents/ACSCheckInPortal/ACSCheckInPortal';
+import { createPageUrl } from '@/utils/navigation';
+import ConfirmationModal from '@/features/shared/components/ConfirmationModal';
+import IncidentEditModal from '@/features/incidents/components/IncidentEditModal';
+import StatusHistoryPanel from '../components/StatusHistoryPanel';
+import PersonnelBreakdownDashboard from '../components/PersonnelBreakdownDashboard';
+import FleetForIncidentDashboard from '../components/FleetForIncidentDashboard';
+import ACSCheckInPortal from '../components/ACSCheckInPortal';
 import useIncidentDetail from '../hooks/useIncidentDetail';
 import IncidentDetailHeader from '../components/IncidentDetailHeader';
 import IncidentDetailCard from '../components/IncidentDetailCard';

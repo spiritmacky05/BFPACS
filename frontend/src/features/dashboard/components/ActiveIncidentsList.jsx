@@ -1,7 +1,7 @@
 import { AlertTriangle, MapPin, Clock, Map as MapIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/utils/navigation";
 
 const alarmColors = {
   "1st Alarm": "text-yellow-400 border-yellow-600/40 bg-yellow-600/10",

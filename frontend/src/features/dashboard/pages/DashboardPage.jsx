@@ -11,7 +11,7 @@
 
 import { useEffect, useState } from 'react';
 import { Flame } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext/AuthContext';
+import { useAuth } from '@/features/auth';
 import ActiveIncidentsList from '../components/ActiveIncidentsList';
 import FleetStatusGrid from '../components/FleetStatusGrid';
 import AnalyticsCharts from '../components/AnalyticsCharts';

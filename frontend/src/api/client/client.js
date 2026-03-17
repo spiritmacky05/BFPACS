@@ -8,7 +8,7 @@
  * - We keep a stable import path while removing duplicate fetch logic.
  */
 
-import { ApiClientError, httpClient } from '@/shared/lib/httpClient';
+import { ApiClientError, httpClient } from '@/shared/httpClient';
 
 /**
  * Backward-compatible error class name.

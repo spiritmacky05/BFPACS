@@ -53,12 +53,33 @@ services:
       args:
         - VITE_API_URL=/api/v1
     container_name: bfpacs_frontend
-    ports:
-      - "5173:80"
+    # Note: Ports are now managed by Caddy for domain-based access
+    expose:
+      - "80"
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
+  caddy:
+    image: caddy:latest
+    container_name: bfpacs_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - bfpacs_caddy_data:/data
+      - bfpacs_caddy_config:/config
+    env_file:
+      - .env
+    depends_on:
+      - frontend
+      - backend
+
 volumes:
   bfpacs_pgdata:
+  bfpacs_caddy_data:
+  bfpacs_caddy_config:

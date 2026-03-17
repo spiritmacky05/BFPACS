@@ -10,15 +10,14 @@
 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider, useAuth } from '@/context/AuthContext/AuthContext';
+import { Toaster } from '@/features/shared/ui/Toaster';
+import { AuthProvider, useAuth } from '@/features/auth';
 import { queryClientInstance } from '@/lib/query-client/query-client';
 import { pagesConfig } from './pages.config';
 import PageNotFound from './lib/PageNotFound/PageNotFound';
 
-// Import Auth Pages directly
-import Login from './pages/Login/Login';
-import Register from './pages/Register/Register';
+// Import Auth Pages
+import { LoginPage as Login, RegisterPage as Register } from '@/features/auth';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { MapPin, Users, Truck, Shield, Navigation } from "lucide-react";
-import MapView from "@/components/common/MapView/MapView";
-import { hydrantsApi } from "@/api/hydrants/hydrants";
-import { useMyStation } from "@/hooks/useMyStation/useMyStation";
+import MapView from "@/features/shared/components/MapView";
+import { hydrantsApi } from "@/api/api-services";
+import { useMyStation } from '@/features/stations';
 
 export default function IncidentMapPanel({ incident, trucks, checkins, personnel }) {
   const [unitCount, setUnitCount] = useState(0);

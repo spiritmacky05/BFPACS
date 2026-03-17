@@ -8,7 +8,7 @@
  * - Makes cross-entity workflows easier to read in service layer.
  */
 
-import { httpClient } from '@/shared/lib/httpClient';
+import { httpClient } from '@/shared/httpClient';
 
 export const incidentAssetsApi = {
   /**
