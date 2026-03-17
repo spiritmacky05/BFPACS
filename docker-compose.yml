@@ -67,8 +67,8 @@ services:
     restart: unless-stopped
     ports:
       - "81:80"
-      - "443:443"
-      - "443:443/udp"
+      - "444:443"
+      - "444:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - bfpacs_caddy_data:/data
