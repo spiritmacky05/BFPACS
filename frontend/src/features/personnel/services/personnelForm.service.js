@@ -4,7 +4,6 @@
  * Pure helper functions for Duty Personnel form behavior.
  */
 
-const MAX_SKILLS = 5;
 
 export function parseCertification(certificationText) {
   if (!certificationText) {
@@ -24,10 +23,6 @@ export function joinCertification(skills) {
 export function toggleSkillWithLimit(previousSkills, skill) {
   if (previousSkills.includes(skill)) {
     return previousSkills.filter((item) => item !== skill);
-  }
-
-  if (previousSkills.length >= MAX_SKILLS) {
-    return previousSkills;
   }
 
   return [...previousSkills, skill];

@@ -152,7 +152,7 @@ export default function PersonnelFormModal({
                 );
               })}
             </div>
-            <p className={styles.skillNote}>{selectedSkills.length} selected (max 5)</p>
+            <p className={styles.skillNote}>{selectedSkills.length} selected</p>
           </div>
         </div>
 
