@@ -29,7 +29,7 @@ const adminLinks = [
 ];
 
 const quickLinks = [
-  { label: "Duty Personnel", page: "DutyPersonnel", icon: UserCheck, desc: "View on-duty personnel" },
+  { label: "Personnel", page: "Personnel", icon: UserCheck, desc: "View on-duty personnel" },
   { label: "Equipment", page: "Equipment", icon: Package, desc: "Equipment inventory" },
   { label: "Hydrants", page: "Hydrants", icon: Droplets, desc: "Hydrant locations & status" },
 ];

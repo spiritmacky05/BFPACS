@@ -74,7 +74,7 @@ const styles = {
 const userNavItems = [
   { label: 'Dashboard',     page: 'Dashboard',    icon: LayoutDashboard },
   { label: 'Incidents',     page: 'Incidents',    icon: AlertTriangle },
-  { label: 'Duty Personnel',page: 'DutyPersonnel',icon: UserCheck },
+  { label: 'Duty Personnel',page: 'Personnel',icon: UserCheck },
   { label: 'Equipment',     page: 'Equipment',    icon: Package },
   { label: 'Fire Hydrants', page: 'Hydrants',     icon: Droplets },
   { label: 'Profile',       page: 'Profile',      icon: User },
@@ -89,7 +89,7 @@ const adminNavItems = [
 ];
 
 const adminResourceItems = [
-  { label: 'Duty Personnel', page: 'DutyPersonnel', icon: UserCheck },
+  { label: 'Duty Personnel', page: 'Personnel', icon: UserCheck },
   { label: 'Equipment',      page: 'Equipment',     icon: Package },
   { label: 'Fire Hydrants',  page: 'Hydrants',      icon: Droplets },
 ];
@@ -110,7 +110,7 @@ const allNavItems = [
   { label: 'Incident Detail', page: 'IncidentDetail', icon: AlertTriangle },
   { label: 'Fleet',           page: 'Fleet',        icon: Truck },
   { label: 'Dispatch System', page: 'Dispatch',     icon: ClipboardList },
-  { label: 'Duty Personnel',  page: 'DutyPersonnel',icon: UserCheck },
+  { label: 'Duty Personnel',  page: 'Personnel',icon: UserCheck },
   { label: 'Equipment',       page: 'Equipment',    icon: Package },
   { label: 'Fire Hydrants',   page: 'Hydrants',     icon: Droplets },
   { label: 'Profile',         page: 'Profile',      icon: User },
