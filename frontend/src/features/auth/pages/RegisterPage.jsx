@@ -10,6 +10,11 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
+  const [region, setRegion] = useState('');
+  const [address, setAddress] = useState('');
+  
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMessage, setPendingMessage] = useState('');
@@ -33,7 +38,15 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const payload = { full_name: fullName, email, password };
+      const payload = { 
+        full_name: fullName, 
+        email, 
+        password,
+        city,
+        district,
+        region,
+        address_text: address || null
+      };
 
       const result = await register(payload);
       if (result.success) {
@@ -159,6 +172,65 @@ const Register = () => {
                 />
               </div>
             </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">City</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    placeholder="e.g. Quezon City"
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">District</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    required
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    placeholder="e.g. District 1"
+                  />
+                </div>
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Region</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    required
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    placeholder="e.g. NCR"
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Complete Address</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    placeholder="e.g. 123 Main St., Brgy. San Juan"
+                  />
+                </div>
+              </motion.div>
+            </div>
 
             <motion.div variants={itemVariants} className="space-y-1.5">
               <label className="text-sm font-medium text-neutral-300 ml-1">Email address</label>

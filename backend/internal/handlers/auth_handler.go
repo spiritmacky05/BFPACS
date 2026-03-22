@@ -64,9 +64,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	// Auto-create a station using full_name as station_name
 	station, err := h.stationRepo.Create(c.Request.Context(), models.CreateStationRequest{
 		StationName: req.FullName,
-		City:        "—",
-		District:    "—",
-		Region:      "—",
+		City:        req.City,
+		District:    req.District,
+		Region:      req.Region,
+		AddressText: req.AddressText,
 	})
 	if err != nil {
 		log.Printf("Auto-create station error: %v", err)

@@ -85,10 +85,7 @@ export default function StationsPage() {
           <button onClick={load} className="p-2 rounded-lg border border-[#1f1f1f] text-gray-400 hover:text-white transition-all">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button onClick={openCreate}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
-            <Plus className="w-4 h-4" /> Add Station
-          </button>
+
         </div>
       </div>
 
