@@ -209,13 +209,22 @@ export default function Profile() {
               </div>
               <div>
                 <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Type of Vehicle</label>
-                <input
-                  type="text"
+                <select
                   value={formData.type_of_vehicle || ""}
                   onChange={(e) => setFormData({...formData, type_of_vehicle: e.target.value})}
                   className="w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-3 py-2 text-sm text-white focus:border-red-600/50 focus:outline-none"
-                  placeholder="e.g., Pumper"
-                />
+                >
+                  <option value="" disabled>Select vehicle type...</option>
+                  <option value="Pumper">Pumper / Fire Engine</option>
+                  <option value="Ladder">Ladder / Aerial</option>
+                  <option value="Tanker">Tanker / Water Tender</option>
+                  <option value="Rescue">Rescue</option>
+                  <option value="Hazmat">Hazmat Unit</option>
+                  <option value="Brush">Brush / Wildland</option>
+                  <option value="Command">Command Vehicle</option>
+                  <option value="Ambulance">Ambulance / EMS</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               <div>
                 <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Engine Number</label>
