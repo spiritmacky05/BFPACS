@@ -99,7 +99,6 @@ const superAdminNavItems = [
   { label: 'Incidents',  page: 'Incidents',  icon: AlertTriangle },
   { label: 'Fleet',      page: 'Fleet',      icon: Truck },
   { label: 'Dispatch System',   page: 'Dispatch',   icon: ClipboardList },
-  { label: 'Fire Stations', page: 'Stations', icon: Building2 },
   { label: 'Profile',    page: 'Profile',    icon: User },
   { label: 'SuperAdmin', page: 'SuperAdmin', icon: ShieldCheck },
 ];

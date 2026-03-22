@@ -54,7 +54,7 @@ import { PersonnelPage as Personnel, PersonnelProfilePage as PersonnelProfile, P
 import { EquipmentPage as Equipment } from './features/equipment';
 import { FleetPage as Fleet } from './features/fleet';
 import { HydrantsPage as Hydrants } from './features/hydrants';
-import { StationsPage as Stations } from './features/stations';
+// import { StationsPage as Stations } from './features/stations';
 import { SuperAdminPage as SuperAdmin } from './features/superadmin';
 import { LoginPage as Login, RegisterPage as Register } from './features/auth';
 import IncidentDetail from './features/incidentDetail/pages/IncidentDetailPage';
@@ -77,7 +77,7 @@ export const PAGES = {
     "Login": Login,
     "Register": Register,
     "SuperAdmin": SuperAdmin,
-    "Stations": Stations,
+    // "Stations": Stations,
 }
 
 export const pagesConfig = {
