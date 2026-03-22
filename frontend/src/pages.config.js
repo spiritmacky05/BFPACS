@@ -66,7 +66,7 @@ export const PAGES = {
     "CheckIn": CheckIn,
     "Dashboard": Dashboard,
     "Dispatch": Dispatch,
-    "Personnel": Personnel,
+    "DutyPersonnel": Personnel,
     "PersonnelProfile": PersonnelProfile,
     "Profile": Profile,
     "Equipment": Equipment,
