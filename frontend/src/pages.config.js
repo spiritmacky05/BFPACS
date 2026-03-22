@@ -52,7 +52,7 @@ import Dashboard from './features/dashboard/pages/DashboardPage';
 import Dispatch from './features/dispatch/pages/DispatchPage';
 import { PersonnelPage as Personnel, PersonnelProfilePage as PersonnelProfile, ProfilePage as Profile } from './features/personnel';
 import { EquipmentPage as Equipment } from './features/equipment';
-import { FleetPage as Fleet } from './features/fleet';
+import { FleetPage as Fleet, FleetProfilePage as FleetProfile } from './features/fleet';
 import { HydrantsPage as Hydrants } from './features/hydrants';
 // import { StationsPage as Stations } from './features/stations';
 import { SuperAdminPage as SuperAdmin } from './features/superadmin';
@@ -71,6 +71,7 @@ export const PAGES = {
     "Profile": Profile,
     "Equipment": Equipment,
     "Fleet": Fleet,
+    "FleetProfile": FleetProfile,
     "Hydrants": Hydrants,
     "IncidentDetail": IncidentDetail,
     "Incidents": Incidents,

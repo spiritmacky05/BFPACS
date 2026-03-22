@@ -5,3 +5,4 @@
  */
 
 export { default as FleetPage } from './pages/FleetPage';
+export { default as FleetProfilePage } from './pages/FleetProfilePage';

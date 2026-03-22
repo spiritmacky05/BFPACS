@@ -1,10 +1,15 @@
 import { Truck, Users, Edit2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function FleetUnitCard({ unit, canEdit, isOwnUnit, statusColors, statusLabels, onEdit }) {
+  const navigate = useNavigate();
   const acsStatus = unit.acs_status || "Serviceable";
 
   return (
-    <tr className={`hover:bg-white/[0.02] transition-all ${isOwnUnit ? "bg-blue-500/5" : ""}`}>
+    <tr 
+      onClick={() => navigate(`/FleetProfile?id=${unit.id}`)}
+      className={`hover:bg-white/[0.04] cursor-pointer transition-all ${isOwnUnit ? "bg-blue-500/5" : ""}`}
+    >
       {/* Responder */}
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
@@ -50,7 +55,10 @@ export default function FleetUnitCard({ unit, canEdit, isOwnUnit, statusColors, 
       <td className="px-4 py-4">
         {canEdit && (
           <button
-            onClick={onEdit}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
             className="p-1.5 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white hover:border-red-500 transition-all"
           >
             <Edit2 className="w-3.5 h-3.5" />
