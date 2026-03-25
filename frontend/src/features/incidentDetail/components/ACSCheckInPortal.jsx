@@ -41,8 +41,8 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
 
   const handleSelectResponder = (responder) => {
     setSelectedResponder(responder);
-    // Show all serviceable equipment regardless of station
-    setRelatedEquipment(allEquipment.filter(eq => eq.status === "Serviceable"));
+    // Show all serviceable and borrowed equipment regardless of station
+    setRelatedEquipment(allEquipment.filter(eq => eq.status === "Serviceable" || eq.status === "Borrowed"));
     setStep("confirm");
   };
 
@@ -205,7 +205,7 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
               <div>
                 <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
                   <Package className="w-3.5 h-3.5 text-orange-400" />
-                  Serviceable Equipment ({relatedEquipment.length})
+                  Equipment On-Scene / Allocated ({relatedEquipment.length})
                 </div>
                 {relatedEquipment.length === 0 ? (
                   <div className="text-gray-600 text-xs py-3 text-center bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
@@ -214,11 +214,19 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
                 ) : (
                   <div className="grid grid-cols-2 gap-1.5">
                     {relatedEquipment.map(eq => (
-                      <div key={eq.id} className="flex items-center gap-2 px-3 py-2 bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
-                        <Package className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="text-white text-xs font-medium truncate">{eq.equipment_name}</div>
-                          <div className="text-gray-600 text-xs">Qty: {eq.quantity}</div>
+                      <div key={eq.id} className="flex flex-col gap-1 px-3 py-2 bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Package className="w-3 h-3 text-orange-400 shrink-0" />
+                            <div className="text-white text-xs font-medium truncate">{eq.equipment_name}</div>
+                          </div>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded border ${eq.status === 'Borrowed' ? 'text-orange-400 bg-orange-600/10 border-orange-600/30' : 'text-green-400 bg-green-600/10 border-green-600/30'}`}>
+                            {eq.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <div className="text-gray-600">Qty: {eq.quantity}</div>
+                          {eq.borrower_name && <div className="text-gray-500 font-medium">By: {eq.borrower_name}</div>}
                         </div>
                       </div>
                     ))}

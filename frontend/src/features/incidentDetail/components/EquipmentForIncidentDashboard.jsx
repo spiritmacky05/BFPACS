@@ -10,8 +10,8 @@ export default function EquipmentForIncidentDashboard({ incidentId }) {
     const fetchEquipment = async () => {
       try {
         const data = await equipmentApi.list();
-        // Since we don't have a direct link yet, we show all serviceable equipment for now
-        setEquipment((data || []).filter(eq => eq.status === "Serviceable"));
+        // Since we don't have a direct link yet, we show all serviceable and borrowed equipment for now
+        setEquipment((data || []).filter(eq => eq.status === "Serviceable" || eq.status === "Borrowed"));
       } catch (error) {
         console.error("Error fetching equipment for incident:", error);
       } finally {
@@ -57,9 +57,16 @@ export default function EquipmentForIncidentDashboard({ incidentId }) {
               </div>
               <div className="text-white text-xs font-medium truncate">{eq.equipment_name}</div>
             </div>
-            <div className="flex items-center justify-between text-[10px] text-gray-500 uppercase tracking-wider">
-              <span>Qty: {eq.quantity}</span>
-              <span className="text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">{eq.status}</span>
+            <div className="flex flex-col gap-1.5 text-[10px] uppercase tracking-wider">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Qty: {eq.quantity}</span>
+                <span className={`px-1.5 py-0.5 rounded border ${eq.status === 'Borrowed' ? 'text-orange-500 bg-orange-500/10 border-orange-500/20' : 'text-green-500 bg-green-500/10 border-green-500/20'}`}>
+                  {eq.status}
+                </span>
+              </div>
+              {eq.borrower_name && (
+                <div className="text-gray-400 font-medium normal-case">By: {eq.borrower_name}</div>
+              )}
             </div>
           </div>
         ))}
