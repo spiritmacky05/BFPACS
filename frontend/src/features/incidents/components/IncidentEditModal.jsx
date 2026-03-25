@@ -44,7 +44,7 @@ export default function IncidentEditModal({ incident, onClose, onSaved }) {
       if (data) {
         setCommanders(
           data
-            .filter(u => u.sub_role === 'manager')
+            .filter(u => u.sub_user_role === 'manager')
             .map(u => u.full_name)
             .sort()
         );

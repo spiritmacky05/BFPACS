@@ -83,7 +83,7 @@ export function useDispatchPage() {
   }, [stations]);
 
   const availableResponders = useMemo(
-    () => responders.filter((r) => r.sub_role === 'responder' && r.agency_role === 'BFP'),
+    () => responders.filter((r) => r.sub_user_role === 'responder' && r.agency_role === 'BFP'),
     [responders]
   );
 

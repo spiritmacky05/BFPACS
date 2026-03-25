@@ -24,11 +24,11 @@ export const useFleet = () => {
     try {
       if (isAdmin) {
         const allUsers = await superadminApi.listUsers();
-        const fleet = (allUsers || []).filter(u => u.sub_role === "responder" && u.agency_role === "BFP");
+        const fleet = (allUsers || []).filter(u => u.sub_user_role === "responder" && u.agency_role === "BFP");
         setResponders(fleet);
       } else {
         const isBfpResponder = currentUser && 
-                             currentUser.sub_role === "responder" && 
+                             currentUser.sub_user_role === "responder" && 
                              currentUser.agency_role === "BFP";
         setResponders(isBfpResponder ? [currentUser] : []);
       }
