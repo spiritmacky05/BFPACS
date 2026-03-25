@@ -267,19 +267,20 @@ export default function IncidentDetailPage() {
           )}
         </IncidentDetailCard>
 
-        <IncidentDetailCard title="Casualties" Icon={Users}>
-          <div className={styles.casualtiesWrap}>
-            <div className={styles.casualtyItem}>
-              <div className={styles.casualtyValueRed}>{incident.total_injured ?? 0}</div>
-              <div className={styles.casualtyLabel}>Injured</div>
-            </div>
-            <div className={styles.casualtyItem}>
-              <div className={styles.casualtyValueGreen}>{incident.total_rescued ?? 0}</div>
-              <div className={styles.casualtyLabel}>Rescued</div>
-            </div>
-          </div>
-        </IncidentDetailCard>
       </div>
+
+      <IncidentDetailCard title="Casualties" Icon={Users}>
+        <div className="grid grid-cols-2 gap-4">
+          <div className={styles.casualtyItem}>
+            <div className={styles.casualtyValueRed}>{incident.total_injured ?? 0}</div>
+            <div className={styles.casualtyLabel}>Injured</div>
+          </div>
+          <div className={styles.casualtyItem}>
+            <div className={styles.casualtyValueGreen}>{incident.total_rescued ?? 0}</div>
+            <div className={styles.casualtyLabel}>Rescued</div>
+          </div>
+        </div>
+      </IncidentDetailCard>
 
       <div ref={refs.fleetRef} className={styles.sectionOffset}>
         <FleetForIncidentDashboard incidentId={incidentId} />
