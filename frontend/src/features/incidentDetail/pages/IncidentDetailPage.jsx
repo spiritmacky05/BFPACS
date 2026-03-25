@@ -27,6 +27,7 @@ import IncidentEditModal from '@/features/incidents/components/IncidentEditModal
 import StatusHistoryPanel from '../components/StatusHistoryPanel';
 import PersonnelBreakdownDashboard from '../components/PersonnelBreakdownDashboard';
 import FleetForIncidentDashboard from '../components/FleetForIncidentDashboard';
+import EquipmentForIncidentDashboard from '../components/EquipmentForIncidentDashboard';
 import ACSCheckInPortal from '../components/ACSCheckInPortal';
 import useIncidentDetail from '../hooks/useIncidentDetail';
 import IncidentDetailHeader from '../components/IncidentDetailHeader';
@@ -72,7 +73,8 @@ const TAB_ICON_BY_ID = {
   overview: LayoutGrid,
   personnel: Users,
   fleet: Activity,
-  history: FileText,
+  equipment: FileText,
+  history: Activity,
 };
 
 export default function IncidentDetailPage() {
@@ -260,6 +262,10 @@ export default function IncidentDetailPage() {
 
       <div ref={refs.fleetRef} className={styles.sectionOffset}>
         <FleetForIncidentDashboard incidentId={incidentId} />
+      </div>
+
+      <div ref={refs.equipmentRef} className={styles.sectionOffset}>
+        <EquipmentForIncidentDashboard incidentId={incidentId} />
       </div>
 
       <div

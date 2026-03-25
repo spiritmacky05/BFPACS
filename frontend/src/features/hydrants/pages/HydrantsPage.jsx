@@ -1,12 +1,5 @@
-/**
- * features/hydrants/pages/HydrantsPage.jsx
- *
- * Fire hydrant registry with PostGIS nearby search, edit/delete,
- * status filters, and inline status change.
- */
-
-import React from 'react';
-import { Droplets, Plus, X, Search, MapPin, Pencil, Trash2, Navigation, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { Droplets, Plus, X, Search, MapPin, Pencil, Trash2, Navigation, ArrowLeft, LayoutGrid, List } from 'lucide-react';
 import MapView from '@/features/shared/components/MapView';
 import { useHydrants } from '../hooks/useHydrants';
 
@@ -23,6 +16,7 @@ const STATUS_COLORS = {
 };
 
 export default function HydrantsPage() {
+  const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
   const {
     hydrants,
     loading,
@@ -89,21 +83,38 @@ export default function HydrantsPage() {
         )}
       </div>
 
-      {/* Status Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {['All', ...HYDRANT_STATUSES].map(s => (
+      {/* Status Filters + View Toggle */}
+      <div className="flex justify-between items-center gap-4 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
+          {['All', ...HYDRANT_STATUSES].map(s => (
+            <button
+              key={s}
+              onClick={() => setFilterStatus(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                filterStatus === s
+                  ? "bg-red-600/20 border-red-600/50 text-red-400"
+                  : "bg-[#111] border-[#1f1f1f] text-gray-500 hover:border-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1 border border-[#1f1f1f] rounded-lg p-1 bg-[#0a0a0a]">
           <button
-            key={s}
-            onClick={() => setFilterStatus(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-              filterStatus === s
-                ? "bg-red-600/20 border-red-600/50 text-red-400"
-                : "bg-[#111] border-[#1f1f1f] text-gray-500 hover:border-gray-500 hover:text-gray-300"
-            }`}
+            onClick={() => setViewMode('card')}
+            className={`p-1.5 rounded transition-all ${viewMode === 'card' ? 'bg-red-600/20 text-red-400' : 'text-gray-500 hover:text-gray-300'}`}
           >
-            {s}
+            <LayoutGrid className="w-4 h-4" />
           </button>
-        ))}
+          <button
+            onClick={() => setViewMode('table')}
+            className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-red-600/20 text-red-400' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Nearby Search */}
@@ -307,13 +318,62 @@ export default function HydrantsPage() {
         );
       })() : (
         <>
-          {/* Cards Grid */}
+          {/* Content View */}
           {loading ? (
             <div className="text-center text-gray-500 py-16">Loading hydrants...</div>
           ) : !displayList.length ? (
             <div className="text-center text-gray-600 py-16">
               <Droplets className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p>No hydrants found</p>
+            </div>
+          ) : viewMode === 'table' ? (
+            <div className="bg-[#111] border border-[#1f1f1f] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#1f1f1f] bg-[#0d0d0d]">
+                      {["Type", "Address", "PSI", "Status", "Coordinates", "Actions"].map(h => (
+                        <th key={h} className="text-left text-gray-500 text-xs uppercase tracking-wider px-4 py-3">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#151515]">
+                    {displayList.map(h => (
+                      <tr key={h.id} className="hover:bg-white/[0.02] transition-colors" onClick={() => setSelectedHydrant(h)}>
+                        <td className="px-4 py-4 text-white font-medium">{h.hydrant_type || '—'}</td>
+                        <td className="px-4 py-4 text-gray-400 max-w-xs truncate">{h.address || h.address_text || '—'}</td>
+                        <td className="px-4 py-4 text-blue-400 font-medium">{h.psi ?? '—'}</td>
+                        <td className="px-4 py-4">
+                          <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${STATUS_COLORS[h.status] ?? STATUS_COLORS['Serviceable']}`}>
+                            {h.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-gray-500 font-mono text-[11px]">
+                          {h.lat != null ? `${h.lat.toFixed(4)}, ${h.lng.toFixed(4)}` : '—'}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openEdit(h); }}
+                              className="p-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:text-blue-400 transition-all"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDelete(h); }}
+                                className="p-1.5 rounded-lg border border-[#2f2f2f] text-gray-400 hover:text-red-400 transition-all"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

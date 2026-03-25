@@ -1,10 +1,4 @@
-/**
- * features/dispatch/components/DispatchPersonnelCard.jsx
- *
- * Presentational card for personnel entries in Dispatch page.
- */
-
-import { Award, Building2 } from 'lucide-react';
+import { Award, Building2, Phone } from 'lucide-react';
 import { PersonnelLink } from '@/features/personnel';
 
 const DUTY_STATUS_CLASS = {
@@ -14,7 +8,7 @@ const DUTY_STATUS_CLASS = {
 };
 
 const styles = {
-  cardBase: 'bg-[#0d0d0d] border rounded-xl p-3.5 flex flex-col gap-2 transition-all',
+  cardBase: 'bg-[#0d0d0d] border rounded-xl p-3.5 flex flex-col gap-2 transition-all group',
   cardOnDuty: 'border-green-600/20 hover:border-green-600/40',
   cardOffDuty: 'border-[#1f1f1f] opacity-60',
   header: 'flex items-start justify-between gap-2',
@@ -33,6 +27,7 @@ const styles = {
   stationCity: 'text-gray-600 truncate',
   certIcon: 'w-3 h-3 text-blue-400 flex-shrink-0',
   certText: 'text-blue-300/80 truncate',
+  callButton: 'mt-2 flex items-center justify-center gap-2 w-full py-1.5 bg-blue-600/10 border border-blue-600/30 text-blue-400 rounded-lg text-xs font-medium hover:bg-blue-600 hover:text-white transition-all',
 };
 
 export default function DispatchPersonnelCard({ personnel }) {
@@ -87,6 +82,13 @@ export default function DispatchPersonnelCard({ personnel }) {
           </div>
         )}
       </div>
+
+      {personnel.contact_number && (
+        <a href={`tel:${personnel.contact_number}`} className={styles.callButton}>
+          <Phone className="w-3 h-3" />
+          CALL
+        </a>
+      )}
     </div>
   );
 }

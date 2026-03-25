@@ -21,8 +21,10 @@ type User struct {
 
 	// SuperAdmin-managed fields
 	UserType             *string `json:"user_type,omitempty"`
-	SubRole              *string `json:"sub_role,omitempty"`
-	PersonnelType        *string `json:"personnel_type,omitempty"`
+	SubUserRole          *string `json:"sub_user_role,omitempty" gorm:"column:sub_role"`
+	AgencyRole           *string `json:"agency_role,omitempty" gorm:"column:personnel_type"`
+	BfpType              *string `json:"bfp_type,omitempty" gorm:"column:bfp_type"`
+	ManagerRank          *string `json:"manager_rank,omitempty" gorm:"column:manager_rank"`
 	TypeOfVehicle        *string `json:"type_of_vehicle,omitempty"`
 	EngineNumber         *string `json:"engine_number,omitempty"`
 	PlateNumber          *string `json:"plate_number,omitempty"`
@@ -42,8 +44,10 @@ type UpdateUserRequest struct {
 	Approved             *bool   `json:"approved"`
 	IsActive             *bool   `json:"is_active"`
 	UserType             *string `json:"user_type"`
-	SubRole              *string `json:"sub_role"`
-	PersonnelType        *string `json:"personnel_type"`
+	SubUserRole          *string `json:"sub_user_role"`
+	AgencyRole           *string `json:"agency_role"`
+	BfpType              *string `json:"bfp_type"`
+	ManagerRank          *string `json:"manager_rank"`
 	TypeOfVehicle        *string `json:"type_of_vehicle"`
 	EngineNumber         *string `json:"engine_number"`
 	PlateNumber          *string `json:"plate_number"`

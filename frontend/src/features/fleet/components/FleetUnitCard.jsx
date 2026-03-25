@@ -1,4 +1,4 @@
-import { Truck, Users, Edit2 } from "lucide-react";
+import { Truck, Users, Edit2, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function FleetUnitCard({ unit, canEdit, isOwnUnit, statusColors, statusLabels, onEdit }) {
@@ -53,17 +53,29 @@ export default function FleetUnitCard({ unit, canEdit, isOwnUnit, statusColors, 
 
       {/* Actions */}
       <td className="px-4 py-4">
-        {canEdit && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="p-1.5 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white hover:border-red-500 transition-all"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {unit.station_contact_number && (
+            <a
+              href={`tel:${unit.station_contact_number}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 border border-blue-600/40 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition-all"
+            >
+              <Phone className="w-3 h-3" />
+              CALL
+            </a>
+          )}
+          {canEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-1.5 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white hover:border-red-500 transition-all"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   );

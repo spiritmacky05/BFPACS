@@ -31,7 +31,11 @@ const OCCUPANCY_TYPES = [
   'Residential',
 ];
 
-const ALARM_OPTIONS = ['1st Alarm', '2nd Alarm', '3rd Alarm', '4th Alarm', '5th Alarm', 'General Alarm'];
+const ALARM_OPTIONS = [
+  '1st Alarm', '2nd Alarm', '3rd Alarm', '4th Alarm', '5th Alarm',
+  'Task Force Alpha', 'Task Force Bravo', 'Task Force Charlie', 'Task Force Delta', 'Task Force Echo',
+  'General Alarm'
+];
 
 const styles = {
   overlay: 'fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4',

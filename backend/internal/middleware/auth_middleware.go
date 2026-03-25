@@ -53,6 +53,7 @@ func RequireAuth() gin.HandlerFunc {
 
 		// Attach user ID, role, and station_id to context
 		c.Set("userID", claims["user_id"])
+		c.Set("userName", claims["full_name"])
 		c.Set("role", claims["role"])
 		if stationID, ok := claims["station_id"]; ok {
 			c.Set("stationID", stationID)

@@ -5,30 +5,23 @@ import { personnelApi } from "@/features/personnel";
 import { ACS_STATUSES } from "@/features/shared/components/acsStatus";
 
 const ROLE_OPTIONS = ["user", "admin", "superadmin"];
-const USER_TYPE_OPTIONS = ["responder", "manager"];
-const SUB_ROLE_OPTIONS = {
-  responder: [
-    { value: "fire_suppression", label: "Fire Suppression (BFP)" },
-    { value: "ems", label: "EMS (BFP)" },
-    { value: "srf", label: "SRF (BFP)" },
-    { value: "iiu", label: "IIU (BFP)" },
-    { value: "fire_brigade", label: "Fire Brigade" },
-    { value: "fire_volunteer", label: "Fire Volunteer" },
-    { value: "drrmo", label: "DRRMO" },
-    { value: "pnp", label: "PNP" },
-    { value: "others", label: "Others" },
-  ],
-  manager: [
-    { value: "finsp", label: "FINSP" },
-    { value: "fsinsp", label: "FSINSP" },
-    { value: "fcinsp", label: "FCINSP" },
-    { value: "fsupt", label: "FSUPT" },
-    { value: "fssupt", label: "FSSUPT" },
-    { value: "fcsupt", label: "FCSUPT" },
-  ],
-};
-
-const PERSONNEL_TYPES = ["BFP", "Fire Brigade", "Fire Volunteer", "PNP", "DRRMO"];
+const SUB_USER_ROLE_OPTIONS = ["responder", "manager"];
+const AGENCY_ROLE_OPTIONS = ["BFP", "Fire Volunteer", "Fire Brigade", "PNP", "DRRMO", "Others"];
+const BFP_TYPE_OPTIONS = ["Fire Suppression", "EMS", "IIU", "SRF"];
+const CAPACITY_OPTIONS = [250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000];
+const VEHICLE_TYPE_OPTIONS = [
+  "Pumper",
+  "Water Tanker",
+  "Aerial Ladder",
+  "Aerial Platform",
+  "Rescue Vehicle",
+  "Ambulance",
+  "Command Vehicle",
+  "Service Vehicle",
+  "Squirt",
+  "Fire Boat",
+  "Crash Fire Rescue (CFR)"
+];
 
 const inputClass =
   "w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-purple-600/50";
@@ -39,10 +32,11 @@ const labelClass = "text-xs text-gray-500 block mb-2";
 export default function UserEditModal({ user, onClose, onSave, saving }) {
   const [form, setForm] = useState({
     role: (user.role || "user").toLowerCase(),
-    user_type: user.user_type || "",
-    sub_role: user.sub_role || "",
+    sub_user_role: user.sub_user_role || "",
+    agency_role: user.agency_role || "",
+    bfp_type: user.bfp_type || "",
+    manager_rank: user.manager_rank || "",
     approved: user.approved || false,
-    personnel_type: user.personnel_type || "BFP",
     type_of_vehicle: user.type_of_vehicle || "",
     engine_number: user.engine_number || "",
     plate_number: user.plate_number || "",
@@ -64,7 +58,6 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
           personnelApi.list(),
         ]);
         setStations(stationList || []);
-        // Find personnel linked to this user by matching name or station
         const linked = (personnelList || []).find(
           (p) => p.station_id === user.station_id
         );
@@ -80,7 +73,6 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
     const payload = {
       role: form.role.toLowerCase(),
       approved: form.approved,
-      personnel_type: form.personnel_type || null,
       type_of_vehicle: form.type_of_vehicle || null,
       engine_number: form.engine_number || null,
       plate_number: form.plate_number || null,
@@ -91,13 +83,33 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
       acs_status: form.acs_status,
       station_id: form.station_id || "",
     };
+
     if (form.role === "user") {
-      payload.user_type = form.user_type || null;
-      payload.sub_role = form.sub_role || null;
+      payload.sub_user_role = form.sub_user_role || null;
+      if (form.sub_user_role === "responder") {
+        payload.agency_role = form.agency_role || null;
+        if (form.agency_role === "BFP") {
+          payload.bfp_type = form.bfp_type || null;
+        } else {
+          payload.bfp_type = null;
+        }
+        payload.manager_rank = null;
+      } else if (form.sub_user_role === "manager") {
+        payload.manager_rank = form.manager_rank || null;
+        payload.agency_role = null;
+        payload.bfp_type = null;
+      } else {
+        payload.agency_role = null;
+        payload.bfp_type = null;
+        payload.manager_rank = null;
+      }
     } else {
-      payload.user_type = null;
-      payload.sub_role = null;
+      payload.sub_user_role = null;
+      payload.agency_role = null;
+      payload.bfp_type = null;
+      payload.manager_rank = null;
     }
+
     onSave(user.id, payload, personnel);
   };
 
@@ -120,12 +132,12 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
           {/* Role Selection */}
           <div>
             <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
-              Role
+              Top-Level Role
             </label>
             <select
               value={form.role}
               onChange={(e) =>
-                setForm({ ...form, role: e.target.value, user_type: "", sub_role: "" })
+                setForm({ ...form, role: e.target.value, sub_user_role: "", agency_role: "", bfp_type: "", manager_rank: "" })
               }
               className={selectClass}
             >
@@ -137,46 +149,81 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
             </select>
           </div>
 
-          {/* User Type & Sub Role */}
+          {/* Sub-User Logic */}
           {form.role === "user" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
-                  Type
-                </label>
-                <select
-                  value={form.user_type}
-                  onChange={(e) =>
-                    setForm({ ...form, user_type: e.target.value, sub_role: "" })
-                  }
-                  className={selectClass}
-                >
-                  <option value="">Select Type</option>
-                  {USER_TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {form.user_type && (
+            <div className="space-y-4 bg-[#1a1a1a]/30 p-4 rounded-lg border border-[#2f2f2f]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
-                    Sub-Role
+                    Sub-User Role
                   </label>
                   <select
-                    value={form.sub_role}
-                    onChange={(e) => setForm({ ...form, sub_role: e.target.value })}
+                    value={form.sub_user_role}
+                    onChange={(e) =>
+                      setForm({ ...form, sub_user_role: e.target.value, agency_role: "", bfp_type: "", manager_rank: "" })
+                    }
                     className={selectClass}
                   >
                     <option value="">Select Sub-Role</option>
-                    {(SUB_ROLE_OPTIONS[form.user_type] || []).map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
+                    {SUB_USER_ROLE_OPTIONS.map((t) => (
+                      <option key={t} value={t}>
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {form.sub_user_role === "manager" && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
+                      Manager Rank
+                    </label>
+                    <input
+                      type="text"
+                      value={form.manager_rank}
+                      onChange={(e) => setForm({ ...form, manager_rank: e.target.value })}
+                      placeholder="Enter Rank"
+                      className={inputClass}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {form.sub_user_role === "responder" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
+                      Agency Role
+                    </label>
+                    <select
+                      value={form.agency_role}
+                      onChange={(e) => setForm({ ...form, agency_role: e.target.value, bfp_type: "" })}
+                      className={selectClass}
+                    >
+                      <option value="">Select Agency</option>
+                      {AGENCY_ROLE_OPTIONS.map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {form.agency_role === "BFP" && (
+                    <div>
+                      <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
+                        BFP Type
+                      </label>
+                      <select
+                        value={form.bfp_type}
+                        onChange={(e) => setForm({ ...form, bfp_type: e.target.value })}
+                        className={selectClass}
+                      >
+                        <option value="">Select BFP Type</option>
+                        {BFP_TYPE_OPTIONS.map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -204,54 +251,24 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
             </button>
           </div>
 
-          {/* Station Assignment */}
+          {/* Global Fields */}
           <div className="border-t border-[#2f2f2f] pt-4">
             <h3 className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
-              Station Assignment
-            </h3>
-            <select
-              value={form.station_id || ""}
-              onChange={(e) => setForm({ ...form, station_id: e.target.value })}
-              className={selectClass}
-            >
-              <option value="">Select Station</option>
-              {stations.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.station_name} ({s.city})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* User Vehicle & Station Info */}
-          <div className="border-t border-[#2f2f2f] pt-4">
-            <h3 className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
-              User Information
+              Global Vehicle & Station Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Personnel Type</label>
-                <select
-                  value={form.personnel_type || "BFP"}
-                  onChange={(e) => setForm({ ...form, personnel_type: e.target.value })}
-                  className={selectClass}
-                >
-                  {PERSONNEL_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
                 <label className={labelClass}>Type of Vehicle</label>
-                <input
-                  type="text"
+                <select
                   value={form.type_of_vehicle}
                   onChange={(e) => setForm({ ...form, type_of_vehicle: e.target.value })}
-                  placeholder="e.g., Pumper, Ladder, Tanker"
-                  className={inputClass}
-                />
+                  className={selectClass}
+                >
+                  <option value="">Select Vehicle Type</option>
+                  {VEHICLE_TYPE_OPTIONS.map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className={labelClass}>Engine Number</label>
@@ -274,16 +291,19 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
                 />
               </div>
               <div>
-                <label className={labelClass}>Fire Truck Capacity</label>
-                <input
-                  type="number"
+                <label className={labelClass}>Fire Truck Capacity (Gallons)</label>
+                <select
                   value={form.fire_truck_capacity}
-                  onChange={(e) =>
-                    setForm({ ...form, fire_truck_capacity: e.target.value })
-                  }
-                  placeholder="Personnel capacity"
-                  className={inputClass}
-                />
+                  onChange={(e) => setForm({ ...form, fire_truck_capacity: e.target.value })}
+                  className={selectClass}
+                >
+                  <option value="">Select Capacity</option>
+                  {CAPACITY_OPTIONS.map((c) => (
+                    <option key={c} value={c}>
+                      {c} Gallons
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className={labelClass}>City Fire Marshal</label>

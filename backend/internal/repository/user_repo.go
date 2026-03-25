@@ -78,11 +78,17 @@ func (r *UserRepo) UpdateUser(ctx context.Context, id uuid.UUID, req models.Upda
 	if req.UserType != nil {
 		updates["user_type"] = *req.UserType
 	}
-	if req.SubRole != nil {
-		updates["sub_role"] = *req.SubRole
+	if req.SubUserRole != nil {
+		updates["sub_role"] = *req.SubUserRole
 	}
-	if req.PersonnelType != nil {
-		updates["personnel_type"] = *req.PersonnelType
+	if req.AgencyRole != nil {
+		updates["personnel_type"] = *req.AgencyRole
+	}
+	if req.BfpType != nil {
+		updates["bfp_type"] = *req.BfpType
+	}
+	if req.ManagerRank != nil {
+		updates["manager_rank"] = *req.ManagerRank
 	}
 	if req.TypeOfVehicle != nil {
 		updates["type_of_vehicle"] = *req.TypeOfVehicle

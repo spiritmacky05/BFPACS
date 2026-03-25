@@ -86,3 +86,12 @@ type UpdateDispatchStatusRequest struct {
 	DispatchStatus    string  `json:"dispatch_status" binding:"required"` // "10-23", "Fire Out", etc.
 	SituationalReport *string `json:"situational_report"`
 }
+
+// IncidentStatusLog tracks the history of changes to an incident
+type IncidentStatusLog struct {
+	ID         uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	IncidentID uuid.UUID `json:"incident_id" gorm:"type:uuid;index"`
+	UserName   string    `json:"user_name"`
+	Status     string    `json:"status"`
+	Timestamp  time.Time `json:"timestamp" gorm:"autoCreateTime"`
+}

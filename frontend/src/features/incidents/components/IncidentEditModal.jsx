@@ -4,9 +4,9 @@ import { personnelApi } from "@/features/personnel";
 import { incidentsApi } from "@/features/incidents";
 
 const ALARM_STATUS_OPTIONS = [
-  "1st Alarm", "2nd Alarm", "3rd Alarm", "4th Alarm", "5th Alarm",
-  "Task Force Alpha", "Task Force Bravo", "Task Force Charlie", "Task Force Delta",
-  "General Alarm", "Fire Under Control", "Fire Out",
+  '1st Alarm', '2nd Alarm', '3rd Alarm', '4th Alarm', '5th Alarm',
+  'Task Force Alpha', 'Task Force Bravo', 'Task Force Charlie', 'Task Force Delta', 'Task Force Echo',
+  'General Alarm'
 ];
 
 const INCIDENT_STATUS_OPTIONS = [
@@ -113,16 +113,9 @@ export default function IncidentEditModal({ incident, onClose, onSaved }) {
           {/* Operational Status */}
           <div className="text-xs text-red-400 uppercase tracking-widest font-semibold border-b border-[#1f1f1f] pb-2">Operational Status</div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className={LABEL_CLS}>Overall Status</label>
-              <select value={form.incident_status} onChange={e => set("incident_status", e.target.value)} className={INPUT_CLS}>
-                <option value="">— Select —</option>
-                {INCIDENT_STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={LABEL_CLS}>Alarm Level</label>
+              <label className={LABEL_CLS}>Alarm Level Status</label>
               <select value={form.alarm_status} onChange={e => set("alarm_status", e.target.value)} className={INPUT_CLS}>
                 <option value="">— Select —</option>
                 {ALARM_STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}

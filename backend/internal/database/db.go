@@ -64,6 +64,7 @@ func NewConnectionPool() *gorm.DB {
 		&models.SituationalReport{},
 		&models.Notification{},
 		&models.PersonnelIncidentLog{},
+		&models.IncidentStatusLog{},
 	)
 	if err != nil {
 		log.Printf("⚠️  AutoMigrate warning (non-fatal, existing schema used): %v", err)

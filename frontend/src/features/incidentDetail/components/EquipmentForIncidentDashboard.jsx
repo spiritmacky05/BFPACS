@@ -1,0 +1,69 @@
+import { useState, useEffect } from "react";
+import { equipmentApi } from "@/features/equipment";
+import { Package } from "lucide-react";
+
+export default function EquipmentForIncidentDashboard({ incidentId }) {
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEquipment = async () => {
+      try {
+        const data = await equipmentApi.list();
+        // Since we don't have a direct link yet, we show all serviceable equipment for now
+        setEquipment((data || []).filter(eq => eq.status === "Serviceable"));
+      } catch (error) {
+        console.error("Error fetching equipment for incident:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEquipment();
+  }, [incidentId]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div className="flex items-center gap-2 text-xs text-orange-400 uppercase tracking-widest font-semibold mb-4">
+          <Package className="w-3.5 h-3.5" /> Equipment Asset
+        </div>
+        <div className="text-gray-500 text-sm italic">Loading equipment data...</div>
+      </div>
+    );
+  }
+
+  if (equipment.length === 0) {
+    return (
+      <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div className="flex items-center gap-2 text-xs text-orange-400 uppercase tracking-widest font-semibold mb-4">
+          <Package className="w-3.5 h-3.5" /> Equipment Asset
+        </div>
+        <div className="text-gray-600 text-sm">No equipment assigned to this incident.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+      <div className="flex items-center gap-2 text-xs text-orange-400 uppercase tracking-widest font-semibold mb-4">
+        <Package className="w-3.5 h-3.5" /> Equipment Asset
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {equipment.map(eq => (
+          <div key={eq.id} className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg p-3 group hover:border-orange-500/30 transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 bg-orange-600/15 border border-orange-600/25 rounded flex items-center justify-center">
+                <Package className="w-3.5 h-3.5 text-orange-400" />
+              </div>
+              <div className="text-white text-xs font-medium truncate">{eq.equipment_name}</div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-gray-500 uppercase tracking-wider">
+              <span>Qty: {eq.quantity}</span>
+              <span className="text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">{eq.status}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

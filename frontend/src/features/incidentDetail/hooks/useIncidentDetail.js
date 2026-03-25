@@ -25,6 +25,7 @@ const TAB_IDS = {
   OVERVIEW: 'overview',
   PERSONNEL: 'personnel',
   FLEET: 'fleet',
+  EQUIPMENT: 'equipment',
   HISTORY: 'history',
 };
 
@@ -73,6 +74,15 @@ function buildPrintableContent(incident) {
       <div class="row"><span class="row-label">Injured</span><span class="row-value">${incident.total_injured ?? '—'}</span></div>
       <div class="row"><span class="row-label">Rescued</span><span class="row-value">${incident.total_rescued ?? '—'}</span></div>
     </div>
+    <div class="section">
+      <div class="section-title">Status History</div>
+      ${(incident.status_history || []).map(log => `
+        <div class="row" style="font-size: 11px;">
+          <span class="row-label" style="width: 120px;">${format(new Date(log.timestamp), 'MMM d, HH:mm')}</span>
+          <span class="row-value"><strong>${log.user_name}</strong>: ${log.status}</span>
+        </div>
+      `).join('') || '<div class="row"><span class="row-value">No history recorded.</span></div>'}
+    </div>
   `;
 }
 
@@ -97,13 +107,15 @@ export function useIncidentDetail() {
   const overviewRef = useRef(null);
   const personnelRef = useRef(null);
   const fleetRef = useRef(null);
+  const equipmentRef = useRef(null);
   const historyRef = useRef(null);
 
   const tabs = useMemo(
     () => [
       { id: TAB_IDS.OVERVIEW, label: 'Overview', ref: overviewRef },
       { id: TAB_IDS.PERSONNEL, label: 'Personnel', ref: personnelRef },
-      { id: TAB_IDS.FLEET, label: 'Fleet & Equipment', ref: fleetRef },
+      { id: TAB_IDS.FLEET, label: 'Fleet', ref: fleetRef },
+      { id: TAB_IDS.EQUIPMENT, label: 'Equipment', ref: equipmentRef },
       { id: TAB_IDS.HISTORY, label: 'History', ref: historyRef },
     ],
     []
@@ -117,7 +129,11 @@ export function useIncidentDetail() {
     }
 
     try {
-      const data = await incidentDetailApi.getById(incidentId);
+      const [data, history] = await Promise.all([
+        incidentDetailApi.getById(incidentId),
+        fetch(`/api/v1/incidents/${incidentId}/history`).then(res => res.json()).catch(() => []),
+      ]);
+      if (data) data.status_history = history;
       setIncident(data || null);
     } catch {
       setIncident(null);
@@ -259,6 +275,7 @@ export function useIncidentDetail() {
       overviewRef,
       personnelRef,
       fleetRef,
+      equipmentRef,
       historyRef,
     },
     scrollToSection,

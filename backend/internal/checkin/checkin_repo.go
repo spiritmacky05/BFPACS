@@ -59,6 +59,13 @@ func (r *CheckInRepo) CheckInAtomic(ctx context.Context, personnelID, incidentID
 		if err := tx.Create(&logEntry).Error; err != nil {
 			return err
 		}
+
+		// Update Responder Status
+		// Try updating User table (Responders)
+		tx.Model(&models.User{}).Where("id = ?", personnelID).Update("acs_status", "ACS ACTIVATED")
+		// Try updating DutyPersonnel table (Legacy/NFC/PIN)
+		tx.Model(&models.DutyPersonnel{}).Where("id = ?", personnelID).Update("duty_status", "ACS ACTIVATED")
+
 		result = &logEntry
 		return nil
 	})

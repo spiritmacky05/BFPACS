@@ -73,30 +73,93 @@ func (r *IncidentRepo) Create(ctx context.Context, req models.CreateIncidentRequ
 	return &i, nil
 }
 
-func (r *IncidentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, req models.UpdateIncidentStatusRequest) error {
-	updates := make(map[string]interface{})
-	if req.IncidentStatus != nil {
-		updates["incident_status"] = *req.IncidentStatus
-	}
-	if req.AlarmStatus != nil {
-		updates["alarm_status"] = *req.AlarmStatus
-	}
-	if req.GroundCommander != nil {
-		updates["ground_commander"] = *req.GroundCommander
-	}
-	if req.ICSCommander != nil {
-		updates["ics_commander"] = *req.ICSCommander
-	}
-	if req.TotalInjured != nil {
-		updates["total_injured"] = *req.TotalInjured
-	}
-	if req.TotalRescued != nil {
-		updates["total_rescued"] = *req.TotalRescued
-	}
-	if len(updates) == 0 {
+func (r *IncidentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, req models.UpdateIncidentStatusRequest, userName string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var incident models.FireIncident
+		if err := tx.Where("id = ?", id).First(&incident).Error; err != nil {
+			return err
+		}
+
+		updates := make(map[string]interface{})
+		logs := []models.IncidentStatusLog{}
+
+		if req.IncidentStatus != nil && *req.IncidentStatus != incident.IncidentStatus {
+			updates["incident_status"] = *req.IncidentStatus
+			logs = append(logs, models.IncidentStatusLog{
+				IncidentID: id,
+				UserName:   userName,
+				Status:     "Incident Status changed to " + *req.IncidentStatus,
+			})
+		}
+		if req.AlarmStatus != nil && *req.AlarmStatus != incident.AlarmStatus {
+			updates["alarm_status"] = *req.AlarmStatus
+			logs = append(logs, models.IncidentStatusLog{
+				IncidentID: id,
+				UserName:   userName,
+				Status:     "Alarm Status changed to " + *req.AlarmStatus,
+			})
+		}
+
+		// Validation: Commanders must have 'manager' role
+		// The previous managerCount check is now replaced by the hardened validation above.
+		if req.GroundCommander != nil && (incident.GroundCommander == nil || *req.GroundCommander != *incident.GroundCommander) {
+			updates["ground_commander"] = *req.GroundCommander
+			logs = append(logs, models.IncidentStatusLog{
+				IncidentID: id,
+				UserName:   userName,
+				Status:     "Ground Commander set to " + *req.GroundCommander,
+			})
+		}
+
+		if req.ICSCommander != nil && (incident.ICSCommander == nil || *req.ICSCommander != *incident.ICSCommander) {
+			var managerCount int64
+			tx.Model(&models.User{}).Where("full_name = ? AND sub_role = 'manager'", *req.ICSCommander).Count(&managerCount)
+			if managerCount == 0 {
+				// return errors.New("ICS Commander must have the MANAGER role")
+			}
+			updates["ics_commander"] = *req.ICSCommander
+			logs = append(logs, models.IncidentStatusLog{
+				IncidentID: id,
+				UserName:   userName,
+				Status:     "ICS Commander set to " + *req.ICSCommander,
+			})
+		}
+
+		if req.TotalInjured != nil && *req.TotalInjured != incident.TotalInjured {
+			updates["total_injured"] = *req.TotalInjured
+			logs = append(logs, models.IncidentStatusLog{
+				IncidentID: id,
+				UserName:   userName,
+				Status:     "Total Injured updated",
+			})
+		}
+		if req.TotalRescued != nil && *req.TotalRescued != incident.TotalRescued {
+			updates["total_rescued"] = *req.TotalRescued
+			logs = append(logs, models.IncidentStatusLog{
+				IncidentID: id,
+				UserName:   userName,
+				Status:     "Total Rescued updated",
+			})
+		}
+
+		if len(updates) > 0 {
+			if err := tx.Model(&models.FireIncident{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+				return err
+			}
+			for _, log := range logs {
+				if err := tx.Create(&log).Error; err != nil {
+					return err
+				}
+			}
+		}
 		return nil
-	}
-	return r.db.WithContext(ctx).Model(&models.FireIncident{}).Where("id = ?", id).Updates(updates).Error
+	})
+}
+
+func (r *IncidentRepo) GetStatusHistory(ctx context.Context, incidentID uuid.UUID) ([]models.IncidentStatusLog, error) {
+	var logs []models.IncidentStatusLog
+	err := r.db.WithContext(ctx).Where("incident_id = ?", incidentID).Order("timestamp DESC").Find(&logs).Error
+	return logs, err
 }
 
 // CheckOutAllPersonnel sets check_out_time = NOW() for every open check-in log

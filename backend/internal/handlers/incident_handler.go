@@ -74,7 +74,10 @@ func (h *IncidentHandler) UpdateStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.Repo.UpdateStatus(c.Request.Context(), id, req); err != nil {
+	userName, _ := c.Get("userName")
+	userNameStr, _ := userName.(string)
+
+	if err := h.Repo.UpdateStatus(c.Request.Context(), id, req, userNameStr); err != nil {
 		log.Printf("[IncidentHandler.UpdateStatus] %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update incident"})
 		return
@@ -87,6 +90,21 @@ func (h *IncidentHandler) UpdateStatus(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "incident updated"})
+}
+
+func (h *IncidentHandler) GetStatusHistory(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	logs, err := h.Repo.GetStatusHistory(c.Request.Context(), id)
+	if err != nil {
+		log.Printf("[IncidentHandler.GetStatusHistory] %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve status history"})
+		return
+	}
+	c.JSON(http.StatusOK, logs)
 }
 
 // Delete removes an incident permanently. Only superadmin should call this.
