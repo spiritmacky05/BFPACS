@@ -31,7 +31,7 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
       equipmentApi.list(),
       personnelApi.list(),
     ]).then(([users, equipment, personnel]) => {
-      const responders = (users || []).filter(u => u.sub_role === 'responder');
+      const responders = users || [];
       setAllResponders(responders);
       setAllEquipment(equipment || []);
       setAllPersonnel(personnel || []);
