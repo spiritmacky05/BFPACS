@@ -113,28 +113,42 @@ export default function PersonnelBreakdownDashboard({ incidentId }) {
           <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isResp ? 'bg-red-600/20 border border-red-600/30' : 'bg-blue-600/20 border border-blue-600/30'}`}>
             {isResp ? <Truck className="w-3.5 h-3.5 text-red-400" /> : <Users className="w-3.5 h-3.5 text-blue-400" />}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-white text-xs font-medium truncate">{name}</div>
-            <div className="text-gray-500 text-xs flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-              <span className="ml-1 text-gray-600">· {log.entry_type || 'Manual'}</span>
-              {isResp && stationPersonnel.length > 0 && (
-                <span className="ml-1 text-gray-600">· {stationPersonnel.length} personnel</span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {cert && <span className={`text-xs px-2 py-0.5 rounded border ${certColor}`}>{cert}</span>}
-            <span className={`text-xs px-2 py-0.5 rounded border ${log.check_out_time ? 'text-gray-400 bg-gray-600/10 border-gray-600/30' : 'text-green-400 bg-green-600/10 border-green-600/30'}`}>
-              {log.check_out_time ? 'Out' : 'On-Scene'}
-            </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-white text-xs font-medium truncate">{name}</div>
+          <div className="text-gray-500 text-xs flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+            <span className="ml-1 text-gray-600">· {log.entry_type || 'Manual'}</span>
             {isResp && stationPersonnel.length > 0 && (
-              isExpanded
-                ? <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
-                : <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+              <span className="ml-1 text-gray-600">· {stationPersonnel.length} personnel</span>
             )}
           </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {cert && <span className={`text-xs px-2 py-0.5 rounded border ${certColor}`}>{cert}</span>}
+          {!log.check_out_time ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Check out ${name}?`)) {
+                  checkinApi.checkout(log.id).then(() => fetchData());
+                }
+              }}
+              className="text-[10px] px-2 py-1 bg-red-600/20 border border-red-600/40 text-red-500 hover:bg-red-600 hover:text-white rounded font-bold uppercase transition-all"
+            >
+              Check Out
+            </button>
+          ) : (
+            <span className="text-xs px-2 py-0.5 rounded border text-gray-400 bg-gray-600/10 border-gray-600/30">
+              Out
+            </span>
+          )}
+          {isResp && stationPersonnel.length > 0 && (
+            isExpanded
+              ? <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
+              : <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+          )}
+        </div>
         </div>
 
         {/* Expandable personnel list for this station */}

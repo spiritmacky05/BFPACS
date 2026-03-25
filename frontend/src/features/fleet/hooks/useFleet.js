@@ -24,11 +24,13 @@ export const useFleet = () => {
     try {
       if (isAdmin) {
         const allUsers = await superadminApi.listUsers();
-        // Requirement: Show all users in fleet so they can all be monitored/dispatched
-        const fleet = allUsers || [];
+        const fleet = (allUsers || []).filter(u => u.sub_role === "responder" && u.agency_role === "BFP");
         setResponders(fleet);
       } else {
-        setResponders(currentUser && currentUser.sub_role === "responder" ? [currentUser] : []);
+        const isBfpResponder = currentUser && 
+                             currentUser.sub_role === "responder" && 
+                             currentUser.agency_role === "BFP";
+        setResponders(isBfpResponder ? [currentUser] : []);
       }
     } catch { 
       setResponders([]); 
