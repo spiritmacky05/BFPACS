@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, AlertTriangle, Save } from "lucide-react";
 import { personnelApi } from "@/features/personnel";
 import { incidentsApi } from "@/features/incidents";
+import { superadminApi } from "@/features/superadmin";
 
 const ALARM_STATUS_OPTIONS = [
   '1st Alarm', '2nd Alarm', '3rd Alarm', '4th Alarm', '5th Alarm',
@@ -39,9 +40,14 @@ export default function IncidentEditModal({ incident, onClose, onSaved }) {
   const [commanders, setCommanders] = useState([]);
 
   useEffect(() => {
-    personnelApi.list().then(data => {
+    superadminApi.listUsers().then(data => {
       if (data) {
-        setCommanders(data.map(p => p.full_name).sort());
+        setCommanders(
+          data
+            .filter(u => u.sub_role === 'manager')
+            .map(u => u.full_name)
+            .sort()
+        );
       }
     });
   }, []);
