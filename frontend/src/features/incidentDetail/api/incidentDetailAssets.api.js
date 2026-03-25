@@ -21,7 +21,7 @@ export const incidentDetailAssetsApi = {
    * Update one fleet unit.
    */
   updateFleetUnit: (fleetId, payload) =>
-    httpClient.patch(`/fleets/${fleetId}`, payload),
+    httpClient.patch(`/admin/users/${fleetId}`, payload),
 };
 
 export default incidentDetailAssetsApi;

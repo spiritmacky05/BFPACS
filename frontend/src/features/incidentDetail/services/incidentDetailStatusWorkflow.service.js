@@ -26,7 +26,8 @@ export const INCIDENT_DETAIL_STATUS = {
  *
  * Current business rules:
  * - Always patch incident status.
- * - If status becomes `Done`, release all dispatched fleet units to `Serviceable`.
+ * - If status becomes `Fire Out` or `Done`, release all dispatched fleet units to `Serviceable`.
+ * - If status becomes `Fire Out` or `Done`, return all borrowed logistical equipment.
  */
 export async function applyIncidentDetailStatusWorkflow({
   incidentId,
@@ -36,7 +37,9 @@ export async function applyIncidentDetailStatusWorkflow({
 }) {
   await incidentApiClient.updateStatus(incidentId, { incident_status: nextStatus });
 
-  if (nextStatus !== INCIDENT_DETAIL_STATUS.DONE) {
+  const shouldRelease = nextStatus === INCIDENT_DETAIL_STATUS.FIRE_OUT || nextStatus === INCIDENT_DETAIL_STATUS.DONE;
+  
+  if (!shouldRelease) {
     return {
       incidentId,
       nextStatus,
@@ -49,9 +52,21 @@ export async function applyIncidentDetailStatusWorkflow({
 
   await Promise.all(
     dispatchesWithFleet.map((dispatch) =>
-      incidentAssetsApiClient.updateFleetUnit(dispatch.fleet_id, { status: 'Serviceable' })
+      incidentAssetsApiClient.updateFleetUnit(dispatch.fleet_id, { status: 'Serviceable', acs_status: 'Serviceable' })
     )
   );
+
+  // Release Logistical Equipment
+  // Note: Since we don't have direct incident linking, we'll return all currently 'Borrowed' items
+  // to align with the "Fire Out" reset requirement for now.
+  try {
+    const { equipmentApi } = await import('@/features/equipment');
+    const allEquip = await equipmentApi.list();
+    const borrowed = (allEquip || []).filter(e => e.status === 'Borrowed');
+    await Promise.all(borrowed.map(e => equipmentApi.return(e.id)));
+  } catch (e) {
+    console.warn("Failed to auto-return equipment:", e);
+  }
 
   return {
     incidentId,
