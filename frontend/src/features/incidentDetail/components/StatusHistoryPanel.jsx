@@ -7,13 +7,20 @@
 
 import { useState, useEffect } from "react";
 import { checkinApi } from "@/features/checkin";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 
 const statusColors = {
   Active: "text-red-400 bg-red-600/10 border-red-600/30",
   Controlled: "text-yellow-400 bg-yellow-600/10 border-yellow-600/30",
   "Fire Out": "text-blue-400 bg-blue-600/10 border-blue-600/30",
   Done: "text-gray-400 bg-gray-600/10 border-gray-600/30",
+};
+
+const safeFormat = (date, formatStr) => {
+  if (!date) return "—";
+  const d = new Date(date);
+  if (!isValid(d)) return "—";
+  return format(d, formatStr);
 };
 
 export default function StatusHistoryPanel({ incidentId, incident }) {
@@ -110,7 +117,7 @@ export default function StatusHistoryPanel({ incidentId, incident }) {
               {log.status}
             </span>
             <span className="text-xs text-gray-500">
-              {format(new Date(log.timestamp), "MMM d, yyyy h:mm a")}
+              {safeFormat(log.timestamp, "MMM d, yyyy h:mm a")}
             </span>
           </div>
           {log.detail && (

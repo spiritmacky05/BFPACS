@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { useMyStation } from '@/features/stations';
@@ -43,6 +43,13 @@ const BADGE_CLASS_BY_STATUS = {
   Done: 'badge-done',
 };
 
+const safeFormat = (date, formatStr) => {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (!isValid(d)) return '—';
+  return format(d, formatStr);
+};
+
 /**
  * Create printable HTML payload from incident model.
  */
@@ -57,7 +64,7 @@ function buildPrintableContent(incident) {
       <div class="row"><span class="row-label">Incident ID</span><span class="row-value">${incident.id?.slice(0, 8) || '—'}</span></div>
       <div class="row"><span class="row-label">Status</span><span class="row-value"><span class="badge ${badgeClass}">${incident.incident_status || '—'}</span></span></div>
       <div class="row"><span class="row-label">Alarm Status</span><span class="row-value">${incident.alarm_status || '—'}</span></div>
-      <div class="row"><span class="row-label">Date & Time Reported</span><span class="row-value">${incident.date_time_reported ? format(new Date(incident.date_time_reported), 'MMMM d, yyyy h:mm a') : '—'}</span></div>
+      <div class="row"><span class="row-label">Date & Time Reported</span><span class="row-value">${safeFormat(incident.date_time_reported, 'MMMM d, yyyy h:mm a')}</span></div>
     </div>
     <div class="section">
       <div class="section-title">Location</div>
@@ -78,7 +85,7 @@ function buildPrintableContent(incident) {
       <div class="section-title">Status History</div>
       ${(incident.status_history || []).map(log => `
         <div class="row" style="font-size: 11px;">
-          <span class="row-label" style="width: 120px;">${format(new Date(log.timestamp), 'MMM d, HH:mm')}</span>
+          <span class="row-label" style="width: 120px;">${safeFormat(log.timestamp, 'MMM d, HH:mm')}</span>
           <span class="row-value"><strong>${log.user_name}</strong>: ${log.status}</span>
         </div>
       `).join('') || '<div class="row"><span class="row-value">No history recorded.</span></div>'}

@@ -9,7 +9,7 @@
  * - Keep page flow intern-friendly and incremental.
  */
 
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import {
   Activity,
   AlertTriangle,
@@ -67,6 +67,13 @@ const styles = {
   sectionOffset: 'scroll-mt-16',
   rowValueOrange: 'text-orange-400',
   rowValueCoordinates: 'text-gray-400 font-mono text-xs',
+};
+
+const safeFormat = (date, formatStr) => {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (!isValid(d)) return '—';
+  return format(d, formatStr);
 };
 
 const TAB_ICON_BY_ID = {
@@ -182,11 +189,7 @@ export default function IncidentDetailPage() {
         <IncidentDetailCard title="Overview" Icon={LayoutGrid}>
           <InfoRow
             label="Reported At"
-            value={
-              incident.date_time_reported
-                ? format(new Date(incident.date_time_reported), 'MMM d, yyyy h:mm a')
-                : null
-            }
+            value={safeFormat(incident.date_time_reported, 'MMM d, yyyy h:mm a')}
           />
           <InfoRow label="Response Type" value={incident.response_type} />
           <InfoRow
