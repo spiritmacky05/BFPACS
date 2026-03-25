@@ -33,6 +33,7 @@ import useIncidentDetail from '../hooks/useIncidentDetail';
 import IncidentDetailHeader from '../components/IncidentDetailHeader';
 import IncidentDetailCard from '../components/IncidentDetailCard';
 import InfoRow from '../components/InfoRow';
+import MapView from '@/features/shared/components/MapView';
 
 const styles = {
   page: 'max-w-3xl mx-auto space-y-6',
@@ -205,40 +206,57 @@ export default function IncidentDetailPage() {
       </div>
 
       <div className={styles.grid}>
-        <IncidentDetailCard title="Location" Icon={MapPin}>
-          <InfoRow label="Address" value={incident.location_text} />
-          <InfoRow label="Type of Occupancy" value={incident.occupancy_type} />
+        <div>
           {incident.lat && incident.lng && (
-            <InfoRow
-              label="Coordinates"
-              value={`${incident.lat}, ${incident.lng}`}
-              valueClass={styles.rowValueCoordinates}
-            />
-          )}
-
-          {destination && (
-            <div className={styles.locationButtons}>
-              <a
-                href={googleUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.navBlueButton}
-              >
-                <Navigation className={styles.iconSmall} />
-                Google Maps
-              </a>
-              <a
-                href={wazeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.navPurpleButton}
-              >
-                <Navigation className={styles.iconSmall} />
-                Waze
-              </a>
+            <div className="mb-4">
+              <MapView 
+                markers={[{
+                  lat: incident.lat,
+                  lng: incident.lng,
+                  type: 'incident',
+                  label: incident.location_text,
+                  sub: `${incident.alarm_status} · ${incident.incident_status}`
+                }]} 
+                height="250px" 
+                zoom={16} 
+              />
             </div>
           )}
-        </IncidentDetailCard>
+          <IncidentDetailCard title="Location" Icon={MapPin}>
+            <InfoRow label="Address" value={incident.location_text} />
+            <InfoRow label="Type of Occupancy" value={incident.occupancy_type} />
+            {incident.lat && incident.lng && (
+              <InfoRow
+                label="Coordinates"
+                value={`${incident.lat}, ${incident.lng}`}
+                valueClass={styles.rowValueCoordinates}
+              />
+            )}
+
+            {destination && (
+              <div className={styles.locationButtons}>
+                <a
+                  href={googleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.navBlueButton}
+                >
+                  <Navigation className={styles.iconSmall} />
+                  Google Maps
+                </a>
+                <a
+                  href={wazeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.navPurpleButton}
+                >
+                  <Navigation className={styles.iconSmall} />
+                  Waze
+                </a>
+              </div>
+            )}
+          </IncidentDetailCard>
+        </div>
 
         <IncidentDetailCard title="Command" Icon={Shield}>
           <InfoRow label="Ground Commander" value={incident.ground_commander} />
