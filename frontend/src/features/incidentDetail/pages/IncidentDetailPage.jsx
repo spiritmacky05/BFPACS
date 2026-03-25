@@ -299,9 +299,9 @@ export default function IncidentDetailPage() {
       <div ref={refs.historyRef} className={styles.historyCard}>
         <div className={styles.historyTitle}>
           <Activity className={styles.iconSmall} />
-          Status History
+          Incident Activity
         </div>
-        <StatusHistoryPanel incidentId={incidentId} incident={incident} />
+        <StatusHistoryPanel incident={incident} />
       </div>
 
       {isAcsPortalOpen && (

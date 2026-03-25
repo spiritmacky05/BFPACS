@@ -86,7 +86,7 @@ function buildPrintableContent(incident) {
       ${(incident.status_history || []).map(log => `
         <div class="row" style="font-size: 11px;">
           <span class="row-label" style="width: 120px;">${safeFormat(log.timestamp, 'MMM d, HH:mm')}</span>
-          <span class="row-value"><strong>${log.user_name}</strong>: ${log.status}</span>
+          <span class="row-value">${log.status}</span>
         </div>
       `).join('') || '<div class="row"><span class="row-value">No history recorded.</span></div>'}
     </div>
