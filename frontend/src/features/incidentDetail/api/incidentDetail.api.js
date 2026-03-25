@@ -24,6 +24,10 @@ export const incidentDetailApi = {
    */
   updateStatus: (incidentId, payload) =>
     httpClient.patch(`/incidents/${incidentId}/status`, payload),
+  /**
+   * Get status history logs for an incident.
+   */
+  getHistory: (incidentId) => httpClient.get(`/incidents/${incidentId}/history`),
 };
 
 export default incidentDetailApi;

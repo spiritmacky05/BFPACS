@@ -138,9 +138,11 @@ export function useIncidentDetail() {
     try {
       const [data, history] = await Promise.all([
         incidentDetailApi.getById(incidentId),
-        fetch(`/api/v1/incidents/${incidentId}/history`).then(res => res.json()).catch(() => []),
+        incidentDetailApi.getHistory(incidentId).catch(() => []),
       ]);
-      if (data) data.status_history = history;
+      if (data) {
+        data.status_history = Array.isArray(history) ? history : [];
+      }
       setIncident(data || null);
     } catch {
       setIncident(null);
