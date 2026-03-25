@@ -24,11 +24,8 @@ export const useFleet = () => {
     try {
       if (isAdmin) {
         const allUsers = await superadminApi.listUsers();
-        // Requirement: Only show "Responder" role with "BFP" agency role
-        const fleet = (allUsers || []).filter(u => 
-          u.sub_role === "responder" && 
-          u.agency_role === "BFP"
-        );
+        // Requirement: Show all responder units (BFP, Volunteers, etc.)
+        const fleet = (allUsers || []).filter(u => u.sub_role === "responder");
         setResponders(fleet);
       } else {
         setResponders(currentUser && currentUser.sub_role === "responder" ? [currentUser] : []);
