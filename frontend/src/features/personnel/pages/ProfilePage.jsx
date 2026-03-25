@@ -53,7 +53,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    personnel_type: null,
+    agency_role: null,
     type_of_vehicle: null,
     engine_number: null,
     plate_number: null,
@@ -101,7 +101,7 @@ export default function Profile() {
     setSaving(true);
     try {
       const updated = await authApi.updateMe({
-        personnel_type: formData.personnel_type || null,
+        agency_role: formData.agency_role || null,
         type_of_vehicle: formData.type_of_vehicle || null,
         engine_number: formData.engine_number || null,
         plate_number: formData.plate_number || null,
@@ -196,8 +196,8 @@ export default function Profile() {
               <div>
                 <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Personnel Type</label>
                 <select
-                  value={formData.personnel_type || "BFP"}
-                  onChange={(e) => setFormData({...formData, personnel_type: e.target.value})}
+                  value={formData.agency_role || "BFP"}
+                  onChange={(e) => setFormData({...formData, agency_role: e.target.value})}
                   className="w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-3 py-2 text-sm text-white focus:border-red-600/50 focus:outline-none"
                 >
                   <option value="BFP">BFP</option>
@@ -305,7 +305,7 @@ export default function Profile() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { icon: Briefcase, label: "Personnel Type", value: user?.personnel_type },
+              { icon: Briefcase, label: "Personnel Type", value: user?.agency_role },
               { icon: Wrench, label: "Vehicle Type", value: user?.type_of_vehicle },
               { icon: ClipboardList, label: "Engine Number", value: user?.engine_number },
               { icon: MapPin, label: "Plate Number", value: user?.plate_number },
