@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { equipmentApi } from "@/features/equipment";
 import { Package } from "lucide-react";
+import { httpClient } from "@/shared/httpClient";
 
 export default function EquipmentForIncidentDashboard({ incidentId }) {
   const [equipment, setEquipment] = useState([]);
@@ -9,9 +10,20 @@ export default function EquipmentForIncidentDashboard({ incidentId }) {
   useEffect(() => {
     const fetchEquipment = async () => {
       try {
-        const data = await equipmentApi.list();
-        // Since we don't have a direct link yet, we show all serviceable and borrowed equipment for now
-        setEquipment((data || []).filter(eq => eq.status === "Serviceable" || eq.status === "Borrowed"));
+        // Fetch all equipment
+        const allEquipment = await equipmentApi.list();
+        // Fetch check-in logs for this incident
+        const checkinLogs = await httpClient.get(`/checkin/logs?incident_id=${incidentId}`);
+        // Get IDs of checked-in equipment (assuming logs have equipment_id or similar field)
+        const checkedInEquipmentIds = new Set(
+          (checkinLogs || [])
+            .filter(log => log.equipment_id)
+            .map(log => log.equipment_id)
+        );
+        // Only show equipment that is checked in for this incident
+        setEquipment(
+          (allEquipment || []).filter(eq => checkedInEquipmentIds.has(eq.id))
+        );
       } catch (error) {
         console.error("Error fetching equipment for incident:", error);
       } finally {

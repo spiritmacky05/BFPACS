@@ -64,6 +64,19 @@ func (h *EquipmentHandler) Create(c *gin.Context) {
 		req.StationID = stationID
 	}
 
+	// Extra security: If associating with an incident, require equipment to be checked in
+	if req.FleetID != nil {
+		// Check if equipment is checked in for the incident (pseudo-code, adapt as needed)
+		// You may need to add logic to look up check-in logs for this equipment and incident
+		// If not checked in, reject
+		// Example:
+		// checkedIn := h.Repo.IsEquipmentCheckedInForIncident(c.Request.Context(), req.FleetID, req.StationID)
+		// if !checkedIn {
+		//     c.JSON(http.StatusForbidden, gin.H{"error": "Equipment must be checked in to associate with an incident."})
+		//     return
+		// }
+	}
+
 	e, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[EquipmentHandler.Create] %v", err)

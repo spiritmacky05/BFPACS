@@ -42,11 +42,9 @@ function getResponderAcsStatusClass(acsStatus) {
   if (acsStatus === 'Serviceable') {
     return styles.responderStatusServiceable;
   }
-
-  if (acsStatus === 'ACS Activated') {
+  if (acsStatus && acsStatus.trim().toLowerCase() === 'acs activated') {
     return styles.responderStatusActivated;
   }
-
   return styles.responderStatusDefault;
 }
 
@@ -104,41 +102,44 @@ export default function DispatchCreateModal({
               BFP Responders ({availableResponders.length} available)
             </label>
 
-            {!availableResponders.length ? (
-              <p className={styles.emptyText}>No responders available.</p>
-            ) : (
-              <div className={styles.respondersWrap}>
-                {availableResponders.map((responder) => (
-                  <label key={responder.id} className={styles.responderRow}>
-                    <input
-                      type='checkbox'
-                      checked={selectedResponderIds.includes(responder.id)}
-                      onChange={() => onToggleResponder(responder.id)}
-                      className='accent-red-600'
-                    />
-
-                    <div className={styles.responderInfo}>
-                      <span className={styles.responderName}>{responder.full_name}</span>
-                      {responder.engine_number ? (
-                        <span className={styles.responderCode}>#{responder.engine_number}</span>
-                      ) : null}
-                    </div>
-
-                    <span className={styles.responderType}>
-                      {responder.type_of_vehicle || responder.user_type}
-                    </span>
-
-                    <span
-                      className={`${styles.responderStatus} ${getResponderAcsStatusClass(
-                        responder.acs_status
-                      )}`}
-                    >
-                      {responder.acs_status || 'Serviceable'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const filteredResponders = availableResponders.filter(
+                (r) => r.agency_role === 'BFP' && r.acs_status === 'Serviceable'
+              );
+              if (!filteredResponders.length) {
+                return <p className={styles.emptyText}>No BFP responders with Serviceable status available.</p>;
+              }
+              return (
+                <div className={styles.respondersWrap}>
+                  {filteredResponders.map((responder) => (
+                    <label key={responder.id} className={styles.responderRow}>
+                      <input
+                        type='checkbox'
+                        checked={selectedResponderIds.includes(responder.id)}
+                        onChange={() => onToggleResponder(responder.id)}
+                        className='accent-red-600'
+                      />
+                      <div className={styles.responderInfo}>
+                        <span className={styles.responderName}>{responder.full_name}</span>
+                        {responder.engine_number ? (
+                          <span className={styles.responderCode}>#{responder.engine_number}</span>
+                        ) : null}
+                      </div>
+                      <span className={styles.responderType}>
+                        {responder.type_of_vehicle || responder.user_type}
+                      </span>
+                      <span
+                        className={`${styles.responderStatus} ${getResponderAcsStatusClass(
+                          responder.acs_status
+                        )}`}
+                      >
+                        {responder.acs_status || 'Serviceable'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           <div>

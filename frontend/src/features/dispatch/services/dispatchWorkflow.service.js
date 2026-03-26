@@ -39,7 +39,7 @@ export async function createDispatchBatch({ incidentId, responderIds, notes, res
       const createdDispatch = await dispatchApi.create(payload);
 
       await dispatchAssetsApi.updateResponder(responderId, {
-        acs_status: 'ACS Activated',
+        acs_status: 'ACS Activated', // unified label
       });
 
       const responder = responders.find((item) => item.id === responderId);

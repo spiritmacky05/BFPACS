@@ -1,3 +1,13 @@
+// Helper for unified ACS status label (for future use)
+function getResponderAcsStatusClass(acsStatus) {
+  if (acsStatus === 'Serviceable') {
+    return 'text-green-400 border-green-600/30 bg-green-600/10';
+  }
+  if (acsStatus && acsStatus.trim().toLowerCase() === 'acs activated') {
+    return 'text-blue-400 border-blue-600/30 bg-blue-600/10';
+  }
+  return 'text-gray-400 border-gray-600/30 bg-gray-600/10';
+}
 /**
  * features/dispatch/components/DispatchCard.jsx
  *

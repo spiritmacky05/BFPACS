@@ -52,6 +52,7 @@ const styles = {
 export default function DispatchPage() {
   const { role } = useAuth();
   const isAdmin = role === 'admin' || role === 'superadmin';
+  const isStation = role === 'station';
 
   const {
     isLoading,
@@ -108,16 +109,16 @@ export default function DispatchPage() {
             value={selectedIncidentId}
             onChange={(event) => setSelectedIncidentId(event.target.value)}
             className={styles.select}
+            disabled={isStation}
           >
             {incidents.map((incident) => (
               <option key={incident.id} value={incident.id}>
-                {incident.location_text} — {incident.alarm_status}
+                {incident.location_text}  {incident.alarm_status}
               </option>
             ))}
           </select>
         )}
       </div>
-
 
       <DispatchList
         dispatches={dispatches}
@@ -126,24 +127,26 @@ export default function DispatchPage() {
         isAdmin={isAdmin}
         expandedRows={expandedDispatchRows}
         onToggleRow={toggleDispatchRowExpansion}
-        onUpdateStatus={updateDispatchStatus}
+        onUpdateStatus={isAdmin ? updateDispatchStatus : undefined}
         onRefresh={refreshDispatches}
       />
 
-      <DispatchCreateModal
-        isOpen={isCreateModalOpen}
-        incidents={incidents}
-        selectedIncidentId={selectedIncidentId}
-        onChangeIncident={setSelectedIncidentId}
-        availableResponders={availableResponders}
-        selectedResponderIds={selectedResponderIds}
-        onToggleResponder={toggleResponderSelection}
-        notes={dispatchNotes}
-        onChangeNotes={setDispatchNotes}
-        isSubmitting={isDispatching}
-        onSubmit={submitDispatchOrder}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
+      {isAdmin && (
+        <DispatchCreateModal
+          isOpen={isCreateModalOpen}
+          incidents={incidents}
+          selectedIncidentId={selectedIncidentId}
+          onChangeIncident={setSelectedIncidentId}
+          availableResponders={availableResponders}
+          selectedResponderIds={selectedResponderIds}
+          onToggleResponder={toggleResponderSelection}
+          notes={dispatchNotes}
+          onChangeNotes={setDispatchNotes}
+          isSubmitting={isDispatching}
+          onSubmit={submitDispatchOrder}
+          onClose={() => setIsCreateModalOpen(false)}
+        />
+      )}
     </section>
   );
 }

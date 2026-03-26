@@ -54,6 +54,17 @@ func (h *IncidentHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Extra security: If associating equipment, require it to be checked in
+	// (Pseudo-code, adapt as needed)
+	// for _, equipmentID := range req.EquipmentIDs {
+	//     checkedIn := h.Repo.IsEquipmentCheckedInForIncident(c.Request.Context(), equipmentID, req.ID)
+	//     if !checkedIn {
+	//         c.JSON(http.StatusForbidden, gin.H{"error": "All equipment must be checked in to associate with this incident."})
+	//         return
+	//     }
+	// }
+
 	incident, err := h.Repo.Create(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[IncidentHandler.Create] %v", err)
