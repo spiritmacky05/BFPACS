@@ -178,13 +178,26 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
                     <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">
                       Manager Rank
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={form.manager_rank}
                       onChange={(e) => setForm({ ...form, manager_rank: e.target.value })}
-                      placeholder="Enter Rank"
-                      className={inputClass}
-                    />
+                      className={selectClass}
+                    >
+                      <option value="">Select Rank</option>
+                      <option value="FO1">FO1</option>
+                      <option value="FO2">FO2</option>
+                      <option value="FO3">FO3</option>
+                      <option value="SFO1">SFO1</option>
+                      <option value="SFO2">SFO2</option>
+                      <option value="SFO3">SFO3</option>
+                      <option value="SFO4">SFO4</option>
+                      <option value="FSINP">FSINP</option>
+                      <option value="FSINSP">FSINSP</option>
+                      <option value="FCINSP">FCINSP</option>
+                      <option value="FSUPT">FSUPT</option>
+                      <option value="FSSUPT">FSSUPT</option>
+                      <option value="FCSUPT">FCSUPT</option>
+                    </select>
                   </div>
                 )}
               </div>

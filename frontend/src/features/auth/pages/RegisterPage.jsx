@@ -13,6 +13,21 @@ const Register = () => {
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [region, setRegion] = useState('');
+
+  const CITY_OPTIONS = [
+    'Manila City', 'Quezon City', 'Caloocan City', 'Las Piñas City', 'Makati City',
+    'Malabon City', 'Mandaluyong City', 'Marikina City', 'Muntinlupa City', 'Navotas City',
+    'Parañaque City', 'Pasay City', 'Pasig City', 'San Juan City', 'Taguig City',
+    'Valenzuela City', 'Municipality of Pateros'
+  ];
+  const DISTRICT_OPTIONS = [
+    'Fire District 1', 'Fire District 2', 'Fire District 3', 'Fire District 4', 'Fire District 5'
+  ];
+  const REGION_OPTIONS = [
+    'NCR', 'CAR', 'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B', 'Region V',
+    'Region VI', 'Region VII', 'Region VIII', 'Region IX', 'Region X', 'Region XI', 'Region XII',
+    'Region XIII', 'BARMM', 'NIR'
+  ];
   const [address, setAddress] = useState('');
   
   const [error, setError] = useState('');
@@ -177,28 +192,34 @@ const Register = () => {
               <motion.div variants={itemVariants} className="space-y-1.5">
                 <label className="text-sm font-medium text-neutral-300 ml-1">City</label>
                 <div className="relative group">
-                  <input
-                    type="text"
+                  <select
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                    placeholder="e.g. Quezon City"
-                  />
+                  >
+                    <option value="">Select City</option>
+                    {CITY_OPTIONS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
               </motion.div>
 
               <motion.div variants={itemVariants} className="space-y-1.5">
                 <label className="text-sm font-medium text-neutral-300 ml-1">District</label>
                 <div className="relative group">
-                  <input
-                    type="text"
+                  <select
                     required
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
                     className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                    placeholder="e.g. District 1"
-                  />
+                  >
+                    <option value="">Select District</option>
+                    {DISTRICT_OPTIONS.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
               </motion.div>
             </div>
@@ -207,14 +228,17 @@ const Register = () => {
               <motion.div variants={itemVariants} className="space-y-1.5">
                 <label className="text-sm font-medium text-neutral-300 ml-1">Region</label>
                 <div className="relative group">
-                  <input
-                    type="text"
+                  <select
                     required
                     value={region}
                     onChange={(e) => setRegion(e.target.value)}
                     className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                    placeholder="e.g. NCR"
-                  />
+                  >
+                    <option value="">Select Region</option>
+                    {REGION_OPTIONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
               </motion.div>
 
