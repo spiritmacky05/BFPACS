@@ -4,6 +4,37 @@ import { authApi } from '../api/auth.api';
 
 const AuthContext = createContext(null);
 
+function getErrorInfo(error) {
+  return {
+    status: error?.status,
+    code: error?.code,
+    message: error?.message || 'Something went wrong. Please try again.',
+  };
+}
+
+function mapLoginError(error) {
+  const { status, code, message } = getErrorInfo(error);
+
+  if (code === 'INVALID_CREDENTIALS' || status === 401) {
+    return 'Failed to log in. Wrong email or password.';
+  }
+  if (code === 'ACCOUNT_INACTIVE' || status === 403) {
+    return message;
+  }
+
+  return message || 'Failed to log in. Please try again.';
+}
+
+function mapRegisterError(error) {
+  const { status, code, message } = getErrorInfo(error);
+
+  if (code === 'USER_EXISTS' || status === 409) {
+    return 'User already exists. Try logging in or use another email.';
+  }
+
+  return message || 'Failed to register. Please try again.';
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -35,11 +66,17 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       let response;
+      let primaryError;
       try {
         response = await authApi.login(email, password);
-      } catch {
+      } catch (error) {
+        primaryError = error;
         // Community users authenticate through their own table.
-        response = await authApi.communityLogin(email, password);
+        try {
+          response = await authApi.communityLogin(email, password);
+        } catch (communityError) {
+          throw communityError || primaryError;
+        }
       }
       // Backend returns { user, token }
       const { user: userData, token: userToken } = response;
@@ -52,8 +89,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      const errMsg = error?.response?.data?.error || 'An unexpected error occurred during login.';
-      return { success: false, error: errMsg };
+      return { success: false, error: mapLoginError(error) };
     }
   };
 
@@ -67,8 +103,7 @@ export const AuthProvider = ({ children }) => {
         message: response?.message || 'Registration successful. Your account is pending approval.',
       };
     } catch (error) {
-      const errMsg = error?.response?.data?.error || 'An unexpected error occurred during registration.';
-      return { success: false, error: errMsg };
+      return { success: false, error: mapRegisterError(error) };
     }
   };
 
@@ -80,8 +115,7 @@ export const AuthProvider = ({ children }) => {
         message: response?.message || 'Community registration successful.',
       };
     } catch (error) {
-      const errMsg = error?.response?.data?.error || 'An unexpected error occurred during community registration.';
-      return { success: false, error: errMsg };
+      return { success: false, error: mapRegisterError(error) };
     }
   };
 

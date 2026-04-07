@@ -36,7 +36,10 @@ func (h *CommunityHandler) Register(c *gin.Context) {
 	entry, err := h.repo.CreateCommunity(c.Request.Context(), req.FullName, strings.ToLower(req.Email), string(hashedPassword), req.ContactNo)
 	if err != nil {
 		log.Printf("[CommunityHandler.Register] %v", err)
-		c.JSON(http.StatusConflict, gin.H{"error": "email might already be in use"})
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "User already exists",
+			"code":  "USER_EXISTS",
+		})
 		return
 	}
 
@@ -60,17 +63,26 @@ func (h *CommunityHandler) Login(c *gin.Context) {
 
 	entry, err := h.repo.GetByEmail(c.Request.Context(), strings.ToLower(req.Email))
 	if err != nil || entry == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Failed to log in. Wrong email or password.",
+			"code":  "INVALID_CREDENTIALS",
+		})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(entry.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Failed to log in. Wrong email or password.",
+			"code":  "INVALID_CREDENTIALS",
+		})
 		return
 	}
 
 	if !entry.IsActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "community account is inactive"})
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Community account is inactive. Please contact administrator.",
+			"code":  "ACCOUNT_INACTIVE",
+		})
 		return
 	}
 

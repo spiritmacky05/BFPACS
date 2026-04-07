@@ -70,7 +70,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "User already exists",
+			"code":  "USER_EXISTS",
+		})
 		return
 	}
 
@@ -78,7 +81,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	user, err := h.userRepo.CreateUserWithStation(c.Request.Context(), req, string(hashedPassword))
 	if err != nil {
 		log.Printf("Create user error: %v", err)
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "User already exists",
+			"code":  "USER_EXISTS",
+		})
 		return
 	}
 
@@ -104,14 +110,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	user, hash, err := h.userRepo.GetUserByEmail(c.Request.Context(), strings.ToLower(strings.TrimSpace(req.Email)))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Failed to log in. Wrong email or password.",
+			"code":  "INVALID_CREDENTIALS",
+		})
 		return
 	}
 
 	// Verify Password
 	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.Password))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Failed to log in. Wrong email or password.",
+			"code":  "INVALID_CREDENTIALS",
+		})
 		return
 	}
 
