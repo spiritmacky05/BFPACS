@@ -48,10 +48,11 @@ export default function CommunityPortalPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  const { data: stations = [] } = useQuery({
+  const { data: stationsData } = useQuery({
     queryKey: ['community-stations'],
     queryFn: stationsApi.list,
   });
+  const stations = Array.isArray(stationsData) ? stationsData : [];
 
   const getStationContact = (station) => {
     const candidates = [

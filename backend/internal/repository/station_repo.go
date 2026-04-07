@@ -18,7 +18,7 @@ func NewStationRepo(db *gorm.DB) *StationRepo {
 }
 
 func (r *StationRepo) GetAll(ctx context.Context) ([]models.Station, error) {
-	var list []models.Station
+	list := make([]models.Station, 0)
 	err := r.db.WithContext(ctx).
 		Raw(`
 			SELECT
