@@ -18,7 +18,8 @@ import { createPageUrl } from '@/utils/navigation';
 const ROLE_LABELS = {
   superadmin: "Super Administrator",
   admin: "Administrator",
-  user: "User"
+  user: "User",
+  community: "Community User",
 };
 
 const adminLinks = [
@@ -96,6 +97,39 @@ export default function Profile() {
   const role = user?.role;
   const isAdmin = role === "admin" || role === "superadmin";
   const isSuperAdmin = role === "superadmin";
+  const isCommunity = role === "community";
+
+  if (isCommunity) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-red-600/20 border border-red-600/40 rounded-full flex items-center justify-center">
+              <User className="w-8 h-8 text-red-400" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-white text-xl font-bold">{user?.full_name || "Community User"}</h2>
+              <p className="text-gray-500 text-sm">{user?.email}</p>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className="text-xs font-medium px-2 py-1 rounded-full border bg-blue-900/20 text-blue-400 border-blue-700/30">
+                  Community User
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#111] border border-[#1f1f1f] rounded-xl p-6">
+          <button
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-900/20 text-red-400 border border-red-800/40 hover:bg-red-900/40 transition-all font-medium text-sm"
+          >
+            <LogOut className="w-4 h-4" /> Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = async () => {
     setSaving(true);

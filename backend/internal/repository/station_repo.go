@@ -19,17 +19,81 @@ func NewStationRepo(db *gorm.DB) *StationRepo {
 
 func (r *StationRepo) GetAll(ctx context.Context) ([]models.Station, error) {
 	var list []models.Station
-	err := r.db.WithContext(ctx).Order("station_name").Find(&list).Error
+	err := r.db.WithContext(ctx).
+		Raw(`
+			SELECT
+				s.id,
+				s.station_name,
+				COALESCE(
+					NULLIF(s.contact_number, ''),
+					NULLIF((
+						SELECT u.station_contact_number
+						FROM users u
+						WHERE u.station_id = s.id
+							AND u.station_contact_number IS NOT NULL
+							AND u.station_contact_number <> ''
+						ORDER BY u.updated_at DESC
+						LIMIT 1
+					), ''),
+					NULLIF(s.team_leader_contact, '')
+				) AS contact_number,
+				s.team_leader_contact,
+				s.address_text,
+				s.city,
+				s.district,
+				s.region,
+				s.lat,
+				s.lng,
+				s.created_at,
+				s.updated_at
+			FROM stations s
+			ORDER BY s.station_name
+		`).
+		Scan(&list).Error
 	return list, err
 }
 
 func (r *StationRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Station, error) {
 	var s models.Station
-	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&s).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Raw(`
+			SELECT
+				s.id,
+				s.station_name,
+				COALESCE(
+					NULLIF(s.contact_number, ''),
+					NULLIF((
+						SELECT u.station_contact_number
+						FROM users u
+						WHERE u.station_id = s.id
+							AND u.station_contact_number IS NOT NULL
+							AND u.station_contact_number <> ''
+						ORDER BY u.updated_at DESC
+						LIMIT 1
+					), ''),
+					NULLIF(s.team_leader_contact, '')
+				) AS contact_number,
+				s.team_leader_contact,
+				s.address_text,
+				s.city,
+				s.district,
+				s.region,
+				s.lat,
+				s.lng,
+				s.created_at,
+				s.updated_at
+			FROM stations s
+			WHERE s.id = ?
+			LIMIT 1
+		`, id).
+		Scan(&s).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
+	}
+	if s.ID == uuid.Nil {
+		return nil, nil
 	}
 	return &s, nil
 }

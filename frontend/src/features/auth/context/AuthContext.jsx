@@ -34,7 +34,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await authApi.login(email, password);
+      let response;
+      try {
+        response = await authApi.login(email, password);
+      } catch {
+        // Community users authenticate through their own table.
+        response = await authApi.communityLogin(email, password);
+      }
       // Backend returns { user, token }
       const { user: userData, token: userToken } = response;
 
@@ -66,6 +72,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerCommunity = async (userData) => {
+    try {
+      const response = await authApi.communityRegister(userData);
+      return {
+        success: true,
+        message: response?.message || 'Community registration successful.',
+      };
+    } catch (error) {
+      const errMsg = error?.response?.data?.error || 'An unexpected error occurred during community registration.';
+      return { success: false, error: errMsg };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('bfp_user');
     localStorage.removeItem('bfp_token');
@@ -85,7 +104,7 @@ export const AuthProvider = ({ children }) => {
   const role = user?.role?.toLowerCase() || 'user';
 
   return (
-    <AuthContext.Provider value={{ user, token, role, isAuthenticated: !!user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, role, isAuthenticated: !!user, login, register, registerCommunity, logout }}>
       {children}
     </AuthContext.Provider>
   );

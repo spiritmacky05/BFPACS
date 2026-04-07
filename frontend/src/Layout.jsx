@@ -103,6 +103,11 @@ const superAdminNavItems = [
   { label: 'SuperAdmin', page: 'SuperAdmin', icon: ShieldCheck },
 ];
 
+const communityNavItems = [
+  { label: 'Community Portal', page: 'Community', icon: Building2 },
+  { label: 'Profile', page: 'Profile', icon: User },
+];
+
 const allNavItems = [
   { label: 'Dashboard',       page: 'Dashboard',    icon: LayoutDashboard },
   { label: 'Incidents',       page: 'Incidents',    icon: AlertTriangle },
@@ -113,6 +118,7 @@ const allNavItems = [
   { label: 'Equipment',       page: 'Equipment',    icon: Package },
   { label: 'Fire Hydrants',   page: 'Hydrants',     icon: Droplets },
   { label: 'Profile',         page: 'Profile',      icon: User },
+  { label: 'Community Portal', page: 'Community',   icon: Building2 },
   { label: 'SuperAdmin',      page: 'SuperAdmin',   icon: ShieldCheck },
 ];
 
@@ -125,8 +131,11 @@ export default function Layout({ children, currentPageName }) {
   const { role } = useAuth();
   const isSuperAdmin = role?.toLowerCase() === 'superadmin';
   const isAdmin      = role?.toLowerCase() === 'admin';
+  const isCommunity  = role?.toLowerCase() === 'community';
   const showResources = isSuperAdmin || isAdmin;
-  const navItems = isSuperAdmin
+  const navItems = isCommunity
+    ? communityNavItems
+    : isSuperAdmin
     ? superAdminNavItems
     : isAdmin
     ? adminNavItems

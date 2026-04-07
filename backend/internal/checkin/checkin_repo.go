@@ -76,7 +76,24 @@ func (r *CheckInRepo) CheckInAtomic(ctx context.Context, personnelID, incidentID
 // CheckOut sets the check_out_time for an open log entry
 func (r *CheckInRepo) CheckOut(ctx context.Context, logID uuid.UUID) error {
 	now := time.Now()
-	return r.db.WithContext(ctx).Model(&models.PersonnelIncidentLog{}).Where("id = ?", logID).Update("check_out_time", &now).Error
+
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var logEntry models.PersonnelIncidentLog
+		if err := tx.Where("id = ?", logID).First(&logEntry).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&models.PersonnelIncidentLog{}).Where("id = ?", logID).Update("check_out_time", &now).Error; err != nil {
+			return err
+		}
+
+		if logEntry.PersonnelID != nil {
+			tx.Model(&models.User{}).Where("id = ?", *logEntry.PersonnelID).Update("acs_status", "Serviceable")
+			tx.Model(&models.DutyPersonnel{}).Where("id = ?", *logEntry.PersonnelID).Update("duty_status", "On Duty")
+		}
+
+		return nil
+	})
 }
 
 // GetUserByID looks up a responder user by UUID from the users table
@@ -145,5 +162,22 @@ func (r *CheckInRepo) GetAllLogs(ctx context.Context) ([]models.PersonnelInciden
 // CheckOutByID sets check_out_time for the given log entry
 func (r *CheckInRepo) CheckOutByID(ctx context.Context, logID uuid.UUID) error {
 	now := time.Now()
-	return r.db.WithContext(ctx).Model(&models.PersonnelIncidentLog{}).Where("id = ?", logID).Update("check_out_time", &now).Error
+
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var logEntry models.PersonnelIncidentLog
+		if err := tx.Where("id = ?", logID).First(&logEntry).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&models.PersonnelIncidentLog{}).Where("id = ?", logID).Update("check_out_time", &now).Error; err != nil {
+			return err
+		}
+
+		if logEntry.PersonnelID != nil {
+			tx.Model(&models.User{}).Where("id = ?", *logEntry.PersonnelID).Update("acs_status", "Serviceable")
+			tx.Model(&models.DutyPersonnel{}).Where("id = ?", *logEntry.PersonnelID).Update("duty_status", "On Duty")
+		}
+
+		return nil
+	})
 }

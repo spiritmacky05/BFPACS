@@ -1,29 +1,42 @@
 import { useState, useEffect } from "react";
 import { equipmentApi } from "@/features/equipment";
+import { dispatchApi as dispatchesApi } from "@/features/dispatch";
+import { stationsApi } from "@/features/stations";
 import { Package } from "lucide-react";
-import { httpClient } from "@/shared/httpClient";
 
 export default function EquipmentForIncidentDashboard({ incidentId }) {
   const [equipment, setEquipment] = useState([]);
+  const [stationNameById, setStationNameById] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEquipment = async () => {
       try {
-        // Fetch all equipment
-        const allEquipment = await equipmentApi.list();
-        // Fetch check-in logs for this incident
-        const checkinLogs = await httpClient.get(`/checkin/logs?incident_id=${incidentId}`);
-        // Get IDs of checked-in equipment (assuming logs have equipment_id or similar field)
-        const checkedInEquipmentIds = new Set(
-          (checkinLogs || [])
-            .filter(log => log.equipment_id)
-            .map(log => log.equipment_id)
+        const [allEquipment, dispatches, stations] = await Promise.all([
+          equipmentApi.list(),
+          dispatchesApi.listByIncident(incidentId).catch(() => []),
+          stationsApi.list().catch(() => []),
+        ]);
+
+        const stationMap = Object.fromEntries(
+          (stations || []).map((station) => [station.id, station.station_name || "Unknown Station"])
         );
-        // Only show equipment that is checked in for this incident
-        setEquipment(
-          (allEquipment || []).filter(eq => checkedInEquipmentIds.has(eq.id))
+        setStationNameById(stationMap);
+
+        const dispatchedStationIds = new Set(
+          (dispatches || [])
+            .map((dispatch) => dispatch?.responder?.station_id)
+            .filter(Boolean)
         );
+
+        const scopedEquipment =
+          dispatchedStationIds.size > 0
+            ? (allEquipment || []).filter(
+                (item) => !item.station_id || dispatchedStationIds.has(item.station_id)
+              )
+            : (allEquipment || []);
+
+        setEquipment(scopedEquipment);
       } catch (error) {
         console.error("Error fetching equipment for incident:", error);
       } finally {
@@ -75,6 +88,9 @@ export default function EquipmentForIncidentDashboard({ incidentId }) {
                 <span className={`px-1.5 py-0.5 rounded border ${eq.status === 'Borrowed' ? 'text-orange-500 bg-orange-500/10 border-orange-500/20' : 'text-green-500 bg-green-500/10 border-green-500/20'}`}>
                   {eq.status}
                 </span>
+              </div>
+              <div className="text-gray-400 font-medium normal-case">
+                Owner: {eq.station_id ? (stationNameById[eq.station_id] || 'Unknown Station') : 'Shared / Global'}
               </div>
               {eq.borrower_name && (
                 <div className="text-gray-400 font-medium normal-case">By: {eq.borrower_name}</div>

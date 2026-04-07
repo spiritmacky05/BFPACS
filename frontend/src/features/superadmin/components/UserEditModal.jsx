@@ -23,6 +23,22 @@ const VEHICLE_TYPE_OPTIONS = [
   "Crash Fire Rescue (CFR)"
 ];
 
+// Explicit no-tank list from configured vehicle options.
+const NO_TANK_VEHICLE_TYPES = new Set([
+  "Aerial Ladder",
+  "Aerial Platform",
+  "Rescue Vehicle",
+  "Ambulance",
+  "Command Vehicle",
+  "Service Vehicle",
+]);
+
+function hasTankByVehicleType(vehicleType) {
+  // Default to tank-capable unless explicitly listed as no-tank.
+  if (!vehicleType) return true;
+  return !NO_TANK_VEHICLE_TYPES.has(vehicleType);
+}
+
 const inputClass =
   "w-full bg-[#0d0d0d] border border-[#2f2f2f] rounded-lg px-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-purple-600/50";
 const selectClass =
@@ -49,6 +65,7 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
   });
   const [stations, setStations] = useState([]);
   const [personnel, setPersonnel] = useState(null);
+  const isTankCapableVehicle = hasTankByVehicleType(form.type_of_vehicle);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,7 +93,10 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
       type_of_vehicle: form.type_of_vehicle || null,
       engine_number: form.engine_number || null,
       plate_number: form.plate_number || null,
-      fire_truck_capacity: form.fire_truck_capacity !== "" ? Number(form.fire_truck_capacity) : null,
+      fire_truck_capacity:
+        isTankCapableVehicle && form.fire_truck_capacity !== ""
+          ? Number(form.fire_truck_capacity)
+          : null,
       city_fire_marshal: form.city_fire_marshal || null,
       station_commander: form.station_commander || null,
       station_contact_number: form.station_contact_number || null,
@@ -274,7 +294,15 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
                 <label className={labelClass}>Type of Vehicle</label>
                 <select
                   value={form.type_of_vehicle}
-                  onChange={(e) => setForm({ ...form, type_of_vehicle: e.target.value })}
+                  onChange={(e) => {
+                    const nextVehicleType = e.target.value;
+                    const nextIsTankCapable = hasTankByVehicleType(nextVehicleType);
+                    setForm({
+                      ...form,
+                      type_of_vehicle: nextVehicleType,
+                      fire_truck_capacity: nextIsTankCapable ? form.fire_truck_capacity : "",
+                    });
+                  }}
                   className={selectClass}
                 >
                   <option value="">Select Vehicle Type</option>
@@ -308,14 +336,21 @@ export default function UserEditModal({ user, onClose, onSave, saving }) {
                 <select
                   value={form.fire_truck_capacity}
                   onChange={(e) => setForm({ ...form, fire_truck_capacity: e.target.value })}
-                  className={selectClass}
+                  disabled={!isTankCapableVehicle}
+                  className={`${selectClass} ${!isTankCapableVehicle ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
-                  <option value="">Select Capacity</option>
-                  {CAPACITY_OPTIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c} Gallons
-                    </option>
-                  ))}
+                  {!isTankCapableVehicle ? (
+                    <option value="">No tank</option>
+                  ) : (
+                    <>
+                      <option value="">Select Capacity</option>
+                      {CAPACITY_OPTIONS.map((c) => (
+                        <option key={c} value={c}>
+                          {c} Gallons
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
               </div>
               <div>

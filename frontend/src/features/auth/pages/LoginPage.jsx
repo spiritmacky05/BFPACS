@@ -164,6 +164,13 @@ const LoginPage = () => {
                 Request access
               </Link>
             </motion.p>
+
+            <motion.p variants={itemVariants} className="text-sm font-light text-neutral-400 text-center">
+              Are you part of the community?{' '}
+              <Link to="/community/register" className="font-medium text-white hover:text-orange-400 transition-colors underline decoration-white/30 underline-offset-4 decoration-1">
+                Register here
+              </Link>
+            </motion.p>
           </form>
         </motion.div>
       </div>

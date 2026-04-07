@@ -39,6 +39,8 @@ const EMPTY_INCIDENT_FORM = {
   lat: '',
   lng: '',
   date_time_reported: '',
+  image_data_url: '',
+  image_mime_type: '',
 };
 
 /**
@@ -140,6 +142,8 @@ export function useIncidentsPage() {
       date_time_reported: createForm.date_time_reported
         ? new Date(createForm.date_time_reported).toISOString()
         : undefined,
+      image_data_url: createForm.image_data_url || undefined,
+      image_mime_type: createForm.image_mime_type || undefined,
     };
 
     await createIncidentMutation.mutateAsync(payload);

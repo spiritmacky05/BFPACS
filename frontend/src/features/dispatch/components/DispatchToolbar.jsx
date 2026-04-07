@@ -4,7 +4,7 @@
  * Header/toolbar for dispatch page.
  */
 
-import { ClipboardList, Plus } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 
 const styles = {
   wrapper: 'flex items-center justify-between',
@@ -34,12 +34,13 @@ export default function DispatchToolbar({ canCreate, onCreate }) {
         </div>
       </div>
 
-      {canCreate ? (
+      {/* Temporarily disabled: ACS check-in now auto-creates dispatch records. */}
+      {/* {canCreate ? (
         <button type='button' onClick={onCreate} className={styles.createButton}>
           <Plus className={styles.createIcon} />
           New Dispatch
         </button>
-      ) : null}
+      ) : null} */}
     </header>
   );
 }

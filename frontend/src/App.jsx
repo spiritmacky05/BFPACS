@@ -18,6 +18,7 @@ import PageNotFound from './lib/PageNotFound/PageNotFound';
 
 // Import Auth Pages
 import { LoginPage as Login, RegisterPage as Register } from '@/features/auth';
+import { CommunityRegisterPage } from '@/features/community';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -36,18 +37,40 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const HomeRoute = () => {
+  const { role } = useAuth();
+
+  if (role === 'community') {
+    const CommunityPage = Pages.Community;
+    if (CommunityPage) {
+      return (
+        <LayoutWrapper currentPageName="Community">
+          <CommunityPage />
+        </LayoutWrapper>
+      );
+    }
+  }
+
+  return (
+    <LayoutWrapper currentPageName={mainPageKey}>
+      <MainPage />
+    </LayoutWrapper>
+  );
+};
+
 function AppRoutes() {
+  const { role } = useAuth();
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/community/register" element={<CommunityRegisterPage />} />
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <LayoutWrapper currentPageName={mainPageKey}>
-              <MainPage />
-            </LayoutWrapper>
+            <HomeRoute />
           </ProtectedRoute>
         }
       />
@@ -57,9 +80,13 @@ function AppRoutes() {
           path={`/${pageName}`}
           element={
             <ProtectedRoute>
-              <LayoutWrapper currentPageName={pageName}>
-                <Page />
-              </LayoutWrapper>
+              {role === 'community' && (pageName === 'Incidents' || pageName === 'IncidentDetail') ? (
+                <Navigate to="/" replace />
+              ) : (
+                <LayoutWrapper currentPageName={pageName}>
+                  <Page />
+                </LayoutWrapper>
+              )}
             </ProtectedRoute>
           }
         />

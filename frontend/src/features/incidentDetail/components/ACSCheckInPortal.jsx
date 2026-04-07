@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { superadminApi }  from "@/features/superadmin";
 import { personnelApi }   from "@/features/personnel";
 import { checkinApi }     from "@/features/checkin";
+import { dispatchApi }    from "@/features/dispatch";
 import { equipmentApi }   from "@/features/equipment";
 import { X, Search, Truck, Users, Package, CheckCircle, ChevronRight, Wifi } from "lucide-react";
 import { format } from "date-fns";
@@ -19,6 +20,8 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
   const [allResponders, setAllResponders] = useState([]);
   const [allEquipment, setAllEquipment] = useState([]);
   const [allPersonnel, setAllPersonnel] = useState([]);
+  const [activeCheckedInIds, setActiveCheckedInIds] = useState(new Set());
+  const [dispatchedIds, setDispatchedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -30,14 +33,34 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
       superadminApi.listUsers(),
       equipmentApi.list(),
       personnelApi.list(),
-    ]).then(([users, equipment, personnel]) => {
+      checkinApi.getLogsForIncident(incidentId).catch(() => []),
+      dispatchApi.listByIncident(incidentId).catch(() => []),
+    ]).then(([users, equipment, personnel, checkinLogs, dispatches]) => {
       const responders = users || [];
       setAllResponders(responders);
       setAllEquipment(equipment || []);
       setAllPersonnel(personnel || []);
+
+      const activeIds = new Set(
+        (checkinLogs || [])
+          .filter((log) => !log?.check_out_time && log?.personnel_id)
+          .map((log) => log.personnel_id)
+      );
+      setActiveCheckedInIds(activeIds);
+
+      const dispatchIds = new Set(
+        (dispatches || [])
+          .map((dispatch) => dispatch?.personnel_id || dispatch?.user_id)
+          .filter(Boolean)
+      );
+      setDispatchedIds(dispatchIds);
+
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [incidentId]);
+
+  const isCheckedInAndDispatched = (responderId) =>
+    activeCheckedInIds.has(responderId) && dispatchedIds.has(responderId);
 
   const handleSelectResponder = (responder) => {
     setSelectedResponder(responder);
@@ -48,21 +71,38 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
 
   const handleConfirmCheckIn = async () => {
     if (!selectedResponder) return;
+    if (isCheckedInAndDispatched(selectedResponder.id)) return;
     setSaving(true);
     try {
-      await checkinApi.manual({
-        user_id: selectedResponder.id,
-        incident_id: incidentId,
+      try {
+        await checkinApi.manual({
+          user_id: selectedResponder.id,
+          incident_id: incidentId,
+        });
+      } catch (error) {
+        // Keep flow idempotent: if already checked-in, still ensure dispatch record exists.
+        if (error.status !== 409) {
+          throw error;
+        }
+      }
+
+      const existingDispatches = await dispatchApi.listByIncident(incidentId).catch(() => []);
+      const hasDispatchRecord = (existingDispatches || []).some((dispatch) => {
+        const responderId = dispatch?.personnel_id || dispatch?.user_id;
+        return responderId === selectedResponder.id;
       });
+
+      if (!hasDispatchRecord) {
+        await dispatchApi.create({
+          incident_id: incidentId,
+          user_id: selectedResponder.id,
+        });
+      }
 
       onCheckInComplete?.();
       onClose();
     } catch (error) {
-      if (error.status === 409) {
-        alert("This responder unit is already checked in to this incident.");
-      } else {
-        console.error("Check-in failed:", error);
-      }
+      console.error("Check-in/dispatch sync failed:", error);
     } finally {
       setSaving(false);
     }
@@ -76,6 +116,9 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
   );
 
   const onDutyPersonnel = allPersonnel.filter(p => p.duty_status === "On Duty");
+  const selectedResponderLocked = selectedResponder
+    ? isCheckedInAndDispatched(selectedResponder.id)
+    : false;
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
@@ -123,11 +166,13 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
                   No responder units found
                 </div>
               ) : (
-                filteredResponders.map(unit => (
+                filteredResponders.map(unit => {
+                  const isLocked = isCheckedInAndDispatched(unit.id);
+                  return (
                   <button
                     key={unit.id}
                     onClick={() => handleSelectResponder(unit)}
-                    className="w-full text-left px-4 py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg hover:border-green-600/40 hover:bg-green-900/10 transition-all group"
+                    className={`w-full text-left px-4 py-3.5 bg-[#0a0a0a] border rounded-lg transition-all group ${isLocked ? 'border-amber-600/30 bg-amber-900/5' : 'border-[#2a2a2a] hover:border-green-600/40 hover:bg-green-900/10'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -140,6 +185,11 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
+                        {isLocked && (
+                          <span className="text-[10px] px-2 py-0.5 rounded border text-amber-300 bg-amber-500/10 border-amber-500/30">
+                            Currently checked in and dispatched
+                          </span>
+                        )}
                         <span className="text-xs px-2 py-0.5 rounded border text-green-400 bg-green-600/10 border-green-600/30">
                           {unit.acs_status || 'Serviceable'}
                         </span>
@@ -147,7 +197,8 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
                       </div>
                     </div>
                   </button>
-                ))
+                  );
+                })
               )}
             </div>
           </>
@@ -170,6 +221,12 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
                   {format(new Date(), "h:mm a")} — Time of Arrival
                 </div>
               </div>
+
+              {selectedResponderLocked && (
+                <div className="text-xs text-amber-300 border border-amber-500/30 bg-amber-500/10 rounded-lg px-3 py-2">
+                  This responder is currently checked in and already dispatched to this incident.
+                </div>
+              )}
 
               {/* Responder Details */}
               <div>
@@ -275,11 +332,13 @@ export default function ACSCheckInPortal({ incidentId, onClose, onCheckInComplet
               </button>
               <button
                 onClick={handleConfirmCheckIn}
-                disabled={saving}
+                disabled={saving || selectedResponderLocked}
                 className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-all disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
-                {saving ? "Checking In..." : "Confirm ACS Check-In"}
+                {selectedResponderLocked
+                  ? "Currently Checked In and Dispatched"
+                  : (saving ? "Checking In..." : "Confirm ACS Check-In & Dispatch")}
               </button>
             </div>
           </>

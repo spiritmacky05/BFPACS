@@ -62,6 +62,30 @@ export default function IncidentCreateModal({
 }) {
   if (!isOpen) return null;
 
+  const hasImage = Boolean(form.image_data_url);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      onChangeField('image_data_url', '');
+      onChangeField('image_mime_type', '');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      onChangeField('image_data_url', '');
+      onChangeField('image_mime_type', '');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChangeField('image_data_url', String(reader.result || ''));
+      onChangeField('image_mime_type', file.type || 'image/*');
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.panel}>
@@ -146,6 +170,26 @@ export default function IncidentCreateModal({
               placeholder="Longitude (120.9842)"
               className={styles.input}
             />
+          </div>
+
+          <div>
+            <label className={styles.label}>Incident Image (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className={styles.input}
+            />
+            <p className="text-[11px] text-gray-500 mt-1">
+              Optional photo evidence. If omitted, Incident Detail will show a placeholder.
+            </p>
+            {hasImage ? (
+              <img
+                src={form.image_data_url}
+                alt="incident preview"
+                className="mt-3 w-full max-h-48 object-cover rounded-lg border border-[#2a2a2a]"
+              />
+            ) : null}
           </div>
         </div>
 

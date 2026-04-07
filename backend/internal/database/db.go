@@ -51,6 +51,7 @@ func NewConnectionPool() *gorm.DB {
 	// AutoMigrate all models
 	err = db.AutoMigrate(
 		&models.User{},
+		&models.Community{},
 		&models.Station{},
 		&models.LogisticalEquipment{},
 		&models.Fleet{},
@@ -65,6 +66,7 @@ func NewConnectionPool() *gorm.DB {
 		&models.Notification{},
 		&models.PersonnelIncidentLog{},
 		&models.IncidentStatusLog{},
+		&models.CommunityIncidentReport{},
 	)
 	if err != nil {
 		log.Printf("⚠️  AutoMigrate warning (non-fatal, existing schema used): %v", err)

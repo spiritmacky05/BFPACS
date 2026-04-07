@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -62,26 +63,22 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Auto-create a station using full_name as station_name
-	station, err := h.stationRepo.Create(c.Request.Context(), models.CreateStationRequest{
-		StationName: req.FullName,
-		City:        req.City,
-		District:    req.District,
-		Region:      req.Region,
-		AddressText: req.AddressText,
-	})
+	exists, err := h.userRepo.EmailExists(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("Auto-create station error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create station"})
+		log.Printf("Email check error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate email"})
+		return
+	}
+	if exists {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
 		return
 	}
 
-	// Create user linked to the new station
-	user, err := h.userRepo.CreateUser(c.Request.Context(), req.Email, req.FullName, string(hashedPassword), "user", &station.ID)
+	// Create station + user in one transaction to prevent orphan stations on duplicate email.
+	user, err := h.userRepo.CreateUserWithStation(c.Request.Context(), req, string(hashedPassword))
 	if err != nil {
 		log.Printf("Create user error: %v", err)
-		// Usually indicates a unique constraint violation on email
-		c.JSON(http.StatusConflict, gin.H{"error": "Email might already be in use"})
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
 		return
 	}
 
@@ -105,7 +102,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, hash, err := h.userRepo.GetUserByEmail(c.Request.Context(), req.Email)
+	user, hash, err := h.userRepo.GetUserByEmail(c.Request.Context(), strings.ToLower(strings.TrimSpace(req.Email)))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return

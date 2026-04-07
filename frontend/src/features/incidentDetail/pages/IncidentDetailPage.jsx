@@ -13,6 +13,7 @@ import { format, isValid } from 'date-fns';
 import {
   Activity,
   AlertTriangle,
+  Image as ImageIcon,
   LayoutGrid,
   MapPin,
   Navigation,
@@ -28,6 +29,7 @@ import StatusHistoryPanel from '../components/StatusHistoryPanel';
 import PersonnelBreakdownDashboard from '../components/PersonnelBreakdownDashboard';
 import FleetForIncidentDashboard from '../components/FleetForIncidentDashboard';
 import EquipmentForIncidentDashboard from '../components/EquipmentForIncidentDashboard';
+import CommunityReportsPanel from '../components/CommunityReportsPanel';
 import ACSCheckInPortal from '../components/ACSCheckInPortal';
 import useIncidentDetail from '../hooks/useIncidentDetail';
 import IncidentDetailHeader from '../components/IncidentDetailHeader';
@@ -68,6 +70,9 @@ const styles = {
   sectionOffset: 'scroll-mt-16',
   rowValueOrange: 'text-orange-400',
   rowValueCoordinates: 'text-gray-400 font-mono text-xs',
+  mediaWrap: 'rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] p-3',
+  mediaImage: 'w-full max-h-80 object-cover rounded-lg border border-[#2a2a2a]',
+  mediaPlaceholder: 'h-52 rounded-lg border border-dashed border-[#2f2f2f] flex items-center justify-center text-gray-500 text-sm',
 };
 
 const safeFormat = (date, formatStr) => {
@@ -199,6 +204,22 @@ export default function IncidentDetailPage() {
             valueClass={styles.rowValueOrange}
           />
         </IncidentDetailCard>
+
+        <div className="mt-4">
+          <IncidentDetailCard title="Incident Image" Icon={ImageIcon}>
+            <div className={styles.mediaWrap}>
+              {incident.image_data_url ? (
+                <img
+                  src={incident.image_data_url}
+                  alt="Incident attachment"
+                  className={styles.mediaImage}
+                />
+              ) : (
+                <div className={styles.mediaPlaceholder}>No image attached for this incident.</div>
+              )}
+            </div>
+          </IncidentDetailCard>
+        </div>
       </div>
 
       <div ref={refs.personnelRef} className={styles.sectionOffset}>
@@ -283,12 +304,14 @@ export default function IncidentDetailPage() {
       </IncidentDetailCard>
 
       <div ref={refs.fleetRef} className={styles.sectionOffset}>
-        <FleetForIncidentDashboard incidentId={incidentId} />
+        <FleetForIncidentDashboard key={checkInVersion} incidentId={incidentId} />
       </div>
 
       <div ref={refs.equipmentRef} className={styles.sectionOffset}>
-        <EquipmentForIncidentDashboard incidentId={incidentId} />
+        <EquipmentForIncidentDashboard key={checkInVersion} incidentId={incidentId} />
       </div>
+
+      <CommunityReportsPanel incidentId={incidentId} />
 
       <div
         ref={refs.printContainerRef}

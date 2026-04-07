@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sassinzz13/bfp-backend/internal/models"
@@ -34,13 +35,61 @@ func (r *UserRepo) CreateUser(ctx context.Context, email, fullName, passwordHash
 
 func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (*models.User, string, error) {
 	var u models.User
-	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&u).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("email = ?", strings.ToLower(strings.TrimSpace(email))).First(&u).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, "", errors.New("user not found")
 		}
 		return nil, "", err
 	}
 	return &u, u.PasswordHash, nil
+}
+
+func (r *UserRepo) EmailExists(ctx context.Context, email string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.User{}).
+		Where("email = ?", strings.ToLower(strings.TrimSpace(email))).
+		Count(&count).Error
+	return count > 0, err
+}
+
+func (r *UserRepo) CreateUserWithStation(ctx context.Context, req models.RegisterRequest, passwordHash string) (*models.User, error) {
+	var created models.User
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		station := models.Station{
+			StationName: req.FullName,
+			City:        req.City,
+			District:    req.District,
+			Region:      req.Region,
+			AddressText: req.AddressText,
+		}
+
+		if err := tx.Create(&station).Error; err != nil {
+			return err
+		}
+
+		user := models.User{
+			Email:        strings.ToLower(strings.TrimSpace(req.Email)),
+			FullName:     req.FullName,
+			PasswordHash: passwordHash,
+			Role:         "user",
+			StationID:    &station.ID,
+			Approved:     false,
+		}
+
+		if err := tx.Create(&user).Error; err != nil {
+			return err
+		}
+
+		created = user
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &created, nil
 }
 
 func (r *UserRepo) GetAll(ctx context.Context) ([]models.User, error) {

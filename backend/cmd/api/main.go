@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -52,6 +53,7 @@ func main() {
 	notifRepo := repository.NewNotificationRepo(db)
 	equipmentRepo := repository.NewEquipmentRepo(db)
 	checkinRepo := checkin.NewCheckInRepo(db)
+	communityRepo := repository.NewCommunityRepo(db)
 
 	authRepo := repository.NewUserRepo(db)
 
@@ -69,6 +71,7 @@ func main() {
 	notifH := handlers.NewNotificationHandler(notifRepo)
 	equipmentH := handlers.NewEquipmentHandler(equipmentRepo)
 	checkinH := checkin.NewHandler(checkinRepo)
+	communityH := handlers.NewCommunityHandler(communityRepo)
 
 	// ── Router ────────────────────────────────────────────────────────────────
 	r := gin.Default()
@@ -90,6 +93,8 @@ func main() {
 		{
 			auth.POST("/register", authH.Register)
 			auth.POST("/login", authH.Login)
+			auth.POST("/community/register", communityH.Register)
+			auth.POST("/community/login", communityH.Login)
 		}
 
 		// ── Public Stations list (for registration dropdown) ──────────
@@ -124,6 +129,15 @@ func main() {
 
 			// ── Fire Incidents (10-70) ──────────────────────────────────────────
 			i := protected.Group("/incidents")
+			i.Use(func(c *gin.Context) {
+				roleRaw, _ := c.Get("role")
+				role, _ := roleRaw.(string)
+				if strings.EqualFold(role, "community") {
+					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Community users are not allowed to access incidents"})
+					return
+				}
+				c.Next()
+			})
 			{
 				i.GET("", incidentH.GetAll)
 				i.GET("/:id", incidentH.GetByID)
@@ -178,6 +192,13 @@ func main() {
 				rep.POST("", reportH.Create)
 				rep.GET("/incident/:id", reportH.GetByIncident)
 				rep.GET("/deployment/:id", reportH.GetByDeployment)
+			}
+
+			// ── Community Reports ──────────────────────────────────────────────
+			community := protected.Group("/community")
+			{
+				community.POST("/reports", communityH.CreateReport)
+				community.GET("/reports", communityH.ListByIncident) // ?incident_id=
 			}
 
 			// ── Notifications ──────────────────────────────────────────────────

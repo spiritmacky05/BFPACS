@@ -57,6 +57,25 @@ export const useAuth = () => {
     }
   };
 
+  const handleCommunityRegister = async (userData) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const result = await globalAuth.registerCommunity(userData);
+      if (result.success) {
+        return { success: true, message: result.message };
+      }
+      setError(result.error);
+      return { success: false, error: result.error };
+    } catch {
+      const msg = 'An unexpected error occurred. Please try again.';
+      setError(msg);
+      return { success: false, error: msg };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     ...globalAuth, // Spread original context (user, token, role, logout, etc.)
     isLoading,
@@ -64,5 +83,6 @@ export const useAuth = () => {
     setError,
     handleLogin,
     handleRegister,
+    handleCommunityRegister,
   };
 };

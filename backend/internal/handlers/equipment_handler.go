@@ -98,6 +98,10 @@ func (h *EquipmentHandler) BorrowItem(c *gin.Context) {
 		return
 	}
 	if err := h.Repo.BorrowItem(c.Request.Context(), id, req); err != nil {
+		if errors.Is(err, repository.ErrBorrowAdminOwnedOnly) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "only admin-owned equipment can be borrowed"})
+			return
+		}
 		if errors.Is(err, repository.ErrAlreadyBorrowed) {
 			c.JSON(http.StatusConflict, gin.H{"error": "equipment is already borrowed"})
 			return

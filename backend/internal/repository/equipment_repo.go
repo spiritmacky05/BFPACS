@@ -27,6 +27,9 @@ var ErrNotBorrowed = errors.New("equipment is not currently borrowed")
 // ErrCannotDeleteBorrowed is returned when trying to delete borrowed equipment
 var ErrCannotDeleteBorrowed = errors.New("cannot delete equipment that is currently borrowed")
 
+// ErrBorrowAdminOwnedOnly is returned when trying to borrow a station-owned item
+var ErrBorrowAdminOwnedOnly = errors.New("only admin-owned equipment can be borrowed")
+
 func (r *EquipmentRepo) GetAll(ctx context.Context) ([]models.LogisticalEquipment, error) {
 	var list []models.LogisticalEquipment
 	err := r.db.WithContext(ctx).Order("equipment_name").Find(&list).Error
@@ -75,6 +78,9 @@ func (r *EquipmentRepo) BorrowItem(ctx context.Context, id uuid.UUID, req models
 		var equip models.LogisticalEquipment
 		if err := tx.Where("id = ?", id).First(&equip).Error; err != nil {
 			return err
+		}
+		if equip.StationID != nil {
+			return ErrBorrowAdminOwnedOnly
 		}
 		if equip.Status == "Borrowed" {
 			return ErrAlreadyBorrowed

@@ -26,6 +26,8 @@ type FireIncident struct {
 	OccupancyCategory          *string    `json:"occupancy_category,omitempty"`
 	InvolvesHazardousMaterials bool       `json:"involves_hazardous_materials"`
 	ResponseType               string     `json:"response_type"`
+	ImageDataURL               *string    `json:"image_data_url,omitempty" gorm:"type:text"`
+	ImageMimeType              *string    `json:"image_mime_type,omitempty"`
 	CreatedAt                  time.Time  `json:"created_at"`
 	UpdatedAt                  time.Time  `json:"updated_at"`
 }
@@ -44,6 +46,8 @@ type CreateIncidentRequest struct {
 	OccupancyCategory          *string    `json:"occupancy_category"`
 	InvolvesHazardousMaterials bool       `json:"involves_hazardous_materials"`
 	ResponseType               string     `json:"response_type"`
+	ImageDataURL               *string    `json:"image_data_url"`
+	ImageMimeType              *string    `json:"image_mime_type"`
 }
 
 // UpdateIncidentStatusRequest is used to change the status/alarm level of an incident

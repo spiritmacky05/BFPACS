@@ -65,6 +65,8 @@ func (r *IncidentRepo) Create(ctx context.Context, req models.CreateIncidentRequ
 		OccupancyCategory:          req.OccupancyCategory,
 		InvolvesHazardousMaterials: req.InvolvesHazardousMaterials,
 		ResponseType:               responseType,
+		ImageDataURL:               req.ImageDataURL,
+		ImageMimeType:              req.ImageMimeType,
 	}
 
 	if err := r.db.WithContext(ctx).Create(&i).Error; err != nil {

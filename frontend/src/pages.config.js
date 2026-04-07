@@ -57,6 +57,7 @@ import { HydrantsPage as Hydrants } from './features/hydrants';
 // import { StationsPage as Stations } from './features/stations';
 import { SuperAdminPage as SuperAdmin } from './features/superadmin';
 import { LoginPage as Login, RegisterPage as Register } from './features/auth';
+import { CommunityPortalPage as Community } from './features/community';
 import IncidentDetail from './features/incidentDetail/pages/IncidentDetailPage';
 import Incidents from './features/incidents/pages/IncidentsPage';
 import __Layout from './Layout.jsx';
@@ -77,6 +78,7 @@ export const PAGES = {
     "Incidents": Incidents,
     "Login": Login,
     "Register": Register,
+    "Community": Community,
     "SuperAdmin": SuperAdmin,
     // "Stations": Stations,
 }

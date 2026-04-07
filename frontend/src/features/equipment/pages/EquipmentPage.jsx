@@ -97,6 +97,13 @@ export default function EquipmentPage() {
     handleDelete
   } = useEquipment();
 
+    const getOwnerLabel = (item) => {
+      if (!item?.station_id) return 'Admin';
+      return stationMap[item.station_id]?.station_name || 'Station';
+    };
+
+    const isAdminOwnedEquipment = (item) => !item?.station_id;
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header.wrapper}>
@@ -142,7 +149,14 @@ export default function EquipmentPage() {
           <table className={styles.table.table}>
             <thead>
               <tr className={styles.table.theadTr}>
-                {['Item', ...(isAdminRole ? ['Station'] : []), 'Quantity', 'Status', 'Borrower', isAdmin ? 'Actions' : ''].filter(Boolean).map(h => (
+                {[
+                  'Item',
+                  ...(isAdminRole ? ['Station'] : []),
+                  'Quantity',
+                  'Status',
+                  isAdminRole ? 'Borrower' : 'Ownership',
+                  isAdmin ? 'Actions' : '',
+                ].filter(Boolean).map(h => (
                   <th key={h} className={styles.table.th}>{h}</th>
                 ))}
               </tr>
@@ -151,11 +165,14 @@ export default function EquipmentPage() {
               {filtered.map(item => (
                 <tr key={item.id} className={styles.table.tbodyTr}>
                   <td className={styles.table.tdName}>
-                    <div className="flex items-center gap-2">
-                       {item.equipment_name || item.item_name}
-                       {!item.station_id && (
-                        <span className="text-xs px-1.5 py-0.5 rounded border border-blue-600/30 bg-blue-600/10 text-blue-400 font-normal">Admin</span>
-                      )}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        {item.equipment_name || item.item_name}
+                          {isAdminOwnedEquipment(item) && (
+                            <span className="text-xs px-1.5 py-0.5 rounded border border-blue-600/30 bg-blue-600/10 text-blue-400 font-normal">Admin</span>
+                          )}
+                      </div>
+                      <div className="text-xs text-gray-500">Owned by: {getOwnerLabel(item)}</div>
                     </div>
                   </td>
                   {isAdminRole && (
@@ -169,22 +186,26 @@ export default function EquipmentPage() {
                       {item.borrower_name ? 'Borrowed' : 'Available'}
                     </span>
                   </td>
-                  <td className={styles.table.tdText}>{item.borrower_name ?? '—'}</td>
+                  <td className={styles.table.tdText}>
+                    {isAdminRole ? (item.borrower_name ?? '—') : getOwnerLabel(item)}
+                  </td>
                   {isAdmin && (
                     <td className={styles.table.tdAction}>
                       <div className={styles.table.actionFlex}>
-                        {!item.borrower_name ? (
+                        {isAdminOwnedEquipment(item) && !item.borrower_name ? (
                           <button onClick={() => { setBorrowItem(item); setBorrowerName(isAdminRole ? '' : (user?.full_name ?? '')); }}
                             className={styles.table.actionBtnBorrowed}>
                             <ArrowRight className={styles.table.actionIcon} /> Borrow
                           </button>
-                        ) : (isAdminRole || item.borrower_name === user?.full_name) ? (
+                        ) : isAdminOwnedEquipment(item) && (isAdminRole || item.borrower_name === user?.full_name) ? (
                           <button onClick={() => handleReturn(item.id)}
                             className={styles.table.actionBtnAvailable}>
                             <ArrowLeft className={styles.table.actionIcon} /> Return
                           </button>
-                        ) : (
+                        ) : isAdminOwnedEquipment(item) ? (
                           <span className="text-xs text-gray-600 px-2 py-1">Borrowed</span>
+                        ) : (
+                          <span className="text-xs text-gray-600 px-2 py-1">Station-owned</span>
                         )}
                         <button onClick={() => setEditItem({ ...item })}
                           className="flex items-center justify-center px-2 py-1 border border-gray-600/40 text-gray-400 rounded hover:bg-gray-600/20 transition-all ml-1" title="Edit">
