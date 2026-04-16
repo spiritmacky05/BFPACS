@@ -65,19 +65,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      let response;
-      let primaryError;
-      try {
-        response = await authApi.login(email, password);
-      } catch (error) {
-        primaryError = error;
-        // Community users authenticate through their own table.
-        try {
-          response = await authApi.communityLogin(email, password);
-        } catch (communityError) {
-          throw communityError || primaryError;
-        }
-      }
+      // Backend now handles both standard and community users in a single call.
+      const response = await authApi.login(email, password);
+      
       // Backend returns { user, token }
       const { user: userData, token: userToken } = response;
 

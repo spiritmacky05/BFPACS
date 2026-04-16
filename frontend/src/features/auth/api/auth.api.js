@@ -22,8 +22,6 @@ export const authApi = {
 
   communityRegister: (userData) => api.post('/auth/community/register', userData),
 
-  communityLogin: (email, password) => api.post('/auth/community/login', { email, password }),
-
   /** 
    * Get the currently authenticated user's profile 
    */
