@@ -53,13 +53,14 @@ func GenerateJWT(userID uuid.UUID, fullName string, role string, stationID *uuid
 	return token.SignedString([]byte(secret))
 }
 
+
 func (h *AuthHandler) Register(c *gin.Context) {
-	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
-	var req models.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+       var req models.RegisterRequest
+       if err := c.ShouldBindJSON(&req); err != nil {
+	       c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	       return
+       }
+       req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
 	// Hash the password securely
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
