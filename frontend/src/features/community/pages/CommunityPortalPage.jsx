@@ -34,6 +34,7 @@ const COLORS = {
  * Pure React Modal Component - Mobile Priority
  */
 function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, setCoords }) {
+    const [manualAddress, setManualAddress] = useState("");
   const [geoError, setGeoError] = useState("");
   const [description, setDescription] = useState('');
   const [locationText, setLocationText] = useState('');
@@ -131,7 +132,8 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
   const handleFormSubmit = () => {
     onSubmit({
       description,
-      location_text: locationText,
+      location_text: manualAddress || locationText,
+      manual_address: manualAddress,
       media_data_url: mediaDataUrl || undefined,
       media_type: mediaType || undefined,
       category
@@ -192,6 +194,19 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
                 readOnly
               />
             </div>
+            {geoError && (
+              <div className="mt-3">
+                <label className="text-xs font-bold text-red-400 uppercase mb-1.5 block">Enter Address or Landmark (Required)</label>
+                <input
+                  value={manualAddress}
+                  onChange={e => setManualAddress(e.target.value)}
+                  placeholder="e.g. 123 Main St, Barangay, City"
+                  className="w-full bg-[#111] border border-red-500 text-white rounded-xl px-4 py-4 text-[15px] focus:border-red-500 outline-none transition-colors"
+                  required
+                />
+                <div className="text-xs text-red-400 mt-1">Location not available. Please enter your address or landmark above.</div>
+              </div>
+            )}
 
             {/* Map Container */}
             <div className="w-full h-52 md:h-64 rounded-xl overflow-hidden border border-[#2a2a2a] relative z-0 shadow-lg">
@@ -307,7 +322,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
           </button>
           <button
             onClick={handleFormSubmit}
-            disabled={loading || !description || !locationText}
+            disabled={loading || !description || (!locationText && !manualAddress)}
             className="flex-2 w-full px-4 py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[15px] font-bold tracking-wider shadow-[0_0_20px_rgba(220,38,38,0.3)] disabled:opacity-50 disabled:shadow-none transition-all active:scale-[0.98] min-h-[56px] flex items-center justify-center gap-2"
           >
             {loading ? (
@@ -351,16 +366,20 @@ export default function CommunityPortalPage() {
     setMessage('');
 
     let address = '';
-    try {
-      if (coords.lat && coords.lng) {
-        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`);
-        if (resp.ok) {
-          const json = await resp.json();
-          address = json.display_name || '';
+    if (data.manual_address) {
+      address = data.manual_address;
+    } else {
+      try {
+        if (coords.lat && coords.lng) {
+          const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`);
+          if (resp.ok) {
+            const json = await resp.json();
+            address = json.display_name || '';
+          }
         }
+      } catch (e) {
+        address = `${coords.lat}, ${coords.lng}`;
       }
-    } catch (e) {
-      address = `${coords.lat}, ${coords.lng}`;
     }
 
     try {
