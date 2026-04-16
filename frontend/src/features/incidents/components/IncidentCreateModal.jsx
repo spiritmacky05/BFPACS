@@ -57,6 +57,26 @@ const styles = {
 };
 
 
+/**
+ * @typedef {Object} IncidentForm
+ * @property {string} [lat]
+ * @property {string} [lng]
+ * @property {string} [image_data_url]
+ * @property {string} [image_mime_type]
+ * @property {string} [location_text]
+ * @property {string} [alarm_status]
+ * @property {string} [date_time_reported]
+ * @property {string} [occupancy_type]
+ * // Add other fields as needed
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen
+ * @param {IncidentForm} props.form
+ * @param {boolean} props.isSaving
+ * @param {() => void} props.onClose
+ * @param {(field: string, value: any) => void} props.onChangeField
+ * @param {() => void} props.onSubmit
+ */
 export default function IncidentCreateModal({
   isOpen,
   form,
@@ -76,6 +96,9 @@ export default function IncidentCreateModal({
 
   const hasImage = Boolean(form.image_data_url);
 
+  /**
+   * @param {React.ChangeEvent<HTMLInputElement>} event
+   */
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) {
