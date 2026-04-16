@@ -3,10 +3,10 @@
 
     # Redirect API calls to the backend service
     @api path /api/*
-    reverse_proxy @api backend:8080
+    reverse_proxy @api bfpacs_backend:8080
 
     # Serve the React app via the frontend service
-    reverse_proxy frontend:80
+    reverse_proxy bfpacs_frontend:80
 
     header {
         # Security Hardening

@@ -49,8 +49,30 @@ services:
     networks:
       - web-proxy
 
+  proxy:
+    image: caddy:2.7-alpine
+    container_name: bfpacs_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - bfpacs_caddy_data:/data
+      - bfpacs_caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - TLS_EMAIL=${TLS_EMAIL:-admin@localhost}
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - web-proxy
+
 volumes:
   bfpacs_pgdata:
+  bfpacs_caddy_data:
+  bfpacs_caddy_config:
 
 networks:
   web-proxy:
