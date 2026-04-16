@@ -34,6 +34,17 @@ const COLORS = {
  * Pure React Modal Component
  */
 function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, setCoords }) {
+    // Mobile-friendly: trigger geolocation on demand
+    const handleUseMyLocation = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          (err) => alert("Location access denied. Please enable location services in your browser.")
+        );
+      } else {
+        alert("Geolocation is not supported by your browser.");
+      }
+    };
   const [description, setDescription] = useState('');
   const [locationText, setLocationText] = useState('');
   const [mediaDataUrl, setMediaDataUrl] = useState('');
@@ -100,8 +111,8 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#111] border border-[#2a2a2a] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#111] border border-[#2a2a2a] w-full max-w-lg md:rounded-2xl rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" style={{maxHeight: '98vh'}}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#1f1f1f] bg-[#1a1a1a]">
           <div className="flex items-center gap-3">
@@ -125,7 +136,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div className="p-3 md:p-5 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase mb-1.5 block">Incident Address / Landmark</label>
             <div className="relative mb-2">
@@ -139,7 +150,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
               />
             </div>
             {/* Map integration */}
-            <div className="w-full h-56 rounded-xl overflow-hidden border border-[#2a2a2a]">
+            <div className="w-full h-48 md:h-56 rounded-xl overflow-hidden border border-[#2a2a2a]">
               {coords.lat && coords.lng ? (
                 <MapContainer
                   center={[coords.lat, coords.lng]}
@@ -147,6 +158,8 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
                   style={{ width: '100%', height: '100%' }}
                   scrollWheelZoom={true}
                   dragging={true}
+                  touchZoom={true}
+                  doubleClickZoom={true}
                 >
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -158,7 +171,17 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
                 <div className="flex items-center justify-center h-full text-gray-500 text-xs">Fetching location...</div>
               )}
             </div>
-            <div className="text-[10px] text-gray-500 mt-1">Tap the map to update your location if needed.</div>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2">
+              <div className="text-[10px] text-gray-500">Tap the map to update your location if needed.</div>
+              <button
+                type="button"
+                onClick={handleUseMyLocation}
+                className="text-[11px] px-3 py-1 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-black font-bold transition-colors w-fit md:ml-2"
+                style={{minWidth: 0}}
+              >
+                Use My Location
+              </button>
+            </div>
           </div>
 
           <div>
@@ -214,7 +237,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex gap-3">
+        <div className="p-3 md:p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex flex-col md:flex-row gap-2 md:gap-3">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-colors"
