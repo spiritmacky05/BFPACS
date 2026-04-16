@@ -1,5 +1,8 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { 
   Flame, 
   ShieldCheck, 
@@ -30,12 +33,47 @@ const COLORS = {
 /**
  * Pure React Modal Component
  */
-function ReportModal({ isOpen, onClose, category, onSubmit, loading }) {
+function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, setCoords }) {
   const [description, setDescription] = useState('');
   const [locationText, setLocationText] = useState('');
   const [mediaDataUrl, setMediaDataUrl] = useState('');
   const [mediaType, setMediaType] = useState('');
   const fileInputRef = useRef(null);
+
+  // Custom marker icon for Leaflet (fixes missing default icon issue)
+  const markerIcon = new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    shadowSize: [41, 41]
+  });
+
+  // Map event handler to update marker and coords
+  function LocationMarker() {
+    useMapEvents({
+      click(e) {
+        setCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
+      },
+      dragend(e) {
+        // Not used, marker is not draggable
+      },
+      moveend(e) {
+        // Not used
+      }
+    });
+    return coords.lat && coords.lng ? (
+      <Marker position={[coords.lat, coords.lng]} icon={markerIcon} />
+    ) : null;
+  }
+
+  useEffect(() => {
+    // If coords change, update locationText with lat/lng
+    if (coords.lat && coords.lng) {
+      setLocationText(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+    }
+  }, [coords]);
 
   if (!isOpen) return null;
 
@@ -90,15 +128,37 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading }) {
         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase mb-1.5 block">Incident Address / Landmark</label>
-            <div className="relative">
+            <div className="relative mb-2">
               <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
               <input
                 value={locationText}
                 onChange={(e) => setLocationText(e.target.value)}
                 placeholder="Where is this happening?"
                 className="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-xl pl-10 pr-4 py-3 text-sm focus:border-red-500/50 outline-none transition-colors"
+                readOnly
               />
             </div>
+            {/* Map integration */}
+            <div className="w-full h-56 rounded-xl overflow-hidden border border-[#2a2a2a]">
+              {coords.lat && coords.lng ? (
+                <MapContainer
+                  center={[coords.lat, coords.lng]}
+                  zoom={17}
+                  style={{ width: '100%', height: '100%' }}
+                  scrollWheelZoom={true}
+                  dragging={true}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <LocationMarker />
+                </MapContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500 text-xs">Fetching location...</div>
+              )}
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1">Tap the map to update your location if needed.</div>
           </div>
 
           <div>
@@ -326,6 +386,8 @@ export default function CommunityPortalPage() {
         category={selectedCategory} 
         onSubmit={handleSubmitReport}
         loading={submitting}
+        coords={coords}
+        setCoords={setCoords}
       />
 
       <style>{`
