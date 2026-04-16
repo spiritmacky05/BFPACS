@@ -34,15 +34,50 @@ const COLORS = {
  * Pure React Modal Component
  */
 function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, setCoords }) {
+        const [geoError, setGeoError] = useState("");
+      // Fetch location every time modal opens
+      useEffect(() => {
+        if (isOpen && (coords.lat === null || coords.lng === null)) {
+          setGeoError("");
+          if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setGeoError("");
+              },
+              (err) => {
+                let msg = "Could not get your location.";
+                if (err.code === 1) msg = "Location access denied. Please enable location services for your browser.";
+                else if (err.code === 2) msg = "Location unavailable. Try again or check your device settings.";
+                else if (err.code === 3) msg = "Location request timed out. Try again.";
+                setGeoError(msg);
+              }
+            );
+          } else {
+            setGeoError("Geolocation is not supported by your browser.");
+          }
+        }
+        // eslint-disable-next-line
+      }, [isOpen]);
     // Mobile-friendly: trigger geolocation on demand
     const handleUseMyLocation = () => {
+      setGeoError("");
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
-          (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          (err) => alert("Location access denied. Please enable location services in your browser.")
+          (pos) => {
+            setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setGeoError("");
+          },
+          (err) => {
+            let msg = "Could not get your location.";
+            if (err.code === 1) msg = "Location access denied. Please enable location services for your browser.";
+            else if (err.code === 2) msg = "Location unavailable. Try again or check your device settings.";
+            else if (err.code === 3) msg = "Location request timed out. Try again.";
+            setGeoError(msg);
+          }
         );
       } else {
-        alert("Geolocation is not supported by your browser.");
+        setGeoError("Geolocation is not supported by your browser.");
       }
     };
   const [description, setDescription] = useState('');
@@ -111,8 +146,15 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#111] border border-[#2a2a2a] w-full max-w-lg md:rounded-2xl rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" style={{maxHeight: '98vh'}}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="bg-[#111] border border-[#2a2a2a] w-full max-w-lg md:rounded-2xl rounded-none md:rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        style={{
+          maxHeight: '100vh',
+          height: '100vh',
+          borderRadius: '0',
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#1f1f1f] bg-[#1a1a1a]">
           <div className="flex items-center gap-3">
@@ -136,7 +178,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         </div>
 
         {/* Body */}
-        <div className="p-3 md:p-5 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        <div className="p-4 md:p-5 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase mb-1.5 block">Incident Address / Landmark</label>
             <div className="relative mb-2">
@@ -150,7 +192,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
               />
             </div>
             {/* Map integration */}
-            <div className="w-full h-48 md:h-56 rounded-xl overflow-hidden border border-[#2a2a2a]">
+            <div className="w-full h-40 md:h-56 rounded-lg overflow-hidden border border-[#2a2a2a]">
               {coords.lat && coords.lng ? (
                 <MapContainer
                   center={[coords.lat, coords.lng]}
@@ -167,16 +209,20 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
                   />
                   <LocationMarker />
                 </MapContainer>
+              ) : geoError ? (
+                <div className="flex flex-col items-center justify-center h-full text-red-500 text-xs text-center px-2">
+                  {geoError}
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500 text-xs">Fetching location...</div>
               )}
             </div>
             <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-              <div className="text-[10px] text-gray-500">Tap the map to update your location if needed.</div>
+              <div className="text-[11px] text-gray-500">Tap the map to update your location if needed.</div>
               <button
                 type="button"
                 onClick={handleUseMyLocation}
-                className="text-[11px] px-3 py-1 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-black font-bold transition-colors w-fit md:ml-2"
+                className="text-[12px] px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-black font-bold transition-colors w-full md:w-fit md:ml-2"
                 style={{minWidth: 0}}
               >
                 Use My Location
@@ -240,14 +286,14 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         <div className="p-3 md:p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex flex-col md:flex-row gap-2 md:gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-colors"
+            className="flex-1 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white text-base font-bold transition-colors"
           >
             CANCEL
           </button>
           <button
             onClick={handleFormSubmit}
             disabled={loading || !description || !locationText}
-            className="flex-2 px-8 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-lg shadow-red-900/20 disabled:opacity-50 transition-all active:scale-[0.98]"
+            className="flex-2 px-8 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-base font-bold shadow-lg shadow-red-900/20 disabled:opacity-50 transition-all active:scale-[0.98]"
           >
             {loading ? 'SUBMITTING...' : 'SUBMIT REPORT'}
           </button>
@@ -283,12 +329,28 @@ export default function CommunityPortalPage() {
     setSubmitting(true);
     setMessage('');
 
+    // Reverse geocode to get address from coords
+    let address = '';
+    try {
+      if (coords.lat && coords.lng) {
+        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`);
+        if (resp.ok) {
+          const json = await resp.json();
+          address = json.display_name || '';
+        }
+      }
+    } catch (e) {
+      // If geocoding fails, fallback to lat/lng
+      address = `${coords.lat}, ${coords.lng}`;
+    }
+
     try {
       await communityApi.submitReport({
         ...data,
         description: `[${data.category}] ${data.description}`,
         lat: coords.lat,
         lng: coords.lng,
+        address: address || `${coords.lat}, ${coords.lng}`
       });
 
       setMessage('REPORT SUBMITTED SUCCESSFULLY. EMERGENCY SERVICES NOTIFIED.');
