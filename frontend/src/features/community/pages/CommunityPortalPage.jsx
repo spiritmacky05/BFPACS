@@ -285,7 +285,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 left-0 right-0 p-2 md:p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex flex-col md:flex-row gap-2 md:gap-3 z-20">
+        <div className="fixed md:sticky bottom-0 left-0 right-0 p-2 md:p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex flex-col md:flex-row gap-2 md:gap-3 z-50 shadow-[0_-4px_16px_0_rgba(0,0,0,0.25)]" style={{maxWidth:'100vw'}}>
           <button
             onClick={onClose}
             className="flex-1 px-4 py-4 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xl font-bold transition-colors"
