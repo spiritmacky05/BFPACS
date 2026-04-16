@@ -58,8 +58,8 @@ func main() {
 	authRepo := repository.NewUserRepo(db)
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
-	authH := handlers.NewAuthHandler(authRepo, stationRepo)
-	adminH := handlers.NewAdminHandler(authRepo)
+	authH := handlers.NewAuthHandler(authRepo, communityRepo, stationRepo)
+	adminH := handlers.NewAdminHandler(authRepo, communityRepo)
 	personnelH := handlers.NewPersonnelHandler(personnelRepo)
 	fleetH := handlers.NewFleetHandler(fleetRepo)
 	incidentH := handlers.NewIncidentHandler(incidentRepo)

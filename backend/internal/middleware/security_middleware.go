@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"os"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,9 +29,12 @@ func CORSMiddleware() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
+		mode := os.Getenv("GIN_MODE")
 
-		// Exact match prevents subdomain bypass (e.g. http://localhost:5173.evil.com)
-		if allowedOrigins[origin] {
+		// Allow any origin in debug mode to facilitate mobile testing
+		isAllowed := allowedOrigins[origin] || mode == "debug" || mode == ""
+
+		if isAllowed && origin != "" {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")

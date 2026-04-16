@@ -12,11 +12,15 @@ import (
 )
 
 type AdminHandler struct {
-	userRepo *repository.UserRepo
+	userRepo      *repository.UserRepo
+	communityRepo *repository.CommunityRepo
 }
 
-func NewAdminHandler(userRepo *repository.UserRepo) *AdminHandler {
-	return &AdminHandler{userRepo: userRepo}
+func NewAdminHandler(userRepo *repository.UserRepo, communityRepo *repository.CommunityRepo) *AdminHandler {
+	return &AdminHandler{
+		userRepo:      userRepo,
+		communityRepo: communityRepo,
+	}
 }
 
 // GetAllUsers — Admin or SuperAdmin: list every user
@@ -145,7 +149,8 @@ func (h *AdminHandler) QuickApprove(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// GetCurrentUser — returns the currently authenticated user's full profile
+// GetCurrentUser — returns the currently authenticated user's full profile.
+// Automatically checks both standard users and community users.
 func (h *AdminHandler) GetCurrentUser(c *gin.Context) {
 	raw, exists := c.Get("userID")
 	if !exists {
@@ -163,17 +168,32 @@ func (h *AdminHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
+	// 1. Try standard users table
 	user, err := h.userRepo.GetByID(c.Request.Context(), id)
+	if err == nil && user != nil {
+		c.JSON(http.StatusOK, user)
+		return
+	}
+
+	// 2. Try community users table
+	community, err := h.communityRepo.GetByID(c.Request.Context(), id)
+	if err == nil && community != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"id":         community.ID,
+			"full_name":  community.FullName,
+			"email":      community.Email,
+			"contact_no": community.ContactNo,
+			"role":       "community",
+			"is_active":  community.IsActive,
+		})
+		return
+	}
+
 	if err != nil {
 		log.Printf("[AdminHandler.GetCurrentUser] %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve user"})
-		return
 	}
-	if user == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-		return
-	}
-	c.JSON(http.StatusOK, user)
+
+	c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 }
 
 // UpdateCurrentUser — allows authenticated users to update their own profile fields.

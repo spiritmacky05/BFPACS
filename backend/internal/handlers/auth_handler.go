@@ -17,12 +17,17 @@ import (
 )
 
 type AuthHandler struct {
-	userRepo    *repository.UserRepo
-	stationRepo *repository.StationRepo
+	userRepo      *repository.UserRepo
+	communityRepo *repository.CommunityRepo
+	stationRepo   *repository.StationRepo
 }
 
-func NewAuthHandler(repo *repository.UserRepo, stationRepo *repository.StationRepo) *AuthHandler {
-	return &AuthHandler{userRepo: repo, stationRepo: stationRepo}
+func NewAuthHandler(repo *repository.UserRepo, communityRepo *repository.CommunityRepo, stationRepo *repository.StationRepo) *AuthHandler {
+	return &AuthHandler{
+		userRepo:      repo,
+		communityRepo: communityRepo,
+		stationRepo:   stationRepo,
+	}
 }
 
 // GenerateJWT creates a new token valid for 24 hours
@@ -108,43 +113,62 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, hash, err := h.userRepo.GetUserByEmail(c.Request.Context(), strings.ToLower(strings.TrimSpace(req.Email)))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Failed to log in. Wrong email or password.",
-			"code":  "INVALID_CREDENTIALS",
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	// 1. Try standard users table first
+	user, hash, err := h.userRepo.GetUserByEmail(c.Request.Context(), email)
+	if err == nil && user != nil {
+		// Verify Password
+		if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.Password)); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong email or password.", "code": "INVALID_CREDENTIALS"})
+			return
+		}
+
+		if !user.IsActive {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Account is inactive."})
+			return
+		}
+
+		if !user.Approved {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Account pending approval."})
+			return
+		}
+
+		tokenStr, _ := GenerateJWT(user.ID, user.FullName, user.Role, user.StationID)
+		c.JSON(http.StatusOK, models.AuthResponse{Token: tokenStr, User: *user})
+		return
+	}
+
+	// 2. Fallback to community users table
+	community, err := h.communityRepo.GetByEmail(c.Request.Context(), email)
+	if err == nil && community != nil {
+		if err := bcrypt.CompareHashAndPassword([]byte(community.PasswordHash), []byte(req.Password)); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong email or password.", "code": "INVALID_CREDENTIALS"})
+			return
+		}
+
+		if !community.IsActive {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Community account is inactive."})
+			return
+		}
+
+		tokenStr, _ := GenerateJWT(community.ID, community.FullName, "community", nil)
+		c.JSON(http.StatusOK, gin.H{
+			"token": tokenStr,
+			"user": gin.H{
+				"id":         community.ID,
+				"full_name":  community.FullName,
+				"email":      community.Email,
+				"contact_no": community.ContactNo,
+				"role":       "community",
+			},
 		})
 		return
 	}
 
-	// Verify Password
-	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.Password))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Failed to log in. Wrong email or password.",
-			"code":  "INVALID_CREDENTIALS",
-		})
-		return
-	}
-
-	if !user.IsActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Account is inactive. Please contact administrator."})
-		return
-	}
-
-	if !user.Approved {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Your account is pending approval. Please wait for a SuperAdmin to approve your registration."})
-		return
-	}
-
-	tokenStr, err := GenerateJWT(user.ID, user.FullName, user.Role, user.StationID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.AuthResponse{
-		Token: tokenStr,
-		User:  *user,
+	// 3. Both failed
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"error": "Failed to log in. Wrong email or password.",
+		"code":  "INVALID_CREDENTIALS",
 	})
 }

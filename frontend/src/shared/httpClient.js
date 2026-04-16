@@ -13,7 +13,7 @@ import axios from 'axios';
  * Base URL for every API request.
  * We keep a safe local fallback so onboarding is easy for interns.
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 /**
  * Shared Axios instance used by all feature API modules.
