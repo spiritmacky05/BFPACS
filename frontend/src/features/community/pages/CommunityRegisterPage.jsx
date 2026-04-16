@@ -35,7 +35,15 @@ export default function CommunityRegisterPage() {
         <p className="text-sm text-gray-400">Create community account for station viewing, auto-call, and incident reporting.</p>
 
         <input required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm" />
-        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm" />
+        <input required type="email" inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm" />
         <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 8)" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm" />
         <input value={contactNo} onChange={(e) => setContactNo(e.target.value)} placeholder="Contact number (optional)" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm" />
 

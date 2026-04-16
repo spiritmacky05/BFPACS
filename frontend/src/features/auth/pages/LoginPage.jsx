@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const { handleLogin, isLoading, error } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -18,7 +18,7 @@ const LoginPage = () => {
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
       transition: { duration: 0.6, staggerChildren: 0.1 }
     }
@@ -35,8 +35,8 @@ const LoginPage = () => {
       <div className="hidden md:flex flex-col justify-center w-1/2 p-12 lg:p-24 relative overflow-hidden bg-gradient-to-br from-orange-600 to-red-900 border-r border-white/10">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542282811-943ef1a647a5?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-30"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
@@ -51,15 +51,15 @@ const LoginPage = () => {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="relative z-10"
         >
           <h2 className="text-5xl font-extrabold tracking-tight mb-4 leading-tight">
-            Secure.<br/>
-            Deploy.<br/>
+            Secure.<br />
+            Deploy.<br />
             Respond.
           </h2>
           <p className="text-lg text-white/70 max-w-md font-light leading-relaxed">
@@ -74,7 +74,7 @@ const LoginPage = () => {
         <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-orange-600/10 rounded-full blur-[100px] pointer-events-none"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-red-900/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-        <motion.div 
+        <motion.div
           className="w-full max-w-md relative z-10"
           variants={containerVariants}
           initial="hidden"
@@ -87,7 +87,7 @@ const LoginPage = () => {
               </div>
               <h1 className="text-xl font-bold tracking-tight text-white">BFPACS</h1>
             </div>
-            
+
             <h2 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome back</h2>
             <p className="text-neutral-400">Please enter your details to sign in.</p>
           </motion.div>
@@ -101,10 +101,15 @@ const LoginPage = () => {
                 </div>
                 <input
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
+                  onChange={(e) => setEmail(e.target.value.trimStart())}
+                  className="..."
                   placeholder="name@bfp.gov.ph"
                 />
               </div>
@@ -131,7 +136,7 @@ const LoginPage = () => {
             </motion.div>
 
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="flex items-center gap-2 p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg"
@@ -157,7 +162,7 @@ const LoginPage = () => {
                 )}
               </button>
             </motion.div>
-            
+
             <motion.p variants={itemVariants} className="text-sm font-light text-neutral-400 text-center mt-6">
               Don't have an account yet?{' '}
               <Link to="/register" className="font-medium text-white hover:text-orange-400 transition-colors underline decoration-white/30 underline-offset-4 decoration-1">

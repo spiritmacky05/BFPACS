@@ -54,6 +54,7 @@ func GenerateJWT(userID uuid.UUID, fullName string, role string, stationID *uuid
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	var req models.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

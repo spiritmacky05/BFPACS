@@ -9,7 +9,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [region, setRegion] = useState('');
@@ -29,11 +29,11 @@ const Register = () => {
     'Region XIII', 'BARMM', 'NIR'
   ];
   const [address, setAddress] = useState('');
-  
+
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMessage, setPendingMessage] = useState('');
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -53,9 +53,9 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const payload = { 
-        full_name: fullName, 
-        email, 
+      const payload = {
+        full_name: fullName,
+        email,
         password,
         city,
         district,
@@ -84,7 +84,7 @@ const Register = () => {
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
       transition: { duration: 0.6, staggerChildren: 0.08 }
     }
@@ -97,13 +97,13 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col md:flex-row-reverse font-sans selection:bg-orange-500/30">
-      
+
       {/* Visual / Branding Side - Reversed horizontally from Login */}
       <div className="hidden md:flex flex-col justify-center w-1/2 p-12 lg:p-24 relative overflow-hidden bg-gradient-to-bl from-orange-600 to-neutral-900 border-l border-white/10">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542282811-943ef1a647a5?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/90"></div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -126,7 +126,7 @@ const Register = () => {
         {/* Abstract background blobs */}
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <motion.div 
+        <motion.div
           className="w-full max-w-md relative z-10 py-12"
           variants={containerVariants}
           initial="hidden"
@@ -139,7 +139,7 @@ const Register = () => {
               </div>
               <h1 className="text-xl font-bold tracking-tight text-white">BFPACS</h1>
             </div>
-            
+
             <h2 className="text-3xl font-bold tracking-tight text-white mb-2">Request Access</h2>
             <p className="text-neutral-400">Create an account to join the grid.</p>
           </motion.div>
@@ -170,178 +170,183 @@ const Register = () => {
               </Link>
             </motion.div>
           ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <motion.div variants={itemVariants} className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Station Name</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
-                  placeholder="e.g. BFP Taguig Station 1"
-                />
-              </div>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <motion.div variants={itemVariants} className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-300 ml-1">City</label>
+                <label className="text-sm font-medium text-neutral-300 ml-1">Station Name</label>
                 <div className="relative group">
-                  <select
-                    required
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                  >
-                    <option value="">Select City</option>
-                    {CITY_OPTIONS.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </motion.div>
-
-              <motion.div variants={itemVariants} className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-300 ml-1">District</label>
-                <div className="relative group">
-                  <select
-                    required
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                  >
-                    <option value="">Select District</option>
-                    {DISTRICT_OPTIONS.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <motion.div variants={itemVariants} className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-300 ml-1">Region</label>
-                <div className="relative group">
-                  <select
-                    required
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                  >
-                    <option value="">Select Region</option>
-                    {REGION_OPTIONS.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                </div>
-              </motion.div>
-
-              <motion.div variants={itemVariants} className="space-y-1.5">
-                <label className="text-sm font-medium text-neutral-300 ml-1">Complete Address</label>
-                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
+                    <Building2 className="w-5 h-5" />
+                  </div>
                   <input
                     type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
-                    placeholder="e.g. 123 Main St., Brgy. San Juan"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
+                    placeholder="e.g. BFP Taguig Station 1"
                   />
                 </div>
               </motion.div>
-            </div>
 
-            <motion.div variants={itemVariants} className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Email address</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
-                  placeholder="name@bfp.gov.ph"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">City</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    >
+                      <option value="">Select City</option>
+                      {CITY_OPTIONS.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">District</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    >
+                      <option value="">Select District</option>
+                      {DISTRICT_OPTIONS.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
 
-            <motion.div variants={itemVariants} className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
-                  placeholder="Min. 8 characters"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">Region</label>
+                  <div className="relative group">
+                    <select
+                      required
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                    >
+                      <option value="">Select Region</option>
+                      {REGION_OPTIONS.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="space-y-1.5">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">Complete Address</label>
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 px-4 transition-all outline-none"
+                      placeholder="e.g. 123 Main St., Brgy. San Juan"
+                    />
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
 
-            <motion.div variants={itemVariants} className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Confirm Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
-                  <Lock className="w-5 h-5" />
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Email address</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
+                    placeholder="name@bfp.gov.ph"
+                  />
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
-                  placeholder="••••••••"
-                />
-              </div>
-            </motion.div>
-
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="flex items-center gap-2 p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg mt-2"
-              >
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span className="flex-1">{error}</span>
               </motion.div>
-            )}
 
-            <motion.div variants={itemVariants} className="pt-2">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group w-full flex justify-center items-center gap-2 text-white bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 focus:ring-4 focus:ring-orange-500/30 font-medium rounded-xl text-sm px-5 py-3.5 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(234,88,12,0.15)] hover:shadow-[0_0_30px_rgba(234,88,12,0.3)] border border-orange-500/20"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    Create account
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
-            </motion.div>
-            
-            <motion.p variants={itemVariants} className="text-sm font-light text-neutral-400 text-center mt-6">
-              Already a member?{' '}
-              <Link to="/login" className="font-medium text-white hover:text-orange-400 transition-colors underline decoration-white/30 underline-offset-4 decoration-1">
-                Sign in
-              </Link>
-            </motion.p>
-          </form>
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Password</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
+                    placeholder="Min. 8 characters"
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Confirm Password</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-neutral-500 group-focus-within:text-orange-500 transition-colors">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-neutral-900/50 border border-neutral-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block pl-12 p-3.5 transition-all outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </motion.div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="flex items-center gap-2 p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg mt-2"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="flex-1">{error}</span>
+                </motion.div>
+              )}
+
+              <motion.div variants={itemVariants} className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="group w-full flex justify-center items-center gap-2 text-white bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 focus:ring-4 focus:ring-orange-500/30 font-medium rounded-xl text-sm px-5 py-3.5 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(234,88,12,0.15)] hover:shadow-[0_0_30px_rgba(234,88,12,0.3)] border border-orange-500/20"
+                >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      Create account
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </motion.div>
+
+              <motion.p variants={itemVariants} className="text-sm font-light text-neutral-400 text-center mt-6">
+                Already a member?{' '}
+                <Link to="/login" className="font-medium text-white hover:text-orange-400 transition-colors underline decoration-white/30 underline-offset-4 decoration-1">
+                  Sign in
+                </Link>
+              </motion.p>
+            </form>
           )}
         </motion.div>
       </div>
