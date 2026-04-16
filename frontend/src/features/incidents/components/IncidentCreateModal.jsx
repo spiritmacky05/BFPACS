@@ -8,7 +8,11 @@
  * - Keeps create behavior testable and reusable.
  */
 
+
+import { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import useGeolocation from '@/lib/useGeolocation';
+import MapView from '@/features/shared/components/MapView';
 
 const OCCUPANCY_TYPES = [
   'Residential Board and Care',
@@ -52,6 +56,7 @@ const styles = {
   coordinatesGrid: 'grid grid-cols-2 gap-3',
 };
 
+
 export default function IncidentCreateModal({
   isOpen,
   form,
@@ -60,6 +65,13 @@ export default function IncidentCreateModal({
   onChangeField,
   onSubmit,
 }) {
+  const { lat, lng, error: geoError, loading: geoLoading } = useGeolocation();
+  // Auto-fill lat/lng if not set
+  useEffect(() => {
+    if (!form.lat && lat) onChangeField('lat', lat);
+    if (!form.lng && lng) onChangeField('lng', lng);
+  }, [lat, lng]);
+
   if (!isOpen) return null;
 
   const hasImage = Boolean(form.image_data_url);
@@ -71,13 +83,11 @@ export default function IncidentCreateModal({
       onChangeField('image_mime_type', '');
       return;
     }
-
     if (!file.type.startsWith('image/')) {
       onChangeField('image_data_url', '');
       onChangeField('image_mime_type', '');
       return;
     }
-
     const reader = new FileReader();
     reader.onload = () => {
       onChangeField('image_data_url', String(reader.result || ''));
@@ -94,13 +104,28 @@ export default function IncidentCreateModal({
             <AlertTriangle className="w-4 h-4 text-red-400" />
             Report Incident
           </h2>
-
           <button type="button" onClick={onClose} className={styles.closeButton}>
             <X className="w-5 h-5" />
           </button>
         </header>
-
         <div className={styles.body}>
+          {/* Geolocation status */}
+          {geoLoading && (
+            <div className="text-xs text-blue-400 mb-2">Acquiring location...</div>
+          )}
+          {geoError && (
+            <div className="text-xs text-red-400 mb-2">{geoError}</div>
+          )}
+          {/* Map preview if lat/lng available */}
+          {form.lat && form.lng && (
+            <div className="mb-3">
+              <MapView
+                markers={[{ lat: Number(form.lat), lng: Number(form.lng), type: 'user', label: 'Your Location' }]}
+                height="180px"
+                zoom={16}
+              />
+            </div>
+          )}
           <div>
             <label className={styles.label}>Location Address *</label>
             <input
@@ -110,7 +135,6 @@ export default function IncidentCreateModal({
               className={styles.input}
             />
           </div>
-
           <div>
             <label className={styles.label}>Alarm Status</label>
             <select
@@ -125,7 +149,6 @@ export default function IncidentCreateModal({
               ))}
             </select>
           </div>
-
           <div>
             <label className={styles.label}>Date & Time Reported</label>
             <input
@@ -135,7 +158,6 @@ export default function IncidentCreateModal({
               className={styles.input}
             />
           </div>
-
           <div>
             <label className={styles.label}>Type of Occupancy (optional)</label>
             <select
@@ -151,27 +173,24 @@ export default function IncidentCreateModal({
               ))}
             </select>
           </div>
-
           <div className={styles.coordinatesGrid}>
             <input
               type="number"
               step="any"
-              value={form.lat}
+              value={form.lat || ''}
               onChange={(event) => onChangeField('lat', event.target.value)}
               placeholder="Latitude (14.5995)"
               className={styles.input}
             />
-
             <input
               type="number"
               step="any"
-              value={form.lng}
+              value={form.lng || ''}
               onChange={(event) => onChangeField('lng', event.target.value)}
               placeholder="Longitude (120.9842)"
               className={styles.input}
             />
           </div>
-
           <div>
             <label className={styles.label}>Incident Image (optional)</label>
             <input
@@ -192,12 +211,10 @@ export default function IncidentCreateModal({
             ) : null}
           </div>
         </div>
-
         <footer className={styles.footer}>
           <button type="button" onClick={onClose} className={styles.cancelButton}>
             Cancel
           </button>
-
           <button
             type="button"
             onClick={onSubmit}
