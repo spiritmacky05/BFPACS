@@ -161,6 +161,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 				"email":      community.Email,
 				"contact_no": community.ContactNo,
 				"role":       "community",
+				"approved":   true,
+				"is_active":  community.IsActive,
 			},
 		})
 		return
