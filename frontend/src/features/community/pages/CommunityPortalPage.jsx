@@ -153,10 +153,12 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
           maxHeight: '100vh',
           height: '100vh',
           borderRadius: '0',
+          marginTop: 'env(safe-area-inset-top, 20px)',
+          marginBottom: 'env(safe-area-inset-bottom, 10px)',
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#1f1f1f] bg-[#1a1a1a]">
+        <div className="flex items-center justify-between p-4 pt-6 md:pt-4 border-b border-[#1f1f1f] bg-[#1a1a1a]" style={{paddingTop:'max(env(safe-area-inset-top, 24px), 24px)'}}>
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${
               category === 'FIRE' ? 'bg-red-500/20 text-red-500' : 
@@ -172,8 +174,8 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
               <p className="text-gray-500 text-[10px] uppercase tracking-wider">Emergency Response Portal</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-400">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-full text-gray-400" style={{fontSize:'28px', lineHeight:'28px', minWidth:'44px', minHeight:'44px', display:'flex', alignItems:'center', justifyContent:'center'}} aria-label="Close modal">
+            <X className="w-7 h-7" />
           </button>
         </div>
 
