@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/features/auth';
 import UserEditModal from '../components/UserEditModal';
 import { useUserManagement } from '../hooks/useUserManagement';
+import { API_BASE } from '@/config/api';
 
 const ROLE_LABELS = {
   superadmin: {
@@ -167,7 +168,7 @@ export default function SuperAdminPage() {
               <div className="flex justify-between text-gray-400">
                 <span>API Base URL</span>
                 <span className="text-gray-300 font-mono text-xs">
-                  {import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1"}
+                  {API_BASE}
                 </span>
               </div>
               <div className="flex justify-between text-gray-400">

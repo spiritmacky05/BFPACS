@@ -4,7 +4,7 @@
  * API layer for Personnel feature.
  */
 
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 
 export const personnelApi = {
   /** List all personnel. */

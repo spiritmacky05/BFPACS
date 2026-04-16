@@ -4,7 +4,7 @@
  * API layer for SuperAdmin (administrative management).
  */
 
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 
 export const superadminApi = {
   /** List all users (Admin/SuperAdmin) */

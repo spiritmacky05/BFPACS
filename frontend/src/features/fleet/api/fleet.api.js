@@ -10,7 +10,7 @@
  *   GET    /api/v1/fleets/:id/movement-logs
  */
 
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 
 export const fleetApi = {
   list: () => api.get('/fleets'),

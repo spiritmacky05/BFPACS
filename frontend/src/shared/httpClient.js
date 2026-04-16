@@ -8,12 +8,12 @@
  */
 
 import axios from 'axios';
+import { API_BASE } from '@/config/api';
 
 /**
  * Base URL for every API request.
- * We keep a safe local fallback so onboarding is easy for interns.
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const API_BASE_URL = API_BASE;
 
 /**
  * Shared Axios instance used by all feature API modules.

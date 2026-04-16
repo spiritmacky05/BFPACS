@@ -4,8 +4,7 @@
  * Aggregator for all API services.
  */
 
-export { default as api }                from './client/client';
-export { ApiError }                      from './client/client';
+// Removed api and ApiError compatibility exports
 export { incidentsApi }                  from '@/features/incidents';
 export { dispatchApi as dispatchesApi }  from '@/features/dispatch';
 export { fleetApi }                      from '@/features/fleet/api/fleet.api';

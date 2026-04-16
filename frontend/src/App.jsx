@@ -24,6 +24,8 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = Pages[mainPageKey];
 
+
+
 const LayoutWrapper = ({ children, currentPageName }) =>
   Layout
     ? <Layout currentPageName={currentPageName}>{children}</Layout>
@@ -97,6 +99,7 @@ function AppRoutes() {
 }
 
 export default function App() {
+  console.log("API BASE =", import.meta.env.VITE_API_URL);
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -108,3 +111,5 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+console.log("API BASE =", import.meta.env.VITE_API_URL);

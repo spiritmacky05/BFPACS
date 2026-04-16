@@ -8,7 +8,7 @@
  *   PATCH  /api/v1/equipment/:id/return
  */
 
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 
 export const equipmentApi = {
   /** List all equipment. Pass stationId to filter by station. */

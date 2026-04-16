@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 import { authApi } from '../api/auth.api';
 
 const AuthContext = createContext(null);
@@ -64,6 +64,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    
     try {
       // Backend now handles both standard and community users in a single call.
       const response = await authApi.login(email, password);

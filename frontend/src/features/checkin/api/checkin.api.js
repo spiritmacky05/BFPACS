@@ -4,7 +4,7 @@
  * NFC / PIN check-in API calls.
  */
 
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 
 export const checkinApi = {
   /**

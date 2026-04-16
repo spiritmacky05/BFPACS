@@ -4,7 +4,7 @@
  * Hydrant API client.
  */
 
-import api from '@/api/client/client';
+import api from '@/shared/httpClient';
 
 export const hydrantsApi = {
   list: () => api.get('/hydrants'),

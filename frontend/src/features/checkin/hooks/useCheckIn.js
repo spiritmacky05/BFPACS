@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { checkinApi } from '../api/checkin.api';
 import { incidentsApi } from '@/api/api-services';
 import { superadminApi } from '@/features/superadmin';
-import { ApiError } from '@/api/client/client';
+import { ApiClientError } from '@/shared/httpClient';
 
 export default function useCheckIn() {
   const [incidents, setSelectedIncidents] = useState([]);
@@ -78,7 +78,7 @@ export default function useCheckIn() {
       setNfcTag('');
       loadLogs();
     } catch (err) {
-      const msg = err instanceof ApiError && err.status === 409
+      const msg = err instanceof ApiClientError && err.status === 409
         ? 'Personnel already checked in to this incident'
         : err.message;
       setScanResult({ success: false, message: msg });
@@ -100,7 +100,7 @@ export default function useCheckIn() {
       setPinCode('');
       loadLogs();
     } catch (err) {
-      const msg = err instanceof ApiError && err.status === 409
+      const msg = err instanceof ApiClientError && err.status === 409
         ? 'Personnel already checked in to this incident'
         : err.message;
       setScanResult({ success: false, message: msg });

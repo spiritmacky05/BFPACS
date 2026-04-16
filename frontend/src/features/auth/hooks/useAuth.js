@@ -17,6 +17,7 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (email, password) => {
+    
     setError('');
     setIsLoading(true);
     try {
