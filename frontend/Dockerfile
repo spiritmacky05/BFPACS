@@ -12,51 +12,58 @@ RUN npm ci
 # Copy source code
 COPY . ./
 
-# Accept API URL as an argument from docker-compose during the build phase
+# Accept API URL at build time
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-# Build the app explicitly passing variables if needed or letting Vite handle it at runtime using build args
+# Build frontend
 RUN npm run build
 
-# Production stage using Nginx
+
+# Production stage (Nginx)
 FROM nginx:alpine
 
-# Copy built assets to Nginx
+# Copy build output
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Add custom Nginx configuration for React Router (SPA fallback)
-RUN echo 'server { \
-    listen 80; \
-    root /usr/share/nginx/html; \
-    \
-    location / { \
-        index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
-    } \
-    \
-    location /api/ { \
-        proxy_pass http://bfpacs_backend:8080; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-    \
-    location = /health { \
-        proxy_pass http://bfpacs_backend:8080/api/v1/health; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-    } \
-    \
-    location ~* \\.(?:css|js|png|jpg|jpeg|gif|ico|svg|woff2?)$ { \
-        expires 1y; \
-        add_header Cache-Control "public, immutable"; \
-    } \
-    \
-    gzip on; \
-    gzip_types text/plain text/css application/json application/javascript text/xml; \
-    }' > /etc/nginx/conf.d/default.conf
+# Proper nginx config (FIXED)
+RUN cat <<'EOF' > /etc/nginx/conf.d/default.conf
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+
+    # SPA routing
+    location / {
+        index index.html index.htm;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API proxy (IMPORTANT FIX: NO /api/ in proxy_pass)
+    location /api/ {
+        proxy_pass http://bfpacs_backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Health check
+    location = /health {
+        proxy_pass http://bfpacs_backend:8080/api/v1/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Static caching
+    location ~* \.(?:css|js|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml;
+}
+EOF
 
 EXPOSE 80
 
