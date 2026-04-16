@@ -148,7 +148,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="bg-[#111] border border-[#2a2a2a] w-full max-w-lg md:rounded-2xl rounded-none md:rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-[#111] border border-[#2a2a2a] w-full max-w-lg md:rounded-2xl rounded-none md:rounded-xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
         style={{
           maxHeight: '100vh',
           height: '100vh',
@@ -178,7 +178,7 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         </div>
 
         {/* Body */}
-        <div className="p-4 md:p-5 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
+        <div className="flex-1 p-4 md:p-5 space-y-4 overflow-y-auto custom-scrollbar" style={{minHeight:0}}>
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase mb-1.5 block">Incident Address / Landmark</label>
             <div className="relative mb-2">
@@ -218,11 +218,11 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
               )}
             </div>
             <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-              <div className="text-[11px] text-gray-500">Tap the map to update your location if needed.</div>
+              <div className="text-[12px] text-gray-500">Tap the map to update your location if needed.</div>
               <button
                 type="button"
                 onClick={handleUseMyLocation}
-                className="text-[12px] px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-black font-bold transition-colors w-full md:w-fit md:ml-2"
+                className="text-[14px] px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-black font-bold transition-colors w-full md:w-fit md:ml-2"
                 style={{minWidth: 0}}
               >
                 Use My Location
@@ -283,18 +283,18 @@ function ReportModal({ isOpen, onClose, category, onSubmit, loading, coords, set
         </div>
 
         {/* Footer */}
-        <div className="p-3 md:p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex flex-col md:flex-row gap-2 md:gap-3">
+        <div className="sticky bottom-0 left-0 right-0 p-3 md:p-4 border-t border-[#1f1f1f] bg-[#1a1a1a] flex flex-col md:flex-row gap-2 md:gap-3 z-20">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white text-base font-bold transition-colors"
-          >
+            className="flex-1 px-4 py-4 rounded-lg bg-white/5 hover:bg-white/10 text-white text-lg font-bold transition-colors"
+            style={{minHeight:'48px'}}>
             CANCEL
           </button>
           <button
             onClick={handleFormSubmit}
             disabled={loading || !description || !locationText}
-            className="flex-2 px-8 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-base font-bold shadow-lg shadow-red-900/20 disabled:opacity-50 transition-all active:scale-[0.98]"
-          >
+            className="flex-2 px-8 py-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-lg font-bold shadow-lg shadow-red-900/20 disabled:opacity-50 transition-all active:scale-[0.98]"
+            style={{minHeight:'48px'}}>
             {loading ? 'SUBMITTING...' : 'SUBMIT REPORT'}
           </button>
         </div>
